@@ -6,8 +6,41 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		DE2A87E82F16075C005C1B49 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE2A87E72F16075C005C1B49 /* WidgetKit.framework */; };
+		DE2A87EA2F16075C005C1B49 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE2A87E92F16075C005C1B49 /* SwiftUI.framework */; };
+		DE2A87F72F160762005C1B49 /* BetterAlarmWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DE2A87E52F16075C005C1B49 /* BetterAlarmWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		DE2A87F52F160762005C1B49 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DE2A86A72F14A20E005C1B49 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DE2A87E42F16075C005C1B49;
+			remoteInfo = BetterAlarmWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		DE2A87FC2F160762005C1B49 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				DE2A87F72F160762005C1B49 /* BetterAlarmWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		DE2A86AF2F14A20E005C1B49 /* BetterAlarm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BetterAlarm.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DE2A87E52F16075C005C1B49 /* BetterAlarmWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BetterAlarmWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DE2A87E72F16075C005C1B49 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		DE2A87E92F16075C005C1B49 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -17,6 +50,13 @@
 				Info.plist,
 			);
 			target = DE2A86AE2F14A20E005C1B49 /* BetterAlarm */;
+		};
+		DE2A87FB2F160762005C1B49 /* Exceptions for "BetterAlarmWidget" folder in "BetterAlarmWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = DE2A87E42F16075C005C1B49 /* BetterAlarmWidgetExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -29,6 +69,14 @@
 			path = BetterAlarm;
 			sourceTree = "<group>";
 		};
+		DE2A87EB2F16075C005C1B49 /* BetterAlarmWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				DE2A87FB2F160762005C1B49 /* Exceptions for "BetterAlarmWidget" folder in "BetterAlarmWidgetExtension" target */,
+			);
+			path = BetterAlarmWidget;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,6 +87,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DE2A87E22F16075C005C1B49 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DE2A87EA2F16075C005C1B49 /* SwiftUI.framework in Frameworks */,
+				DE2A87E82F16075C005C1B49 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -46,6 +103,8 @@
 			isa = PBXGroup;
 			children = (
 				DE2A86B12F14A20E005C1B49 /* BetterAlarm */,
+				DE2A87EB2F16075C005C1B49 /* BetterAlarmWidget */,
+				DE2A87E62F16075C005C1B49 /* Frameworks */,
 				DE2A86B02F14A20E005C1B49 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,8 +113,18 @@
 			isa = PBXGroup;
 			children = (
 				DE2A86AF2F14A20E005C1B49 /* BetterAlarm.app */,
+				DE2A87E52F16075C005C1B49 /* BetterAlarmWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		DE2A87E62F16075C005C1B49 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				DE2A87E72F16075C005C1B49 /* WidgetKit.framework */,
+				DE2A87E92F16075C005C1B49 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -68,10 +137,12 @@
 				DE2A86AB2F14A20E005C1B49 /* Sources */,
 				DE2A86AC2F14A20E005C1B49 /* Frameworks */,
 				DE2A86AD2F14A20E005C1B49 /* Resources */,
+				DE2A87FC2F160762005C1B49 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				DE2A87F62F160762005C1B49 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				DE2A86B12F14A20E005C1B49 /* BetterAlarm */,
@@ -82,6 +153,28 @@
 			productName = BetterAlarm;
 			productReference = DE2A86AF2F14A20E005C1B49 /* BetterAlarm.app */;
 			productType = "com.apple.product-type.application";
+		};
+		DE2A87E42F16075C005C1B49 /* BetterAlarmWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DE2A87F82F160762005C1B49 /* Build configuration list for PBXNativeTarget "BetterAlarmWidgetExtension" */;
+			buildPhases = (
+				DE2A87E12F16075C005C1B49 /* Sources */,
+				DE2A87E22F16075C005C1B49 /* Frameworks */,
+				DE2A87E32F16075C005C1B49 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				DE2A87EB2F16075C005C1B49 /* BetterAlarmWidget */,
+			);
+			name = BetterAlarmWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = BetterAlarmWidgetExtension;
+			productReference = DE2A87E52F16075C005C1B49 /* BetterAlarmWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -94,6 +187,9 @@
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
 					DE2A86AE2F14A20E005C1B49 = {
+						CreatedOnToolsVersion = 26.1.1;
+					};
+					DE2A87E42F16075C005C1B49 = {
 						CreatedOnToolsVersion = 26.1.1;
 					};
 				};
@@ -113,12 +209,20 @@
 			projectRoot = "";
 			targets = (
 				DE2A86AE2F14A20E005C1B49 /* BetterAlarm */,
+				DE2A87E42F16075C005C1B49 /* BetterAlarmWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		DE2A86AD2F14A20E005C1B49 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DE2A87E32F16075C005C1B49 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -135,7 +239,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DE2A87E12F16075C005C1B49 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		DE2A87F62F160762005C1B49 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DE2A87E42F16075C005C1B49 /* BetterAlarmWidgetExtension */;
+			targetProxy = DE2A87F52F160762005C1B49 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		DE2A86C32F14A210005C1B49 /* Debug */ = {
@@ -315,6 +434,68 @@
 			};
 			name = Release;
 		};
+		DE2A87F92F160762005C1B49 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = AHW642SXDF;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BetterAlarmWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BetterAlarmWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nahun.BetterAlarm.BetterAlarmWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		DE2A87FA2F160762005C1B49 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = AHW642SXDF;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BetterAlarmWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BetterAlarmWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nahun.BetterAlarm.BetterAlarmWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -332,6 +513,15 @@
 			buildConfigurations = (
 				DE2A86C32F14A210005C1B49 /* Debug */,
 				DE2A86C42F14A210005C1B49 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DE2A87F82F160762005C1B49 /* Build configuration list for PBXNativeTarget "BetterAlarmWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DE2A87F92F160762005C1B49 /* Debug */,
+				DE2A87FA2F160762005C1B49 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -105,7 +105,7 @@ struct Alarm: Codable, Identifiable, Equatable {
         let baseDescription: String
         switch schedule {
         case .once:
-            baseDescription = "반복 안 함"
+            baseDescription = "1회"
         case .weekly(let days):
             if days.count == 7 {
                 baseDescription = "매일"
@@ -128,6 +128,13 @@ struct Alarm: Codable, Identifiable, Equatable {
             return baseDescription + " (다음 1회 건너뜀)"
         }
         return baseDescription
+    }
+
+    var isWeeklyAlarm: Bool {
+        if case .weekly = schedule {
+            return true
+        }
+        return false
     }
 
     func nextTriggerDate(from date: Date = Date()) -> Date? {

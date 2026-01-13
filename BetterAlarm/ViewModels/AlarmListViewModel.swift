@@ -8,10 +8,10 @@ protocol AlarmListViewModelDelegate: AnyObject {
 class AlarmListViewModel {
     weak var delegate: AlarmListViewModelDelegate?
 
-    private let alarmManager = AlarmManager.shared
+    private let alarmStore = AlarmStore.shared
 
     var alarms: [Alarm] {
-        return alarmManager.alarms
+        return alarmStore.alarms
     }
 
     var numberOfAlarms: Int {
@@ -19,7 +19,7 @@ class AlarmListViewModel {
     }
 
     var nextAlarmDisplayString: String? {
-        return alarmManager.nextAlarmDisplayString
+        return alarmStore.nextAlarmDisplayString
     }
 
     var hasAlarms: Bool {
@@ -27,7 +27,7 @@ class AlarmListViewModel {
     }
 
     init() {
-        alarmManager.delegate = self
+        alarmStore.delegate = self
     }
 
     // MARK: - Data Access
@@ -40,29 +40,29 @@ class AlarmListViewModel {
     // MARK: - Actions
 
     func createAlarm(hour: Int, minute: Int, title: String, weekdays: Set<Weekday>?, specificDate: Date?) {
-        alarmManager.createAlarm(hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate)
+        alarmStore.createAlarm(hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate)
         updateNextAlarmDisplay()
     }
 
     func updateAlarm(_ alarm: Alarm, hour: Int, minute: Int, title: String, weekdays: Set<Weekday>?, specificDate: Date?) {
-        alarmManager.updateAlarm(alarm, hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate)
+        alarmStore.updateAlarm(alarm, hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate)
         updateNextAlarmDisplay()
     }
 
     func deleteAlarm(at index: Int) {
-        alarmManager.deleteAlarm(at: index)
+        alarmStore.deleteAlarm(at: index)
         updateNextAlarmDisplay()
     }
 
     func toggleAlarm(at index: Int, enabled: Bool) {
         guard let alarm = alarm(at: index) else { return }
-        alarmManager.toggleAlarm(alarm, enabled: enabled)
+        alarmStore.toggleAlarm(alarm, enabled: enabled)
         updateNextAlarmDisplay()
     }
 
     func turnOffCompletely(at index: Int) {
         guard let alarm = alarm(at: index) else { return }
-        alarmManager.toggleAlarm(alarm, enabled: false)
+        alarmStore.toggleAlarm(alarm, enabled: false)
         updateNextAlarmDisplay()
     }
 
@@ -73,10 +73,10 @@ class AlarmListViewModel {
     }
 }
 
-// MARK: - AlarmManagerDelegate
+// MARK: - AlarmStoreDelegate
 
-extension AlarmListViewModel: AlarmManagerDelegate {
-    func alarmManagerDidUpdateAlarms(_ manager: AlarmManager) {
+extension AlarmListViewModel: AlarmStoreDelegate {
+    func alarmStoreDidUpdateAlarms(_ store: AlarmStore) {
         delegate?.viewModelDidUpdateAlarms()
     }
 }

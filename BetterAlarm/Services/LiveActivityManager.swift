@@ -1,13 +1,14 @@
 import Foundation
 import ActivityKit
 
-// MARK: - Alarm Activity Attributes
+// MARK: - Alarm Activity Attributes (Must match Widget definition)
 
 struct AlarmActivityAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
         var nextAlarmTime: String
         var nextAlarmDate: String
         var alarmTitle: String
+        var isSkipped: Bool
     }
 
     var alarmId: String
@@ -43,8 +44,9 @@ class LiveActivityManager {
                 pushType: nil
             )
             currentActivity = activity
+            print("[LiveActivity] Started activity for: \(alarm.displayTitle)")
         } catch {
-            print("Failed to start Live Activity: \(error)")
+            print("[LiveActivity] Failed to start: \(error)")
         }
     }
 
@@ -60,6 +62,7 @@ class LiveActivityManager {
 
         Task {
             await activity.update(ActivityContent(state: contentState, staleDate: nil))
+            print("[LiveActivity] Updated activity for: \(alarm.displayTitle)")
         }
     }
 
@@ -71,6 +74,7 @@ class LiveActivityManager {
         Task {
             await activity.end(nil, dismissalPolicy: .immediate)
             currentActivity = nil
+            print("[LiveActivity] Ended activity")
         }
     }
 
@@ -81,7 +85,8 @@ class LiveActivityManager {
             return AlarmActivityAttributes.ContentState(
                 nextAlarmTime: "--:--",
                 nextAlarmDate: "알람 없음",
-                alarmTitle: ""
+                alarmTitle: "",
+                isSkipped: false
             )
         }
 
@@ -108,7 +113,8 @@ class LiveActivityManager {
         return AlarmActivityAttributes.ContentState(
             nextAlarmTime: timeString,
             nextAlarmDate: dateString,
-            alarmTitle: alarm.displayTitle
+            alarmTitle: alarm.displayTitle,
+            isSkipped: alarm.isSkippingNext
         )
     }
 }

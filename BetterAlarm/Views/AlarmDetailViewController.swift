@@ -91,6 +91,7 @@ class AlarmDetailViewController: UIViewController {
         picker.datePickerMode = .time
         picker.preferredDatePickerStyle = .wheels
         picker.locale = Locale(identifier: "ko_KR")
+        picker.overrideUserInterfaceStyle = .dark  // Force white text
         picker.addTarget(self, action: #selector(timeChanged), for: .valueChanged)
         return picker
     }()
@@ -173,6 +174,7 @@ class AlarmDetailViewController: UIViewController {
         picker.locale = Locale(identifier: "ko_KR")
         picker.minimumDate = Date()
         picker.tintColor = .accentPrimary
+        picker.overrideUserInterfaceStyle = .dark  // Force white text
         picker.addTarget(self, action: #selector(dateChanged), for: .valueChanged)
         return picker
     }()

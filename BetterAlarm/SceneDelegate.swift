@@ -9,13 +9,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
 
         window = UIWindow(windowScene: windowScene)
-        window?.rootViewController = AlarmListViewController()
+        window?.rootViewController = MainTabBarController()
         window?.makeKeyAndVisible()
 
         // Load alarms and start Live Activity
-        AlarmManager.shared.loadAlarms()
-        AlarmManager.shared.rescheduleAllAlarms()
-        AlarmManager.shared.startLiveActivity()
+        AlarmStore.shared.loadAlarms()
+        AlarmStore.shared.rescheduleAllAlarms()
+        AlarmStore.shared.startLiveActivity()
 
         // Setup alarm notification observer
         setupAlarmNotificationObserver()
@@ -26,9 +26,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func sceneDidBecomeActive(_ scene: UIScene) {
         // Refresh alarms and clean up expired one-time alarms
-        AlarmManager.shared.loadAlarms()
-        AlarmManager.shared.cleanupExpiredOneTimeAlarms()
-        AlarmManager.shared.updateLiveActivity()
+        AlarmStore.shared.loadAlarms()
+        AlarmStore.shared.cleanupExpiredOneTimeAlarms()
+        AlarmStore.shared.updateLiveActivity()
     }
 
     func sceneWillResignActive(_ scene: UIScene) {
@@ -36,7 +36,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func sceneWillEnterForeground(_ scene: UIScene) {
         // Refresh alarms
-        AlarmManager.shared.loadAlarms()
+        AlarmStore.shared.loadAlarms()
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
@@ -62,7 +62,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             if let alarmObj = userInfo["alarm"] as? Alarm {
                 alarm = alarmObj
             } else if let alarmId = userInfo["alarmId"] as? String {
-                alarm = AlarmManager.shared.alarms.first { $0.id.uuidString == alarmId }
+                alarm = AlarmStore.shared.alarms.first { $0.id.uuidString == alarmId }
             }
         }
 

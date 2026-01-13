@@ -1,18 +1,16 @@
 import Foundation
-import UserNotifications
 
-protocol AlarmManagerDelegate: AnyObject {
-    func alarmManagerDidUpdateAlarms(_ manager: AlarmManager)
+protocol AlarmStoreDelegate: AnyObject {
+    func alarmStoreDidUpdateAlarms(_ store: AlarmStore)
 }
 
-class AlarmManager {
-    static let shared = AlarmManager()
+class AlarmStore {
+    static let shared = AlarmStore()
 
-    weak var delegate: AlarmManagerDelegate?
+    weak var delegate: AlarmStoreDelegate?
 
     private let userDefaults = UserDefaults.standard
     private let alarmsKey = "savedAlarms"
-    private let alarmKitService = AlarmKitService.shared
 
     private(set) var alarms: [Alarm] = []
 
@@ -73,7 +71,7 @@ class AlarmManager {
         sortAlarms()
         saveAlarms()
         scheduleAlarm(alarm)
-        delegate?.alarmManagerDidUpdateAlarms(self)
+        delegate?.alarmStoreDidUpdateAlarms(self)
         updateLiveActivity()
     }
 
@@ -100,7 +98,7 @@ class AlarmManager {
         sortAlarms()
         saveAlarms()
         scheduleAlarm(updated)
-        delegate?.alarmManagerDidUpdateAlarms(self)
+        delegate?.alarmStoreDidUpdateAlarms(self)
         updateLiveActivity()
     }
 
@@ -108,7 +106,7 @@ class AlarmManager {
         cancelAlarm(alarm)
         alarms.removeAll { $0.id == alarm.id }
         saveAlarms()
-        delegate?.alarmManagerDidUpdateAlarms(self)
+        delegate?.alarmStoreDidUpdateAlarms(self)
         updateLiveActivity()
     }
 
@@ -125,7 +123,6 @@ class AlarmManager {
         updated.isEnabled = enabled
 
         if enabled {
-            // Clear any skipped date when re-enabling
             updated.skippedDate = nil
             scheduleAlarm(updated)
         } else {
@@ -134,7 +131,7 @@ class AlarmManager {
 
         alarms[index] = updated
         saveAlarms()
-        delegate?.alarmManagerDidUpdateAlarms(self)
+        delegate?.alarmStoreDidUpdateAlarms(self)
         updateLiveActivity()
     }
 
@@ -142,20 +139,18 @@ class AlarmManager {
         guard let index = alarms.firstIndex(where: { $0.id == alarm.id }) else { return }
         guard alarm.isEnabled else { return }
 
-        // Get the next trigger date before skipping
         guard let nextDate = alarm.nextTriggerDate() else { return }
 
         var updated = alarm
         updated.skippedDate = nextDate
 
-        // Cancel the current alarm and reschedule for the next occurrence
         cancelAlarm(alarm)
         scheduleAlarm(updated)
 
         alarms[index] = updated
         sortAlarms()
         saveAlarms()
-        delegate?.alarmManagerDidUpdateAlarms(self)
+        delegate?.alarmStoreDidUpdateAlarms(self)
         updateLiveActivity()
     }
 
@@ -172,34 +167,28 @@ class AlarmManager {
         alarms[index] = updated
         sortAlarms()
         saveAlarms()
-        delegate?.alarmManagerDidUpdateAlarms(self)
+        delegate?.alarmStoreDidUpdateAlarms(self)
         updateLiveActivity()
     }
 
     // MARK: - One-time Alarm Cleanup
 
-    /// Called after an alarm finishes ringing to clean up one-time alarms
     func handleAlarmCompleted(_ alarm: Alarm) {
         switch alarm.schedule {
         case .once, .specificDate:
-            // Delete one-time alarms after they ring
             deleteAlarm(alarm)
         case .weekly:
-            // Weekly alarms continue to the next occurrence
-            // Clear any skip flag if it was set for the current occurrence
             if alarm.skippedDate != nil {
                 clearSkipOnceAlarm(alarm)
             }
         }
     }
 
-    /// Check and clean up any one-time alarms that have passed
     func cleanupExpiredOneTimeAlarms() {
         let now = Date()
         let alarmsToDelete = alarms.filter { alarm in
             switch alarm.schedule {
             case .once, .specificDate:
-                // If no next trigger date, the alarm has expired
                 return alarm.nextTriggerDate(from: now) == nil
             case .weekly:
                 return false
@@ -245,17 +234,23 @@ class AlarmManager {
     // MARK: - Alarm Scheduling
 
     private func scheduleAlarm(_ alarm: Alarm) {
-        alarmKitService.scheduleAlarm(for: alarm)
+        Task { @MainActor in
+            await AlarmKitService.shared.scheduleAlarm(for: alarm)
+        }
     }
 
     private func cancelAlarm(_ alarm: Alarm) {
-        alarmKitService.cancelAlarm(for: alarm)
+        Task { @MainActor in
+            AlarmKitService.shared.cancelAlarm(for: alarm)
+        }
     }
 
     func rescheduleAllAlarms() {
-        alarmKitService.cancelAllAlarms()
-        for alarm in alarms where alarm.isEnabled {
-            scheduleAlarm(alarm)
+        Task { @MainActor in
+            await AlarmKitService.shared.stopAllAlarms()
+            if let nextAlarm = nextAlarm, nextAlarm.isEnabled {
+                await AlarmKitService.shared.scheduleAlarm(for: nextAlarm)
+            }
         }
     }
 

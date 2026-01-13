@@ -1,3 +1,10 @@
+//
+//  BetterAlarmWidgetBundle.swift
+//  BetterAlarmWidget
+//
+//  Created by kimnahun on 1/13/26.
+//
+
 import WidgetKit
 import SwiftUI
 
@@ -5,6 +12,6 @@ import SwiftUI
 struct BetterAlarmWidgetBundle: WidgetBundle {
     var body: some Widget {
         BetterAlarmWidget()
-        BetterAlarmLiveActivity()
+        BetterAlarmWidgetLiveActivity()
     }
 }

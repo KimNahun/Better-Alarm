@@ -269,7 +269,7 @@ class AlarmRingingViewController: UIViewController {
 
         // Handle one-time alarm cleanup
         if let alarm = alarm {
-            AlarmManager.shared.handleAlarmCompleted(alarm)
+            AlarmStore.shared.handleAlarmCompleted(alarm)
         }
 
         dismiss(animated: true) { [weak self] in

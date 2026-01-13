@@ -1,10 +1,17 @@
 import UIKit
 
 class AlarmListViewController: UIViewController {
+    // MARK: - Types
+
+    enum Section {
+        case main
+    }
+
     // MARK: - Properties
 
-    private let alarmManager = AlarmManager.shared
+    private let alarmStore = AlarmStore.shared
     private var gradientLayer: CAGradientLayer?
+    private var dataSource: UITableViewDiffableDataSource<Section, Alarm.ID>!
 
     // MARK: - UI Components
 
@@ -15,7 +22,6 @@ class AlarmListViewController: UIViewController {
         table.separatorStyle = .none
         table.showsVerticalScrollIndicator = false
         table.delegate = self
-        table.dataSource = self
         table.register(AlarmCell.self, forCellReuseIdentifier: AlarmCell.identifier)
         table.contentInset = UIEdgeInsets(top: 10, left: 0, bottom: 100, right: 0)
         return table
@@ -112,14 +118,15 @@ class AlarmListViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupConstraints()
-        alarmManager.delegate = self
+        configureDataSource()
+        alarmStore.delegate = self
         requestNotificationPermission()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        alarmManager.loadAlarms()
-        tableView.reloadData()
+        alarmStore.loadAlarms()
+        applySnapshot(animatingDifferences: false)
         updateUI()
     }
 
@@ -188,7 +195,7 @@ class AlarmListViewController: UIViewController {
 
             addButton.widthAnchor.constraint(equalToConstant: 56),
             addButton.heightAnchor.constraint(equalToConstant: 56),
-            addButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            addButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             addButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20)
         ])
     }
@@ -197,20 +204,104 @@ class AlarmListViewController: UIViewController {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge, .criticalAlert]) { _, _ in }
     }
 
+    // MARK: - DiffableDataSource
+
+    private func configureDataSource() {
+        dataSource = UITableViewDiffableDataSource<Section, Alarm.ID>(tableView: tableView) { [weak self] tableView, indexPath, alarmId in
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: AlarmCell.identifier, for: indexPath) as? AlarmCell,
+                  let alarm = self?.alarmStore.alarms.first(where: { $0.id == alarmId }) else {
+                return UITableViewCell()
+            }
+
+            cell.configure(with: alarm)
+            cell.delegate = self
+            return cell
+        }
+
+        dataSource.defaultRowAnimation = .fade
+    }
+
+    private func applySnapshot(animatingDifferences: Bool = true) {
+        var snapshot = NSDiffableDataSourceSnapshot<Section, Alarm.ID>()
+        snapshot.appendSections([.main])
+        snapshot.appendItems(alarmStore.alarms.map { $0.id })
+        dataSource.apply(snapshot, animatingDifferences: animatingDifferences)
+    }
+
     // MARK: - Update UI
 
     private func updateUI() {
-        let hasAlarms = !alarmManager.alarms.isEmpty
+        let hasAlarms = !alarmStore.alarms.isEmpty
         emptyStateView.isHidden = hasAlarms
         tableView.isHidden = !hasAlarms
         updateNextAlarmDisplay()
     }
 
     private func updateNextAlarmDisplay() {
-        if let displayString = alarmManager.nextAlarmDisplayString {
+        if let displayString = alarmStore.nextAlarmDisplayString {
             nextAlarmTimeLabel.text = displayString
         } else {
             nextAlarmTimeLabel.text = "설정된 알람 없음"
+        }
+    }
+
+    // MARK: - Toast Message
+
+    func showToast(message: String, duration: TimeInterval = 3.0) {
+        let toastContainer = UIView()
+        toastContainer.translatesAutoresizingMaskIntoConstraints = false
+        toastContainer.backgroundColor = UIColor(white: 0.1, alpha: 0.95)
+        toastContainer.layer.cornerRadius = 12
+        toastContainer.isUserInteractionEnabled = false
+
+        let iconView = UIImageView()
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        iconView.image = UIImage(systemName: "checkmark.circle.fill")
+        iconView.tintColor = .accentPrimary
+        iconView.contentMode = .scaleAspectFit
+
+        let messageLabel = UILabel()
+        messageLabel.translatesAutoresizingMaskIntoConstraints = false
+        messageLabel.text = message
+        messageLabel.textColor = .white
+        messageLabel.font = .systemFont(ofSize: 15, weight: .medium)
+        messageLabel.numberOfLines = 0
+
+        toastContainer.addSubview(iconView)
+        toastContainer.addSubview(messageLabel)
+        view.addSubview(toastContainer)
+
+        NSLayoutConstraint.activate([
+            toastContainer.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            toastContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            toastContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+
+            iconView.leadingAnchor.constraint(equalTo: toastContainer.leadingAnchor, constant: 16),
+            iconView.centerYAnchor.constraint(equalTo: toastContainer.centerYAnchor),
+            iconView.widthAnchor.constraint(equalToConstant: 24),
+            iconView.heightAnchor.constraint(equalToConstant: 24),
+
+            messageLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 12),
+            messageLabel.trailingAnchor.constraint(equalTo: toastContainer.trailingAnchor, constant: -16),
+            messageLabel.topAnchor.constraint(equalTo: toastContainer.topAnchor, constant: 14),
+            messageLabel.bottomAnchor.constraint(equalTo: toastContainer.bottomAnchor, constant: -14)
+        ])
+
+        // Initial state
+        toastContainer.alpha = 0
+        toastContainer.transform = CGAffineTransform(translationX: 0, y: -20)
+
+        // Animate in
+        UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.5) {
+            toastContainer.alpha = 1
+            toastContainer.transform = .identity
+        }
+
+        // Animate out
+        UIView.animate(withDuration: 0.5, delay: duration, options: .curveEaseOut) {
+            toastContainer.alpha = 0
+        } completion: { _ in
+            toastContainer.removeFromSuperview()
         }
     }
 
@@ -231,7 +322,7 @@ class AlarmListViewController: UIViewController {
         present(addVC, animated: true)
     }
 
-    private func showSkipOrTurnOffActionSheet(for alarm: Alarm, at index: Int) {
+    private func showSkipOrTurnOffActionSheet(for alarm: Alarm, at indexPath: IndexPath) {
         let actionSheet = UIAlertController(
             title: alarm.displayTitle,
             message: "알람을 어떻게 처리할까요?",
@@ -241,45 +332,32 @@ class AlarmListViewController: UIViewController {
         // Skip once option (1번만 끄기)
         let skipOnceAction = UIAlertAction(title: "1번만 끄기", style: .default) { [weak self] _ in
             UIView.hapticFeedback(style: .light)
-            self?.alarmManager.skipOnceAlarm(alarm)
-            self?.tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .automatic)
-            self?.updateUI()
+            self?.alarmStore.skipOnceAlarm(alarm)
+            self?.showToast(message: "다음 알람이 건너뛰어집니다")
         }
         actionSheet.addAction(skipOnceAction)
 
         // Turn off completely option (완전히 끄기) - now deletes the alarm
         let deleteAction = UIAlertAction(title: "완전히 끄기", style: .destructive) { [weak self] _ in
             UIView.hapticFeedback(style: .medium)
-            self?.alarmManager.deleteAlarm(alarm)
+            self?.alarmStore.deleteAlarm(alarm)
+            self?.showToast(message: "알람이 삭제되었습니다")
         }
         actionSheet.addAction(deleteAction)
 
         // Cancel option (취소)
         let cancelAction = UIAlertAction(title: "취소", style: .cancel) { [weak self] _ in
-            self?.tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
+            // Reload the cell to reset switch state
+            self?.applySnapshot()
         }
         actionSheet.addAction(cancelAction)
 
         present(actionSheet, animated: true)
     }
-}
 
-// MARK: - UITableViewDataSource
-
-extension AlarmListViewController: UITableViewDataSource {
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return alarmManager.alarms.count
-    }
-
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: AlarmCell.identifier, for: indexPath) as? AlarmCell else {
-            return UITableViewCell()
-        }
-
-        let alarm = alarmManager.alarms[indexPath.row]
-        cell.configure(with: alarm)
-        cell.delegate = self
-        return cell
+    private func deleteAlarm(_ alarm: Alarm) {
+        alarmStore.deleteAlarm(alarm)
+        showToast(message: "알람이 삭제되었습니다")
     }
 }
 
@@ -291,7 +369,8 @@ extension AlarmListViewController: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let alarm = alarmManager.alarms[indexPath.row]
+        guard let alarmId = dataSource.itemIdentifier(for: indexPath),
+              let alarm = alarmStore.alarms.first(where: { $0.id == alarmId }) else { return }
 
         UIView.hapticFeedback(style: .light)
 
@@ -310,10 +389,14 @@ extension AlarmListViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let deleteAction = UIContextualAction(style: .destructive, title: nil) { [weak self] _, _, completion in
+            guard let alarmId = self?.dataSource.itemIdentifier(for: indexPath),
+                  let alarm = self?.alarmStore.alarms.first(where: { $0.id == alarmId }) else {
+                completion(false)
+                return
+            }
+
             UIView.hapticFeedback(style: .medium)
-            self?.alarmManager.deleteAlarm(at: indexPath.row)
-            tableView.deleteRows(at: [indexPath], with: .automatic)
-            self?.updateUI()
+            self?.deleteAlarm(alarm)
             completion(true)
         }
 
@@ -331,10 +414,17 @@ extension AlarmListViewController: AlarmCellDelegate {
         guard let indexPath = tableView.indexPath(for: cell) else { return }
 
         if !isOn && alarm.isEnabled {
-            showSkipOrTurnOffActionSheet(for: alarm, at: indexPath.row)
+            // Weekly alarms: show skip option
+            // Once/SpecificDate alarms: delete directly
+            if alarm.isWeeklyAlarm {
+                showSkipOrTurnOffActionSheet(for: alarm, at: indexPath)
+            } else {
+                // For one-time alarms, toggle off means delete
+                UIView.hapticFeedback(style: .medium)
+                deleteAlarm(alarm)
+            }
         } else {
-            alarmManager.toggleAlarm(alarm, enabled: isOn)
-            tableView.reloadRows(at: [indexPath], with: .automatic)
+            alarmStore.toggleAlarm(alarm, enabled: isOn)
         }
     }
 }
@@ -344,20 +434,20 @@ extension AlarmListViewController: AlarmCellDelegate {
 extension AlarmListViewController: AlarmDetailViewControllerDelegate {
     func alarmDetailViewController(_ controller: AlarmDetailViewController, didSaveAlarm hour: Int, minute: Int, title: String, weekdays: Set<Weekday>?, specificDate: Date?, existingAlarm: Alarm?) {
         if let existing = existingAlarm {
-            alarmManager.updateAlarm(existing, hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate)
+            alarmStore.updateAlarm(existing, hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate)
+            showToast(message: "알람이 수정되었습니다")
         } else {
-            alarmManager.createAlarm(hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate)
+            alarmStore.createAlarm(hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate)
+            showToast(message: "알람이 추가되었습니다")
         }
-        tableView.reloadData()
-        updateUI()
     }
 }
 
-// MARK: - AlarmManagerDelegate
+// MARK: - AlarmStoreDelegate
 
-extension AlarmListViewController: AlarmManagerDelegate {
-    func alarmManagerDidUpdateAlarms(_ manager: AlarmManager) {
-        tableView.reloadData()
+extension AlarmListViewController: AlarmStoreDelegate {
+    func alarmStoreDidUpdateAlarms(_ store: AlarmStore) {
+        applySnapshot()
         updateUI()
     }
 }
