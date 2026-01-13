@@ -18,6 +18,12 @@ extension UIColor {
     /// Gradient end color
     static let gradientEnd = UIColor(red: 0.1, green: 0.12, blue: 0.2, alpha: 1.0)    // Deep blue-purple
 
+    /// Background gradient top color
+    static let backgroundTop = UIColor(red: 0.08, green: 0.08, blue: 0.15, alpha: 1.0)  // Deep navy
+
+    /// Background gradient bottom color
+    static let backgroundBottom = UIColor(red: 0.1, green: 0.12, blue: 0.2, alpha: 1.0)  // Deep blue-purple
+
     /// Glass card background
     static let glassBackground = UIColor.white.withAlphaComponent(0.08)
 

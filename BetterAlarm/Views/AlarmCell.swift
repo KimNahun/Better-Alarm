@@ -57,6 +57,15 @@ class AlarmCell: UITableViewCell {
         return label
     }()
 
+    private let skipInfoLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.textColor = UIColor(red: 1.0, green: 0.6, blue: 0.2, alpha: 1.0)  // Orange
+        label.isHidden = true
+        return label
+    }()
+
     private lazy var toggleSwitch: UISwitch = {
         let toggle = UISwitch()
         toggle.translatesAutoresizingMaskIntoConstraints = false
@@ -95,6 +104,7 @@ class AlarmCell: UITableViewCell {
 
         labelsStackView.addArrangedSubview(titleLabel)
         labelsStackView.addArrangedSubview(repeatLabel)
+        labelsStackView.addArrangedSubview(skipInfoLabel)
 
         contentView.addSubview(containerView)
         containerView.addSubview(accentLine)
@@ -144,9 +154,42 @@ class AlarmCell: UITableViewCell {
         repeatLabel.text = alarm.repeatDescription
 
         configureTypeIndicator(for: alarm)
+        configureSkipInfo(for: alarm)
 
-        toggleSwitch.setOn(alarm.isEnabled, animated: false)
-        updateAppearance(isEnabled: alarm.isEnabled)
+        // If alarm is skipping next, show switch as OFF and dim the cell
+        let isActivelyOn = alarm.isEnabled && !alarm.isSkippingNext
+        toggleSwitch.setOn(isActivelyOn, animated: false)
+        updateAppearance(isEnabled: isActivelyOn, isSkipping: alarm.isSkippingNext)
+    }
+
+    private func configureSkipInfo(for alarm: Alarm) {
+        guard alarm.isSkippingNext, let skippedDate = alarm.skippedDate else {
+            skipInfoLabel.isHidden = true
+            skipInfoLabel.text = nil
+            return
+        }
+
+        skipInfoLabel.isHidden = false
+
+        let calendar = Calendar.current
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+
+        // Get the skipped weekday
+        let skippedWeekday = calendar.component(.weekday, from: skippedDate)
+        let skippedWeekdayName = Weekday(rawValue: skippedWeekday)?.shortName ?? ""
+
+        // Get next trigger date after the skipped one
+        if let nextDate = alarm.nextTriggerDate() {
+            let nextMonth = calendar.component(.month, from: nextDate)
+            let nextDay = calendar.component(.day, from: nextDate)
+            let nextWeekday = calendar.component(.weekday, from: nextDate)
+            let nextWeekdayName = Weekday(rawValue: nextWeekday)?.shortName ?? ""
+
+            skipInfoLabel.text = "\(skippedWeekdayName)요일 스킵됨. 다음 알람은 \(nextMonth)월 \(nextDay)일 \(nextWeekdayName)요일"
+        } else {
+            skipInfoLabel.text = "\(skippedWeekdayName)요일 스킵됨"
+        }
     }
 
     private func configureTypeIndicator(for alarm: Alarm) {
@@ -186,8 +229,9 @@ class AlarmCell: UITableViewCell {
         }
     }
 
-    private func updateAppearance(isEnabled: Bool) {
+    private func updateAppearance(isEnabled: Bool, isSkipping: Bool = false) {
         let alpha: CGFloat = isEnabled ? 1.0 : 0.5
+        let containerAlpha: CGFloat = isEnabled ? 1.0 : 0.7
 
         UIView.animate(withDuration: 0.2) {
             self.timeLabel.alpha = alpha
@@ -195,7 +239,10 @@ class AlarmCell: UITableViewCell {
             self.repeatLabel.alpha = alpha
             self.typeLabel.alpha = alpha
             self.accentLine.alpha = alpha
-            self.containerView.alpha = isEnabled ? 1.0 : 0.7
+            self.containerView.alpha = containerAlpha
+
+            // Skip info label should remain visible when skipping
+            self.skipInfoLabel.alpha = isSkipping ? 1.0 : alpha
         }
     }
 
@@ -226,11 +273,14 @@ class AlarmCell: UITableViewCell {
         titleLabel.text = nil
         repeatLabel.text = nil
         typeLabel.text = nil
+        skipInfoLabel.text = nil
+        skipInfoLabel.isHidden = true
         toggleSwitch.isOn = false
         containerView.transform = .identity
         containerView.alpha = 1.0
         typeLabel.alpha = 1.0
         accentLine.alpha = 1.0
+        skipInfoLabel.alpha = 1.0
     }
 
 }

@@ -4,28 +4,49 @@ class MainTabBarController: UITabBarController {
 
     // MARK: - Properties
 
-    private var gradientLayer: CAGradientLayer?
+    private var backgroundGradientLayer: CAGradientLayer?
 
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupBackground()
         setupTabBar()
         setupViewControllers()
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        gradientLayer?.frame = tabBar.bounds
+        backgroundGradientLayer?.frame = view.bounds
     }
 
     // MARK: - Setup
 
+    private func setupBackground() {
+        // Add gradient background to the tab bar controller's view
+        // This prevents flickering when switching tabs
+        let gradientLayer = CAGradientLayer()
+        gradientLayer.colors = [
+            UIColor.backgroundTop.cgColor,
+            UIColor.backgroundBottom.cgColor
+        ]
+        gradientLayer.locations = [0.0, 1.0]
+        gradientLayer.startPoint = CGPoint(x: 0.5, y: 0)
+        gradientLayer.endPoint = CGPoint(x: 0.5, y: 1)
+        gradientLayer.frame = view.bounds
+
+        view.layer.insertSublayer(gradientLayer, at: 0)
+        backgroundGradientLayer = gradientLayer
+    }
+
     private func setupTabBar() {
         // Custom appearance for tab bar
         let appearance = UITabBarAppearance()
-        appearance.configureWithTransparentBackground()
-        appearance.backgroundColor = UIColor(white: 0.08, alpha: 0.95)
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(white: 0.08, alpha: 1.0)
+
+        // Shadow line at the top
+        appearance.shadowColor = UIColor.white.withAlphaComponent(0.1)
 
         // Normal state
         appearance.stackedLayoutAppearance.normal.iconColor = .textTertiary
@@ -41,21 +62,12 @@ class MainTabBarController: UITabBarController {
             .font: UIFont.systemFont(ofSize: 11, weight: .semibold)
         ]
 
+        // Apply to all states
         tabBar.standardAppearance = appearance
         tabBar.scrollEdgeAppearance = appearance
 
-        // Add subtle top border
-        let topBorder = UIView()
-        topBorder.backgroundColor = UIColor.white.withAlphaComponent(0.1)
-        topBorder.translatesAutoresizingMaskIntoConstraints = false
-        tabBar.addSubview(topBorder)
-
-        NSLayoutConstraint.activate([
-            topBorder.topAnchor.constraint(equalTo: tabBar.topAnchor),
-            topBorder.leadingAnchor.constraint(equalTo: tabBar.leadingAnchor),
-            topBorder.trailingAnchor.constraint(equalTo: tabBar.trailingAnchor),
-            topBorder.heightAnchor.constraint(equalToConstant: 0.5)
-        ])
+        // Ensure the tab bar is not translucent
+        tabBar.isTranslucent = false
     }
 
     private func setupViewControllers() {

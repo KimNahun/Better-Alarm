@@ -4,8 +4,6 @@ class SettingsViewController: UIViewController {
 
     // MARK: - Properties
 
-    private var gradientLayer: CAGradientLayer?
-
     // MARK: - UI Components
 
     private let titleLabel: UILabel = {
@@ -53,15 +51,11 @@ class SettingsViewController: UIViewController {
         setupConstraints()
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        gradientLayer?.frame = view.bounds
-    }
-
     // MARK: - Setup
 
     private func setupUI() {
-        gradientLayer = view.addGradientBackground()
+        // Use solid background color to prevent white flash on tab switch
+        view.backgroundColor = .backgroundTop
 
         view.addSubview(titleLabel)
         view.addSubview(tableView)

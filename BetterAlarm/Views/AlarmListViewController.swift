@@ -10,7 +10,6 @@ class AlarmListViewController: UIViewController {
     // MARK: - Properties
 
     private let alarmStore = AlarmStore.shared
-    private var gradientLayer: CAGradientLayer?
     private var dataSource: UITableViewDiffableDataSource<Section, Alarm.ID>!
 
     // MARK: - UI Components
@@ -119,8 +118,23 @@ class AlarmListViewController: UIViewController {
         setupUI()
         setupConstraints()
         configureDataSource()
-        alarmStore.delegate = self
+        setupNotificationObserver()
         requestNotificationPermission()
+    }
+
+    private func setupNotificationObserver() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAlarmsDidUpdate),
+            name: .alarmsDidUpdate,
+            object: nil
+        )
+    }
+
+    @objc private func handleAlarmsDidUpdate() {
+        applySnapshot()
+        reconfigureVisibleCells()
+        updateUI()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -130,15 +144,11 @@ class AlarmListViewController: UIViewController {
         updateUI()
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        gradientLayer?.frame = view.bounds
-    }
-
     // MARK: - Setup
 
     private func setupUI() {
-        gradientLayer = view.addGradientBackground()
+        // Use solid background color to prevent white flash on tab switch
+        view.backgroundColor = .backgroundTop
 
         view.addSubview(headerView)
         headerView.addSubview(titleLabel)
@@ -226,6 +236,19 @@ class AlarmListViewController: UIViewController {
         snapshot.appendSections([.main])
         snapshot.appendItems(alarmStore.alarms.map { $0.id })
         dataSource.apply(snapshot, animatingDifferences: animatingDifferences)
+    }
+
+    private func reconfigureVisibleCells() {
+        // Reconfigure all visible cells to reflect state changes immediately
+        for cell in tableView.visibleCells {
+            guard let alarmCell = cell as? AlarmCell,
+                  let indexPath = tableView.indexPath(for: cell),
+                  let alarmId = dataSource.itemIdentifier(for: indexPath),
+                  let alarm = alarmStore.alarms.first(where: { $0.id == alarmId }) else {
+                continue
+            }
+            alarmCell.configure(with: alarm)
+        }
     }
 
     // MARK: - Update UI
@@ -349,6 +372,7 @@ class AlarmListViewController: UIViewController {
         let cancelAction = UIAlertAction(title: "취소", style: .cancel) { [weak self] _ in
             // Reload the cell to reset switch state
             self?.applySnapshot()
+            self?.reconfigureVisibleCells()
         }
         actionSheet.addAction(cancelAction)
 
@@ -411,20 +435,33 @@ extension AlarmListViewController: UITableViewDelegate {
 
 extension AlarmListViewController: AlarmCellDelegate {
     func alarmCell(_ cell: AlarmCell, didToggleAlarm alarm: Alarm, isOn: Bool) {
-        guard let indexPath = tableView.indexPath(for: cell) else { return }
-
-        if !isOn && alarm.isEnabled {
-            // Weekly alarms: show skip option
-            // Once/SpecificDate alarms: delete directly
-            if alarm.isWeeklyAlarm {
-                showSkipOrTurnOffActionSheet(for: alarm, at: indexPath)
-            } else {
-                // For one-time alarms, toggle off means delete
-                UIView.hapticFeedback(style: .medium)
-                deleteAlarm(alarm)
+        if isOn {
+            // Turning ON
+            if alarm.isSkippingNext {
+                // Clear skip status
+                UIView.hapticFeedback(style: .light)
+                alarmStore.clearSkipOnceAlarm(alarm)
+                showToast(message: "스킵이 취소되었습니다")
+            } else if !alarm.isEnabled {
+                // Enable disabled alarm
+                UIView.hapticFeedback(style: .light)
+                alarmStore.toggleAlarm(alarm, enabled: true)
+                showToast(message: "알람이 켜졌습니다")
             }
         } else {
-            alarmStore.toggleAlarm(alarm, enabled: isOn)
+            // Turning OFF
+            if alarm.isEnabled && !alarm.isSkippingNext {
+                if alarm.isWeeklyAlarm {
+                    // Weekly alarms: show skip option
+                    guard let indexPath = tableView.indexPath(for: cell) else { return }
+                    showSkipOrTurnOffActionSheet(for: alarm, at: indexPath)
+                } else {
+                    // For one-time/specific date alarms: just toggle off
+                    UIView.hapticFeedback(style: .light)
+                    alarmStore.toggleAlarm(alarm, enabled: false)
+                    showToast(message: "알람이 꺼졌습니다")
+                }
+            }
         }
     }
 }
@@ -443,11 +480,3 @@ extension AlarmListViewController: AlarmDetailViewControllerDelegate {
     }
 }
 
-// MARK: - AlarmStoreDelegate
-
-extension AlarmListViewController: AlarmStoreDelegate {
-    func alarmStoreDidUpdateAlarms(_ store: AlarmStore) {
-        applySnapshot()
-        updateUI()
-    }
-}

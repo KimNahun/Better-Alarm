@@ -1,5 +1,9 @@
 import Foundation
 
+extension Notification.Name {
+    static let alarmsDidUpdate = Notification.Name("alarmsDidUpdate")
+}
+
 protocol AlarmStoreDelegate: AnyObject {
     func alarmStoreDidUpdateAlarms(_ store: AlarmStore)
 }
@@ -16,6 +20,11 @@ class AlarmStore {
 
     private init() {
         loadAlarms()
+    }
+
+    private func notifyUpdate() {
+        delegate?.alarmStoreDidUpdateAlarms(self)
+        NotificationCenter.default.post(name: .alarmsDidUpdate, object: self)
     }
 
     // MARK: - Load/Save
@@ -71,7 +80,7 @@ class AlarmStore {
         sortAlarms()
         saveAlarms()
         scheduleAlarm(alarm)
-        delegate?.alarmStoreDidUpdateAlarms(self)
+        notifyUpdate()
         updateLiveActivity()
     }
 
@@ -98,7 +107,7 @@ class AlarmStore {
         sortAlarms()
         saveAlarms()
         scheduleAlarm(updated)
-        delegate?.alarmStoreDidUpdateAlarms(self)
+        notifyUpdate()
         updateLiveActivity()
     }
 
@@ -106,7 +115,7 @@ class AlarmStore {
         cancelAlarm(alarm)
         alarms.removeAll { $0.id == alarm.id }
         saveAlarms()
-        delegate?.alarmStoreDidUpdateAlarms(self)
+        notifyUpdate()
         updateLiveActivity()
     }
 
@@ -131,7 +140,7 @@ class AlarmStore {
 
         alarms[index] = updated
         saveAlarms()
-        delegate?.alarmStoreDidUpdateAlarms(self)
+        notifyUpdate()
         updateLiveActivity()
     }
 
@@ -150,7 +159,7 @@ class AlarmStore {
         alarms[index] = updated
         sortAlarms()
         saveAlarms()
-        delegate?.alarmStoreDidUpdateAlarms(self)
+        notifyUpdate()
         updateLiveActivity()
     }
 
@@ -167,7 +176,7 @@ class AlarmStore {
         alarms[index] = updated
         sortAlarms()
         saveAlarms()
-        delegate?.alarmStoreDidUpdateAlarms(self)
+        notifyUpdate()
         updateLiveActivity()
     }
 

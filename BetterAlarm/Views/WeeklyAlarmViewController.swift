@@ -11,7 +11,6 @@ class WeeklyAlarmViewController: UIViewController {
     // MARK: - Properties
 
     private let alarmStore = AlarmStore.shared
-    private var gradientLayer: CAGradientLayer?
     private var dataSource: UITableViewDiffableDataSource<Section, Alarm.ID>!
     private var selectedWeekday: Weekday = .monday
 
@@ -105,7 +104,22 @@ class WeeklyAlarmViewController: UIViewController {
             selectedWeekday = weekday
         }
 
-        alarmStore.delegate = self
+        setupNotificationObserver()
+    }
+
+    private func setupNotificationObserver() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAlarmsDidUpdate),
+            name: .alarmsDidUpdate,
+            object: nil
+        )
+    }
+
+    @objc private func handleAlarmsDidUpdate() {
+        applySnapshot()
+        reconfigureVisibleCells()
+        updateUI()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -115,15 +129,11 @@ class WeeklyAlarmViewController: UIViewController {
         updateUI()
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        gradientLayer?.frame = view.bounds
-    }
-
     // MARK: - Setup
 
     private func setupUI() {
-        gradientLayer = view.addGradientBackground()
+        // Use solid background color to prevent white flash on tab switch
+        view.backgroundColor = .backgroundTop
 
         view.addSubview(headerView)
         headerView.addSubview(titleLabel)
@@ -252,6 +262,20 @@ class WeeklyAlarmViewController: UIViewController {
         dataSource.apply(snapshot, animatingDifferences: animatingDifferences)
     }
 
+    private func reconfigureVisibleCells() {
+        // Reconfigure all visible cells to reflect state changes immediately
+        let filtered = filteredAlarms()
+        for cell in tableView.visibleCells {
+            guard let alarmCell = cell as? AlarmCell,
+                  let indexPath = tableView.indexPath(for: cell),
+                  let alarmId = dataSource.itemIdentifier(for: indexPath),
+                  let alarm = filtered.first(where: { $0.id == alarmId }) else {
+                continue
+            }
+            alarmCell.configure(with: alarm)
+        }
+    }
+
     // MARK: - Update UI
 
     private func updateUI() {
@@ -326,34 +350,47 @@ extension WeeklyAlarmViewController: UITableViewDelegate {
 
 extension WeeklyAlarmViewController: AlarmCellDelegate {
     func alarmCell(_ cell: AlarmCell, didToggleAlarm alarm: Alarm, isOn: Bool) {
-        if !isOn && alarm.isEnabled {
-            // Show skip option for weekly alarms
-            let actionSheet = UIAlertController(
-                title: alarm.displayTitle,
-                message: "알람을 어떻게 처리할까요?",
-                preferredStyle: .actionSheet
-            )
-
-            let skipOnceAction = UIAlertAction(title: "1번만 끄기", style: .default) { [weak self] _ in
+        if isOn {
+            // Turning ON
+            if alarm.isSkippingNext {
+                // Clear skip status
                 UIView.hapticFeedback(style: .light)
-                self?.alarmStore.skipOnceAlarm(alarm)
+                alarmStore.clearSkipOnceAlarm(alarm)
+            } else if !alarm.isEnabled {
+                // Enable disabled alarm
+                UIView.hapticFeedback(style: .light)
+                alarmStore.toggleAlarm(alarm, enabled: true)
             }
-            actionSheet.addAction(skipOnceAction)
-
-            let deleteAction = UIAlertAction(title: "완전히 끄기", style: .destructive) { [weak self] _ in
-                UIView.hapticFeedback(style: .medium)
-                self?.alarmStore.deleteAlarm(alarm)
-            }
-            actionSheet.addAction(deleteAction)
-
-            let cancelAction = UIAlertAction(title: "취소", style: .cancel) { [weak self] _ in
-                self?.applySnapshot()
-            }
-            actionSheet.addAction(cancelAction)
-
-            present(actionSheet, animated: true)
         } else {
-            alarmStore.toggleAlarm(alarm, enabled: isOn)
+            // Turning OFF
+            if alarm.isEnabled && !alarm.isSkippingNext {
+                // Show skip option for weekly alarms
+                let actionSheet = UIAlertController(
+                    title: alarm.displayTitle,
+                    message: "알람을 어떻게 처리할까요?",
+                    preferredStyle: .actionSheet
+                )
+
+                let skipOnceAction = UIAlertAction(title: "1번만 끄기", style: .default) { [weak self] _ in
+                    UIView.hapticFeedback(style: .light)
+                    self?.alarmStore.skipOnceAlarm(alarm)
+                }
+                actionSheet.addAction(skipOnceAction)
+
+                let deleteAction = UIAlertAction(title: "완전히 끄기", style: .destructive) { [weak self] _ in
+                    UIView.hapticFeedback(style: .medium)
+                    self?.alarmStore.deleteAlarm(alarm)
+                }
+                actionSheet.addAction(deleteAction)
+
+                let cancelAction = UIAlertAction(title: "취소", style: .cancel) { [weak self] _ in
+                    self?.applySnapshot()
+                    self?.reconfigureVisibleCells()
+                }
+                actionSheet.addAction(cancelAction)
+
+                present(actionSheet, animated: true)
+            }
         }
     }
 }
@@ -370,11 +407,3 @@ extension WeeklyAlarmViewController: AlarmDetailViewControllerDelegate {
     }
 }
 
-// MARK: - AlarmStoreDelegate
-
-extension WeeklyAlarmViewController: AlarmStoreDelegate {
-    func alarmStoreDidUpdateAlarms(_ store: AlarmStore) {
-        applySnapshot()
-        updateUI()
-    }
-}
