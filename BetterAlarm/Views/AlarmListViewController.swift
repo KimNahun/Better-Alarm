@@ -67,6 +67,46 @@ class AlarmListViewController: UIViewController {
         return label
     }()
 
+    // Permission denied UI
+    private let permissionDeniedView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.isHidden = true
+        return view
+    }()
+
+    private let permissionWarningIcon: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.image = UIImage(systemName: "exclamationmark.triangle.fill")
+        imageView.tintColor = UIColor(red: 1.0, green: 0.6, blue: 0.2, alpha: 1.0)
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+
+    private let permissionWarningLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "알람 권한이 없습니다"
+        label.font = .systemFont(ofSize: 15, weight: .medium)
+        label.textColor = .textPrimary
+        return label
+    }()
+
+    private lazy var openSettingsButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitle("설정으로 이동", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
+        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = .accentPrimary
+        button.layer.cornerRadius = 8
+        button.addTarget(self, action: #selector(openSettingsTapped), for: .touchUpInside)
+        return button
+    }()
+
+    private var hasAlarmPermission: Bool = true
+
     private let emptyStateView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -129,6 +169,29 @@ class AlarmListViewController: UIViewController {
             name: .alarmsDidUpdate,
             object: nil
         )
+
+        // App state observers for permission updates
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAppDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAppWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+    }
+
+    @objc private func handleAppDidBecomeActive() {
+        checkAlarmPermission()
+    }
+
+    @objc private func handleAppWillEnterForeground() {
+        checkAlarmPermission()
     }
 
     @objc private func handleAlarmsDidUpdate() {
@@ -141,7 +204,35 @@ class AlarmListViewController: UIViewController {
         super.viewWillAppear(animated)
         alarmStore.loadAlarms()
         applySnapshot(animatingDifferences: false)
+        checkAlarmPermission()
         updateUI()
+    }
+
+    private func checkAlarmPermission() {
+        Task {
+            let isAuthorized = await AlarmKitService.shared.checkAuthorizationStatus()
+            await MainActor.run {
+                hasAlarmPermission = isAuthorized
+                updatePermissionUI()
+            }
+        }
+    }
+
+    private func updatePermissionUI() {
+        if hasAlarmPermission {
+            permissionDeniedView.isHidden = true
+            nextAlarmTimeLabel.isHidden = false
+        } else {
+            permissionDeniedView.isHidden = false
+            nextAlarmTimeLabel.isHidden = true
+        }
+    }
+
+    @objc private func openSettingsTapped() {
+        UIView.hapticFeedback(style: .light)
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
+        }
     }
 
     // MARK: - Setup
@@ -155,6 +246,12 @@ class AlarmListViewController: UIViewController {
         headerView.addSubview(nextAlarmCard)
         nextAlarmCard.addSubview(nextAlarmTitleLabel)
         nextAlarmCard.addSubview(nextAlarmTimeLabel)
+
+        // Permission denied UI
+        nextAlarmCard.addSubview(permissionDeniedView)
+        permissionDeniedView.addSubview(permissionWarningIcon)
+        permissionDeniedView.addSubview(permissionWarningLabel)
+        permissionDeniedView.addSubview(openSettingsButton)
 
         view.addSubview(tableView)
         view.addSubview(emptyStateView)
@@ -185,6 +282,25 @@ class AlarmListViewController: UIViewController {
             nextAlarmTimeLabel.leadingAnchor.constraint(equalTo: nextAlarmCard.leadingAnchor, constant: 18),
             nextAlarmTimeLabel.trailingAnchor.constraint(equalTo: nextAlarmCard.trailingAnchor, constant: -18),
             nextAlarmTimeLabel.bottomAnchor.constraint(equalTo: nextAlarmCard.bottomAnchor, constant: -14),
+
+            // Permission denied view constraints
+            permissionDeniedView.topAnchor.constraint(equalTo: nextAlarmTitleLabel.bottomAnchor, constant: 6),
+            permissionDeniedView.leadingAnchor.constraint(equalTo: nextAlarmCard.leadingAnchor, constant: 18),
+            permissionDeniedView.trailingAnchor.constraint(equalTo: nextAlarmCard.trailingAnchor, constant: -18),
+            permissionDeniedView.bottomAnchor.constraint(equalTo: nextAlarmCard.bottomAnchor, constant: -14),
+
+            permissionWarningIcon.leadingAnchor.constraint(equalTo: permissionDeniedView.leadingAnchor),
+            permissionWarningIcon.centerYAnchor.constraint(equalTo: permissionDeniedView.centerYAnchor),
+            permissionWarningIcon.widthAnchor.constraint(equalToConstant: 24),
+            permissionWarningIcon.heightAnchor.constraint(equalToConstant: 24),
+
+            permissionWarningLabel.leadingAnchor.constraint(equalTo: permissionWarningIcon.trailingAnchor, constant: 8),
+            permissionWarningLabel.centerYAnchor.constraint(equalTo: permissionDeniedView.centerYAnchor),
+
+            openSettingsButton.trailingAnchor.constraint(equalTo: permissionDeniedView.trailingAnchor),
+            openSettingsButton.centerYAnchor.constraint(equalTo: permissionDeniedView.centerYAnchor),
+            openSettingsButton.widthAnchor.constraint(equalToConstant: 100),
+            openSettingsButton.heightAnchor.constraint(equalToConstant: 32),
 
             tableView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 8),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -469,12 +585,12 @@ extension AlarmListViewController: AlarmCellDelegate {
 // MARK: - AlarmDetailViewControllerDelegate
 
 extension AlarmListViewController: AlarmDetailViewControllerDelegate {
-    func alarmDetailViewController(_ controller: AlarmDetailViewController, didSaveAlarm hour: Int, minute: Int, title: String, weekdays: Set<Weekday>?, specificDate: Date?, existingAlarm: Alarm?) {
+    func alarmDetailViewController(_ controller: AlarmDetailViewController, didSaveAlarm hour: Int, minute: Int, title: String, weekdays: Set<Weekday>?, specificDate: Date?, soundName: String, existingAlarm: Alarm?) {
         if let existing = existingAlarm {
-            alarmStore.updateAlarm(existing, hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate)
+            alarmStore.updateAlarm(existing, hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate, soundName: soundName)
             showToast(message: "알람이 수정되었습니다")
         } else {
-            alarmStore.createAlarm(hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate)
+            alarmStore.createAlarm(hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate, soundName: soundName)
             showToast(message: "알람이 추가되었습니다")
         }
     }

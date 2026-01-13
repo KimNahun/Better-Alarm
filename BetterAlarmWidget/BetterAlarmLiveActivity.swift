@@ -4,17 +4,6 @@ import SwiftUI
 
 // MARK: - Alarm Activity Attributes (Shared with main app)
 
-struct AlarmActivityAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
-        var nextAlarmTime: String
-        var nextAlarmDate: String
-        var alarmTitle: String
-        var isSkipped: Bool
-    }
-
-    var alarmId: String
-}
-
 // MARK: - Live Activity Widget
 
 struct BetterAlarmLiveActivity: Widget {

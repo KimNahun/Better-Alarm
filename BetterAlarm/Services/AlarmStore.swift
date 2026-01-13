@@ -59,7 +59,7 @@ class AlarmStore {
 
     // MARK: - CRUD
 
-    func createAlarm(hour: Int, minute: Int, title: String, weekdays: Set<Weekday>?, specificDate: Date?) {
+    func createAlarm(hour: Int, minute: Int, title: String, weekdays: Set<Weekday>?, specificDate: Date?, soundName: String = "default") {
         let schedule: AlarmSchedule
         if let weekdays = weekdays, !weekdays.isEmpty {
             schedule = .weekly(weekdays)
@@ -73,7 +73,8 @@ class AlarmStore {
             title: title,
             hour: hour,
             minute: minute,
-            schedule: schedule
+            schedule: schedule,
+            soundName: soundName
         )
 
         alarms.append(alarm)
@@ -84,7 +85,7 @@ class AlarmStore {
         updateLiveActivity()
     }
 
-    func updateAlarm(_ alarm: Alarm, hour: Int, minute: Int, title: String, weekdays: Set<Weekday>?, specificDate: Date?) {
+    func updateAlarm(_ alarm: Alarm, hour: Int, minute: Int, title: String, weekdays: Set<Weekday>?, specificDate: Date?, soundName: String = "default") {
         guard let index = alarms.firstIndex(where: { $0.id == alarm.id }) else { return }
 
         let schedule: AlarmSchedule
@@ -101,6 +102,7 @@ class AlarmStore {
         updated.minute = minute
         updated.title = title
         updated.schedule = schedule
+        updated.soundName = soundName
 
         cancelAlarm(alarm)
         alarms[index] = updated

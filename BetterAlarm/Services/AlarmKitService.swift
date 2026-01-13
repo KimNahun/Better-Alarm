@@ -79,7 +79,7 @@ final class AlarmKitService {
     }
     
     // MARK: - Permission
-    
+
     func requestPermission() async -> Bool {
         do {
             let status = try await manager.requestAuthorization()
@@ -87,6 +87,13 @@ final class AlarmKitService {
         } catch {
             print("[AlarmKit] Failed to request permission: \(error)")
             return false
+        }
+    }
+
+    func checkAuthorizationStatus() async -> Bool {
+        do {
+            let status = manager.authorizationState
+            return status == .authorized
         }
     }
     

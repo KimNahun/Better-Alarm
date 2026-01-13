@@ -1,7 +1,9 @@
 import Foundation
 import ActivityKit
 
-// MARK: - Alarm Activity Attributes (Must match Widget definition)
+// MARK: - Alarm Activity Attributes
+// This definition must exist in both main app and widget targets
+// as they are separate compilation units
 
 struct AlarmActivityAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {

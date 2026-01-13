@@ -398,11 +398,11 @@ extension WeeklyAlarmViewController: AlarmCellDelegate {
 // MARK: - AlarmDetailViewControllerDelegate
 
 extension WeeklyAlarmViewController: AlarmDetailViewControllerDelegate {
-    func alarmDetailViewController(_ controller: AlarmDetailViewController, didSaveAlarm hour: Int, minute: Int, title: String, weekdays: Set<Weekday>?, specificDate: Date?, existingAlarm: Alarm?) {
+    func alarmDetailViewController(_ controller: AlarmDetailViewController, didSaveAlarm hour: Int, minute: Int, title: String, weekdays: Set<Weekday>?, specificDate: Date?, soundName: String, existingAlarm: Alarm?) {
         if let existing = existingAlarm {
-            alarmStore.updateAlarm(existing, hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate)
+            alarmStore.updateAlarm(existing, hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate, soundName: soundName)
         } else {
-            alarmStore.createAlarm(hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate)
+            alarmStore.createAlarm(hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate, soundName: soundName)
         }
     }
 }

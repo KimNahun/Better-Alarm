@@ -1,8 +1,15 @@
 import UIKit
+import MessageUI
 
 class SettingsViewController: UIViewController {
 
     // MARK: - Properties
+
+    private var appVersion: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        return "\(version) (\(build))"
+    }
 
     // MARK: - UI Components
 
@@ -27,21 +34,45 @@ class SettingsViewController: UIViewController {
 
     // MARK: - Settings Data
 
-    private let sections: [(title: String, items: [(icon: String, title: String, detail: String?)])] = [
-        ("알람", [
-            ("speaker.wave.3.fill", "알람 소리", "기본"),
-            ("moon.zzz.fill", "스누즈 시간", "5분"),
-            ("vibration", "진동", nil)
-        ]),
-        ("일반", [
-            ("bell.badge.fill", "알림 권한", nil),
-            ("clock.fill", "24시간제", nil)
-        ]),
-        ("정보", [
-            ("info.circle.fill", "앱 버전", "1.0.0"),
-            ("envelope.fill", "피드백 보내기", nil)
-        ])
-    ]
+    private enum SettingsItem {
+        case alarmSound
+        case snoozeTime
+        case vibration
+        case alarmPermission
+        case use24HourFormat
+        case appVersion
+        case feedback
+    }
+
+    private struct SettingsRow {
+        let icon: String
+        let title: String
+        let detail: String?
+        let item: SettingsItem
+    }
+
+    private struct SettingsSection {
+        let title: String
+        let rows: [SettingsRow]
+    }
+
+    private var sections: [SettingsSection] {
+        [
+            SettingsSection(title: "알람", rows: [
+                SettingsRow(icon: "speaker.wave.3.fill", title: "알람 소리", detail: "기본", item: .alarmSound),
+                SettingsRow(icon: "moon.zzz.fill", title: "스누즈 시간", detail: "5분", item: .snoozeTime),
+                SettingsRow(icon: "iphone.radiowaves.left.and.right", title: "진동", detail: nil, item: .vibration)
+            ]),
+            SettingsSection(title: "일반", rows: [
+                SettingsRow(icon: "alarm.fill", title: "알람 권한", detail: nil, item: .alarmPermission),
+                SettingsRow(icon: "clock.fill", title: "24시간제", detail: nil, item: .use24HourFormat)
+            ]),
+            SettingsSection(title: "정보", rows: [
+                SettingsRow(icon: "info.circle.fill", title: "앱 버전", detail: appVersion, item: .appVersion),
+                SettingsRow(icon: "envelope.fill", title: "피드백 보내기", detail: nil, item: .feedback)
+            ])
+        ]
+    }
 
     // MARK: - Lifecycle
 
@@ -72,6 +103,40 @@ class SettingsViewController: UIViewController {
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
+
+    // MARK: - Actions
+
+    private func openAppSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
+        }
+    }
+
+    private func sendFeedbackEmail() {
+        guard MFMailComposeViewController.canSendMail() else {
+            // Show alert if mail is not configured
+            let alert = UIAlertController(
+                title: "메일 설정 필요",
+                message: "메일 앱이 설정되어 있지 않습니다.\nrlaskgns0212@naver.com으로 피드백을 보내주세요.",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "복사하기", style: .default) { _ in
+                UIPasteboard.general.string = "rlaskgns0212@naver.com"
+                UIView.hapticFeedback(style: .light)
+            })
+            alert.addAction(UIAlertAction(title: "확인", style: .cancel))
+            present(alert, animated: true)
+            return
+        }
+
+        let mailVC = MFMailComposeViewController()
+        mailVC.mailComposeDelegate = self
+        mailVC.setToRecipients(["rlaskgns0212@naver.com"])
+        mailVC.setSubject("[BetterAlarm] 피드백")
+        mailVC.setMessageBody("\n\n\n---\n앱 버전: \(appVersion)\niOS 버전: \(UIDevice.current.systemVersion)\n기기: \(UIDevice.current.model)", isHTML: false)
+
+        present(mailVC, animated: true)
+    }
 }
 
 // MARK: - UITableViewDataSource
@@ -82,7 +147,7 @@ extension SettingsViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return sections[section].items.count
+        return sections[section].rows.count
     }
 
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
@@ -91,22 +156,32 @@ extension SettingsViewController: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "SettingsCell", for: indexPath)
-        let item = sections[indexPath.section].items[indexPath.row]
+        let row = sections[indexPath.section].rows[indexPath.row]
 
         var config = cell.defaultContentConfiguration()
-        config.image = UIImage(systemName: item.icon)
+        config.image = UIImage(systemName: row.icon)
         config.imageProperties.tintColor = .accentPrimary
-        config.text = item.title
+        config.text = row.title
         config.textProperties.color = .textPrimary
 
-        if let detail = item.detail {
+        if let detail = row.detail {
             config.secondaryText = detail
             config.secondaryTextProperties.color = .textTertiary
         }
 
         cell.contentConfiguration = config
         cell.backgroundColor = UIColor.white.withAlphaComponent(0.05)
-        cell.accessoryType = item.detail == nil ? .disclosureIndicator : .none
+
+        // Show disclosure indicator for actionable items
+        switch row.item {
+        case .alarmPermission, .feedback:
+            cell.accessoryType = .disclosureIndicator
+        case .appVersion:
+            cell.accessoryType = .none
+            cell.selectionStyle = .none
+        default:
+            cell.accessoryType = .disclosureIndicator
+        }
 
         return cell
     }
@@ -117,16 +192,40 @@ extension SettingsViewController: UITableViewDataSource {
 extension SettingsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        UIView.hapticFeedback(style: .light)
 
-        // Handle settings selection
-        let item = sections[indexPath.section].items[indexPath.row]
-        print("Selected: \(item.title)")
+        let row = sections[indexPath.section].rows[indexPath.row]
+
+        switch row.item {
+        case .alarmPermission:
+            UIView.hapticFeedback(style: .light)
+            openAppSettings()
+        case .feedback:
+            UIView.hapticFeedback(style: .light)
+            sendFeedbackEmail()
+        case .appVersion:
+            // Do nothing for app version
+            break
+        default:
+            UIView.hapticFeedback(style: .light)
+            print("Selected: \(row.title)")
+        }
     }
 
     func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
         if let header = view as? UITableViewHeaderFooterView {
             header.textLabel?.textColor = .textSecondary
+        }
+    }
+}
+
+// MARK: - MFMailComposeViewControllerDelegate
+
+extension SettingsViewController: MFMailComposeViewControllerDelegate {
+    func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+        controller.dismiss(animated: true)
+
+        if result == .sent {
+            UIView.hapticFeedback(style: .medium)
         }
     }
 }

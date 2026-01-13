@@ -130,9 +130,11 @@ class AlarmCell: UITableViewCell {
 
             timeLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 14),
             timeLabel.leadingAnchor.constraint(equalTo: accentLine.trailingAnchor, constant: 14),
+            // Fixed minimum width for consistent type label positioning
+            timeLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 110),
 
             typeLabel.firstBaselineAnchor.constraint(equalTo: timeLabel.firstBaselineAnchor),
-            typeLabel.leadingAnchor.constraint(equalTo: timeLabel.trailingAnchor, constant: 10),
+            typeLabel.leadingAnchor.constraint(equalTo: timeLabel.trailingAnchor, constant: 8),
 
             labelsStackView.topAnchor.constraint(equalTo: timeLabel.bottomAnchor, constant: 2),
             labelsStackView.leadingAnchor.constraint(equalTo: accentLine.trailingAnchor, constant: 14),
