@@ -24,13 +24,61 @@ class LiveActivityManager {
 
     private var currentActivity: Activity<AlarmActivityAttributes>?
 
-    private init() {}
+    // UserDefaults key for Live Activity enabled state
+    private let liveActivityEnabledKey = "liveActivityEnabled"
+
+    var isLiveActivityEnabled: Bool {
+        get {
+            // Default to true if not set
+            if UserDefaults.standard.object(forKey: liveActivityEnabledKey) == nil {
+                return true
+            }
+            return UserDefaults.standard.bool(forKey: liveActivityEnabledKey)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: liveActivityEnabledKey)
+        }
+    }
+
+    // Check if Live Activities are supported and authorized
+    var areActivitiesAvailable: Bool {
+        return ActivityAuthorizationInfo().areActivitiesEnabled
+    }
+
+    // Check if there's currently an active Live Activity
+    var hasActiveActivity: Bool {
+        // Check both our reference and the system's active activities
+        if let activity = currentActivity {
+            // Verify the activity is still active in the system
+            return Activity<AlarmActivityAttributes>.activities.contains { $0.id == activity.id }
+        }
+        return !Activity<AlarmActivityAttributes>.activities.isEmpty
+    }
+
+    private init() {
+        // Sync with any existing activity on init
+        syncWithExistingActivity()
+    }
+
+    // MARK: - Sync with System
+
+    private func syncWithExistingActivity() {
+        // If there's an existing activity in the system, sync our reference
+        if let existingActivity = Activity<AlarmActivityAttributes>.activities.first {
+            currentActivity = existingActivity
+        }
+    }
 
     // MARK: - Start Activity
 
     func startActivity(with alarm: Alarm) {
+        guard isLiveActivityEnabled else {
+            print("[LiveActivity] Live Activity is disabled by user")
+            return
+        }
+
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
-            print("Live Activities are not enabled")
+            print("[LiveActivity] Live Activities are not enabled in system")
             return
         }
 
@@ -49,6 +97,36 @@ class LiveActivityManager {
             print("[LiveActivity] Started activity for: \(alarm.displayTitle)")
         } catch {
             print("[LiveActivity] Failed to start: \(error)")
+        }
+    }
+
+    // MARK: - Restart Activity (if dismissed by user)
+
+    func restartActivityIfNeeded(with alarm: Alarm?) {
+        guard isLiveActivityEnabled else { return }
+        guard let alarm = alarm else {
+            endActivity()
+            return
+        }
+
+        // If user has enabled Live Activity but there's no active one, restart it
+        if !hasActiveActivity {
+            print("[LiveActivity] No active activity found, restarting...")
+            startActivity(with: alarm)
+        }
+    }
+
+    // MARK: - Toggle Activity
+
+    func setEnabled(_ enabled: Bool, with alarm: Alarm?) {
+        isLiveActivityEnabled = enabled
+
+        if enabled {
+            if let alarm = alarm {
+                startActivity(with: alarm)
+            }
+        } else {
+            endActivity()
         }
     }
 

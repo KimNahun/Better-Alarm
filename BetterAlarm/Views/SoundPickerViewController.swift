@@ -8,23 +8,30 @@ protocol SoundPickerDelegate: AnyObject {
 struct AlarmSound: Equatable {
     let id: String
     let name: String
-    let fileName: String?  // nil for system sounds
-    let systemSoundID: SystemSoundID?
+    let systemSoundID: SystemSoundID
 
+    // Unique iOS system sounds for alarms
     static let availableSounds: [AlarmSound] = [
-        AlarmSound(id: "default", name: "기본", fileName: nil, systemSoundID: 1005),
-        AlarmSound(id: "alarm", name: "알람", fileName: nil, systemSoundID: 1304),
-        AlarmSound(id: "beacon", name: "비콘", fileName: nil, systemSoundID: 1306),
-        AlarmSound(id: "bulletin", name: "게시판", fileName: nil, systemSoundID: 1307),
-        AlarmSound(id: "chime", name: "차임", fileName: nil, systemSoundID: 1308),
-        AlarmSound(id: "circuit", name: "서킷", fileName: nil, systemSoundID: 1309),
-        AlarmSound(id: "constellation", name: "별자리", fileName: nil, systemSoundID: 1310),
-        AlarmSound(id: "radar", name: "레이더", fileName: nil, systemSoundID: 1311),
-        AlarmSound(id: "signal", name: "신호", fileName: nil, systemSoundID: 1312),
-        AlarmSound(id: "silk", name: "실크", fileName: nil, systemSoundID: 1313),
-        AlarmSound(id: "bell", name: "벨소리", fileName: nil, systemSoundID: 1000),
-        AlarmSound(id: "horn", name: "경적", fileName: nil, systemSoundID: 1033),
-        AlarmSound(id: "electronic", name: "전자음", fileName: nil, systemSoundID: 1154)
+        AlarmSound(id: "default", name: "기본 알람", systemSoundID: 1005),
+        AlarmSound(id: "tritone", name: "트라이톤", systemSoundID: 1007),
+        AlarmSound(id: "alert", name: "경고음", systemSoundID: 1011),
+        AlarmSound(id: "glass", name: "유리", systemSoundID: 1013),
+        AlarmSound(id: "horn", name: "경적", systemSoundID: 1014),
+        AlarmSound(id: "bell", name: "벨소리", systemSoundID: 1016),
+        AlarmSound(id: "electronic", name: "전자음", systemSoundID: 1020),
+        AlarmSound(id: "anticipate", name: "기대", systemSoundID: 1021),
+        AlarmSound(id: "bloom", name: "블룸", systemSoundID: 1022),
+        AlarmSound(id: "calypso", name: "칼립소", systemSoundID: 1023),
+        AlarmSound(id: "chime", name: "차임", systemSoundID: 1024),
+        AlarmSound(id: "complete", name: "완료", systemSoundID: 1025),
+        AlarmSound(id: "fanfare", name: "팡파레", systemSoundID: 1026),
+        AlarmSound(id: "ladder", name: "사다리", systemSoundID: 1027),
+        AlarmSound(id: "minuet", name: "미뉴엣", systemSoundID: 1028),
+        AlarmSound(id: "newsflash", name: "뉴스", systemSoundID: 1029),
+        AlarmSound(id: "noir", name: "느와르", systemSoundID: 1030),
+        AlarmSound(id: "sherwood", name: "셔우드", systemSoundID: 1031),
+        AlarmSound(id: "spell", name: "주문", systemSoundID: 1032),
+        AlarmSound(id: "suspense", name: "서스펜스", systemSoundID: 1033)
     ]
 
     static func sound(forId id: String) -> AlarmSound {
@@ -38,13 +45,14 @@ class SoundPickerViewController: UIViewController {
 
     weak var delegate: SoundPickerDelegate?
     private var selectedSound: AlarmSound
-    private var audioPlayer: AVAudioPlayer?
+    private var lastPlayedIndex: Int?
 
     // MARK: - UI Components
 
     private let headerView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .backgroundTop
         return view
     }()
 
@@ -73,7 +81,9 @@ class SoundPickerViewController: UIViewController {
         table.backgroundColor = .clear
         table.delegate = self
         table.dataSource = self
-        table.register(UITableViewCell.self, forCellReuseIdentifier: "SoundCell")
+        table.register(SoundCell.self, forCellReuseIdentifier: SoundCell.identifier)
+        table.separatorColor = UIColor.white.withAlphaComponent(0.1)
+        table.separatorInset = UIEdgeInsets(top: 0, left: 56, bottom: 0, right: 0)
         return table
     }()
 
@@ -99,7 +109,6 @@ class SoundPickerViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        stopSound()
     }
 
     // MARK: - Setup
@@ -121,7 +130,7 @@ class SoundPickerViewController: UIViewController {
             headerView.heightAnchor.constraint(equalToConstant: 56),
 
             titleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
-            titleLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
+            titleLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
 
             doneButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
             doneButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -20),
@@ -137,7 +146,6 @@ class SoundPickerViewController: UIViewController {
 
     @objc private func doneTapped() {
         UIView.hapticFeedback(style: .light)
-        stopSound()
         delegate?.soundPicker(self, didSelectSound: selectedSound)
         dismiss(animated: true)
     }
@@ -145,16 +153,90 @@ class SoundPickerViewController: UIViewController {
     // MARK: - Sound Playback
 
     private func playSound(_ sound: AlarmSound) {
-        stopSound()
+        AudioServicesPlaySystemSound(sound.systemSoundID)
+    }
+}
 
-        if let systemSoundID = sound.systemSoundID {
-            AudioServicesPlaySystemSound(systemSoundID)
-        }
+// MARK: - Sound Cell
+
+class SoundCell: UITableViewCell {
+    static let identifier = "SoundCell"
+
+    private let playIconView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.image = UIImage(systemName: "speaker.wave.2.fill")
+        imageView.tintColor = .accentPrimary
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+
+    private let nameLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 17)
+        label.textColor = .textPrimary
+        return label
+    }()
+
+    private let checkmarkView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.image = UIImage(systemName: "checkmark")
+        imageView.tintColor = .accentPrimary
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        setupUI()
     }
 
-    private func stopSound() {
-        audioPlayer?.stop()
-        audioPlayer = nil
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI() {
+        backgroundColor = UIColor.white.withAlphaComponent(0.05)
+        selectionStyle = .default
+
+        let selectedView = UIView()
+        selectedView.backgroundColor = UIColor.white.withAlphaComponent(0.1)
+        selectedBackgroundView = selectedView
+
+        contentView.addSubview(playIconView)
+        contentView.addSubview(nameLabel)
+        contentView.addSubview(checkmarkView)
+
+        NSLayoutConstraint.activate([
+            playIconView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            playIconView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            playIconView.widthAnchor.constraint(equalToConstant: 24),
+            playIconView.heightAnchor.constraint(equalToConstant: 24),
+
+            nameLabel.leadingAnchor.constraint(equalTo: playIconView.trailingAnchor, constant: 16),
+            nameLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            nameLabel.trailingAnchor.constraint(equalTo: checkmarkView.leadingAnchor, constant: -16),
+
+            checkmarkView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            checkmarkView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            checkmarkView.widthAnchor.constraint(equalToConstant: 20),
+            checkmarkView.heightAnchor.constraint(equalToConstant: 20)
+        ])
+    }
+
+    func configure(with sound: AlarmSound, isSelected: Bool) {
+        nameLabel.text = sound.name
+        checkmarkView.isHidden = !isSelected
+
+        if isSelected {
+            nameLabel.textColor = .accentPrimary
+            nameLabel.font = .systemFont(ofSize: 17, weight: .semibold)
+        } else {
+            nameLabel.textColor = .textPrimary
+            nameLabel.font = .systemFont(ofSize: 17)
+        }
     }
 }
 
@@ -166,19 +248,19 @@ extension SoundPickerViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "SoundCell", for: indexPath)
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: SoundCell.identifier, for: indexPath) as? SoundCell else {
+            return UITableViewCell()
+        }
+
         let sound = AlarmSound.availableSounds[indexPath.row]
-
-        var config = cell.defaultContentConfiguration()
-        config.text = sound.name
-        config.textProperties.color = .textPrimary
-
-        cell.contentConfiguration = config
-        cell.backgroundColor = UIColor.white.withAlphaComponent(0.05)
-        cell.accessoryType = sound == selectedSound ? .checkmark : .none
-        cell.tintColor = .accentPrimary
+        let isSelected = sound == selectedSound
+        cell.configure(with: sound, isSelected: isSelected)
 
         return cell
+    }
+
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 52
     }
 }
 

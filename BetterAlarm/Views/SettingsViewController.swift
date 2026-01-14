@@ -39,6 +39,7 @@ class SettingsViewController: UIViewController {
         case snoozeTime
         case vibration
         case alarmPermission
+        case liveActivity
         case use24HourFormat
         case appVersion
         case feedback
@@ -65,6 +66,7 @@ class SettingsViewController: UIViewController {
             ]),
             SettingsSection(title: "일반", rows: [
                 SettingsRow(icon: "alarm.fill", title: "알람 권한", detail: nil, item: .alarmPermission),
+                SettingsRow(icon: "rectangle.stack.fill", title: "잠금화면 위젯", detail: nil, item: .liveActivity),
                 SettingsRow(icon: "clock.fill", title: "24시간제", detail: nil, item: .use24HourFormat)
             ]),
             SettingsSection(title: "정보", rows: [
@@ -172,18 +174,39 @@ extension SettingsViewController: UITableViewDataSource {
         cell.contentConfiguration = config
         cell.backgroundColor = UIColor.white.withAlphaComponent(0.05)
 
-        // Show disclosure indicator for actionable items
+        // Configure accessory views
         switch row.item {
+        case .liveActivity:
+            let toggle = UISwitch()
+            toggle.onTintColor = .accentPrimary
+            toggle.tag = 100 // Tag to identify this switch
+            toggle.addTarget(self, action: #selector(liveActivityToggleChanged(_:)), for: .valueChanged)
+            Task { @MainActor in
+                toggle.isOn = LiveActivityManager.shared.isLiveActivityEnabled
+            }
+            cell.accessoryView = toggle
+            cell.selectionStyle = .none
         case .alarmPermission, .feedback:
+            cell.accessoryView = nil
             cell.accessoryType = .disclosureIndicator
         case .appVersion:
+            cell.accessoryView = nil
             cell.accessoryType = .none
             cell.selectionStyle = .none
         default:
+            cell.accessoryView = nil
             cell.accessoryType = .disclosureIndicator
         }
 
         return cell
+    }
+
+    @objc private func liveActivityToggleChanged(_ sender: UISwitch) {
+        UIView.hapticFeedback(style: .light)
+        Task { @MainActor in
+            let nextAlarm = AlarmStore.shared.nextAlarm
+            LiveActivityManager.shared.setEnabled(sender.isOn, with: nextAlarm)
+        }
     }
 }
 
@@ -222,10 +245,35 @@ extension SettingsViewController: UITableViewDelegate {
 
 extension SettingsViewController: MFMailComposeViewControllerDelegate {
     func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
-        controller.dismiss(animated: true)
+        controller.dismiss(animated: true) { [weak self] in
+            self?.showMailResult(result, error: error)
+        }
+    }
 
-        if result == .sent {
+    private func showMailResult(_ result: MFMailComposeResult, error: Error?) {
+        let message: String
+        var showAlert = true
+
+        switch result {
+        case .sent:
             UIView.hapticFeedback(style: .medium)
+            message = "피드백이 전송되었습니다.\n감사합니다!"
+        case .saved:
+            message = "이메일이 임시보관함에 저장되었습니다."
+        case .cancelled:
+            showAlert = false
+            message = ""
+        case .failed:
+            message = "이메일 전송에 실패했습니다.\n\(error?.localizedDescription ?? "알 수 없는 오류")"
+        @unknown default:
+            showAlert = false
+            message = ""
+        }
+
+        if showAlert {
+            let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "확인", style: .default))
+            present(alert, animated: true)
         }
     }
 }

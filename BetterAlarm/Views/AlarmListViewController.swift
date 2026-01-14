@@ -188,10 +188,18 @@ class AlarmListViewController: UIViewController {
 
     @objc private func handleAppDidBecomeActive() {
         checkAlarmPermission()
+        restartLiveActivityIfNeeded()
     }
 
     @objc private func handleAppWillEnterForeground() {
         checkAlarmPermission()
+        restartLiveActivityIfNeeded()
+    }
+
+    private func restartLiveActivityIfNeeded() {
+        Task { @MainActor in
+            LiveActivityManager.shared.restartActivityIfNeeded(with: alarmStore.nextAlarm)
+        }
     }
 
     @objc private func handleAlarmsDidUpdate() {

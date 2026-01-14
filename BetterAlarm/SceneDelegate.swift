@@ -25,10 +25,30 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
+        // Check if alarm was dismissed from lock screen while app was closed
+        handleAlarmDismissedFromLockScreen()
+
         // Refresh alarms and clean up expired one-time alarms
         AlarmStore.shared.loadAlarms()
         AlarmStore.shared.cleanupExpiredOneTimeAlarms()
+
+        // Reschedule next alarm (in case previous alarm was dismissed from lock screen)
+        AlarmStore.shared.rescheduleAllAlarms()
+
+        // Update Live Activity with next alarm
         AlarmStore.shared.updateLiveActivity()
+    }
+
+    private func handleAlarmDismissedFromLockScreen() {
+        let wasDismissed = UserDefaults.standard.bool(forKey: "alarmDismissedFromLockScreen")
+
+        if wasDismissed {
+            // Clear the flag
+            UserDefaults.standard.set(false, forKey: "alarmDismissedFromLockScreen")
+
+            // Clean up any one-time alarms that triggered while app was closed
+            AlarmStore.shared.cleanupExpiredOneTimeAlarms()
+        }
     }
 
     func sceneWillResignActive(_ scene: UIScene) {
@@ -108,10 +128,17 @@ extension SceneDelegate: AlarmRingingViewControllerDelegate {
 
         // Post notification that alarm was dismissed
         NotificationCenter.default.post(name: .alarmDismissed, object: nil)
+
+        // Reschedule next alarm and update Live Activity
+        AlarmStore.shared.rescheduleAllAlarms()
+        AlarmStore.shared.updateLiveActivity()
     }
 
     func alarmRingingViewControllerDidSnooze(_ controller: AlarmRingingViewController, alarm: Alarm) {
         alarmRingingVC = nil
+
+        // Update Live Activity (snooze will be shown as next alarm)
+        AlarmStore.shared.updateLiveActivity()
 
         // Show snooze confirmation (optional)
         if let rootVC = window?.rootViewController {

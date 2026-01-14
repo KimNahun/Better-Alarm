@@ -11,22 +11,27 @@ nonisolated struct BetterAlarmMetadata: AlarmMetadata {}
 struct StopAlarmIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "알람 정지"
     static var description = IntentDescription("알람을 정지합니다")
-    
+
     @Parameter(title: "알람 ID")
     var alarmID: String
-    
+
     init() {
         self.alarmID = ""
     }
-    
+
     init(alarmID: String) {
         self.alarmID = alarmID
     }
-    
+
     func perform() async throws -> some IntentResult {
         if let id = UUID(uuidString: alarmID) {
             try? AlarmManager.shared.stop(id: id)
         }
+
+        // Mark that alarm was dismissed from lock screen (for cleanup when app opens)
+        UserDefaults.standard.set(true, forKey: "alarmDismissedFromLockScreen")
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "alarmDismissedTime")
+
         return .result()
     }
 }

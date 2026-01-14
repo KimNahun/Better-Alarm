@@ -10,6 +10,7 @@ class AlarmPlayer: NSObject {
     private var audioPlayer: AVAudioPlayer?
     private var alarmTimer: Timer?
     private var isPlaying = false
+    private var currentSoundID: SystemSoundID?
 
     private override init() {
         super.init()
@@ -60,52 +61,29 @@ class AlarmPlayer: NSObject {
     // MARK: - Play Alarm Sound
 
     func playAlarmSound(named soundName: String = "default") {
-        let soundURL: URL?
+        stopAlarm()
 
-        if let customURL = Bundle.main.url(forResource: soundName, withExtension: "mp3") {
-            soundURL = customURL
-        } else if let customURL = Bundle.main.url(forResource: soundName, withExtension: "wav") {
-            soundURL = customURL
-        } else if let customURL = Bundle.main.url(forResource: soundName, withExtension: "m4a") {
-            soundURL = customURL
-        } else if let defaultURL = Bundle.main.url(forResource: "alarm_default", withExtension: "mp3") {
-            soundURL = defaultURL
-        } else {
-            playSystemAlarmSound()
-            return
-        }
-
-        guard let url = soundURL else {
-            playSystemAlarmSound()
-            return
-        }
-
-        do {
-            try AVAudioSession.sharedInstance().setActive(true)
-            audioPlayer = try AVAudioPlayer(contentsOf: url)
-            audioPlayer?.numberOfLoops = -1
-            audioPlayer?.volume = 1.0
-            audioPlayer?.prepareToPlay()
-            audioPlayer?.play()
-            isPlaying = true
-        } catch {
-            print("Failed to play alarm sound: \(error)")
-            playSystemAlarmSound()
-        }
+        // Get the sound from AlarmSound list
+        let sound = AlarmSound.sound(forId: soundName)
+        playSystemSoundLoop(sound.systemSoundID)
+       
     }
 
-    private func playSystemAlarmSound() {
+    private func playSystemSoundLoop(_ soundID: SystemSoundID) {
         isPlaying = true
+        currentSoundID = soundID
 
-        alarmTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard self?.isPlaying == true else {
+        // Play immediately
+        AudioServicesPlaySystemSound(soundID)
+
+        // Loop every 2 seconds (system sounds are short)
+        alarmTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+            guard let self = self, self.isPlaying, let soundID = self.currentSoundID else {
                 self?.alarmTimer?.invalidate()
                 return
             }
-            AudioServicesPlaySystemSound(SystemSoundID(1005))
+            AudioServicesPlaySystemSound(soundID)
         }
-
-        AudioServicesPlaySystemSound(SystemSoundID(1005))
     }
 
     // MARK: - Stop Alarm
@@ -116,6 +94,7 @@ class AlarmPlayer: NSObject {
         alarmTimer?.invalidate()
         alarmTimer = nil
         isPlaying = false
+        currentSoundID = nil
     }
 
     // MARK: - Snooze
