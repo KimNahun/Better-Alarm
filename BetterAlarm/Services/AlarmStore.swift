@@ -54,7 +54,12 @@ class AlarmStore {
     }
 
     private func sortAlarms() {
-        alarms.sort { ($0.nextTriggerDate() ?? .distantFuture) < ($1.nextTriggerDate() ?? .distantFuture) }
+        alarms.sort { alarm1, alarm2 in
+            if alarm1.hour != alarm2.hour {
+                return alarm1.hour < alarm2.hour
+            }
+            return alarm1.minute < alarm2.minute
+        }
     }
 
     // MARK: - CRUD

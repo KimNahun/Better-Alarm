@@ -267,13 +267,16 @@ class AlarmRingingViewController: UIViewController {
         AlarmPlayer.shared.stopAlarm()
         stopAnimations()
 
-        // Handle one-time alarm cleanup
-        if let alarm = alarm {
-            AlarmStore.shared.handleAlarmCompleted(alarm)
-        }
+        let completedAlarm = alarm
 
         dismiss(animated: true) { [weak self] in
             guard let self = self else { return }
+
+            // Handle one-time alarm cleanup AFTER dismiss animation completes
+            if let alarm = completedAlarm {
+                AlarmStore.shared.handleAlarmCompleted(alarm)
+            }
+
             self.delegate?.alarmRingingViewControllerDidDismiss(self)
         }
     }

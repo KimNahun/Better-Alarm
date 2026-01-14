@@ -126,8 +126,12 @@ extension SceneDelegate: AlarmRingingViewControllerDelegate {
     func alarmRingingViewControllerDidDismiss(_ controller: AlarmRingingViewController) {
         alarmRingingVC = nil
 
-        // Post notification that alarm was dismissed
+        // Reload alarms to ensure UI is updated
+        AlarmStore.shared.loadAlarms()
+
+        // Post notification that alarm was dismissed (triggers UI refresh)
         NotificationCenter.default.post(name: .alarmDismissed, object: nil)
+        NotificationCenter.default.post(name: .alarmsDidUpdate, object: nil)
 
         // Reschedule next alarm and update Live Activity
         AlarmStore.shared.rescheduleAllAlarms()

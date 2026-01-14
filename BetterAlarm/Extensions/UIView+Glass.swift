@@ -45,8 +45,6 @@ extension UIView {
 // MARK: - Glass Card View
 
 class GlassCardView: UIView {
-    private var blurView: UIVisualEffectView?
-
     var cornerRadius: CGFloat = 20 {
         didSet { updateAppearance() }
     }
@@ -62,31 +60,15 @@ class GlassCardView: UIView {
     }
 
     private func setupView() {
-        backgroundColor = .clear
-
-        blurView = UIVisualEffectView(effect: UIBlurEffect(style: .systemThinMaterialDark))
-        blurView?.translatesAutoresizingMaskIntoConstraints = false
-        if let blurView = blurView {
-            addSubview(blurView)
-            NSLayoutConstraint.activate([
-                blurView.topAnchor.constraint(equalTo: topAnchor),
-                blurView.leadingAnchor.constraint(equalTo: leadingAnchor),
-                blurView.trailingAnchor.constraint(equalTo: trailingAnchor),
-                blurView.bottomAnchor.constraint(equalTo: bottomAnchor)
-            ])
-        }
-
+        // Use solid semi-transparent background for better scroll performance
+        backgroundColor = UIColor(red: 0.15, green: 0.13, blue: 0.22, alpha: 0.9)
         updateAppearance()
     }
 
     private func updateAppearance() {
         layer.cornerRadius = cornerRadius
         clipsToBounds = true
-
         layer.borderWidth = 0.5
         layer.borderColor = UIColor.glassBorder.cgColor
-
-        blurView?.layer.cornerRadius = cornerRadius
-        blurView?.clipsToBounds = true
     }
 }

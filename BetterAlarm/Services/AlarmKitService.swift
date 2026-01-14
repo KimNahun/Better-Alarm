@@ -28,7 +28,7 @@ struct StopAlarmIntent: LiveActivityIntent {
             try? AlarmManager.shared.stop(id: id)
         }
 
-        // Mark that alarm was dismissed from lock screen (for cleanup when app opens)
+        // Lock Screen에서 알람 해제 시 표시
         UserDefaults.standard.set(true, forKey: "alarmDismissedFromLockScreen")
         UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "alarmDismissedTime")
 
@@ -40,20 +40,19 @@ struct SnoozeAlarmIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "스누즈"
     static var description = IntentDescription("알람을 스누즈합니다")
     static var openAppWhenRun = false
-    
+
     @Parameter(title: "알람 ID")
     var alarmID: String
-    
+
     init() {
         self.alarmID = ""
     }
-    
+
     init(alarmID: String) {
         self.alarmID = alarmID
     }
-    
+
     func perform() async throws -> some IntentResult {
-        // 스누즈 로직 - 5분 후 다시 알람
         await AlarmKitService.shared.snoozeFromIntent(alarmID: alarmID)
         return .result()
     }
@@ -64,25 +63,28 @@ struct SnoozeAlarmIntent: LiveActivityIntent {
 @MainActor
 final class AlarmKitService {
     static let shared = AlarmKitService()
-    
+
     private let manager = AlarmManager.shared
-    
+
     // 스케줄된 알람 ID 추적
     private var currentAlarmId: UUID?
-    
+
+    // 현재 알람의 사운드 ID 저장
+    private var currentSoundId: String = "default"
+
     // 알람 모니터링 Task
     private var monitorTask: Task<Void, Never>?
-    
+
     // 알람이 울릴 때 콜백
     private var onAlerting: ((UUID) -> Void)?
-    
+
     // 스누즈 시간 (5분)
     static let snoozeInterval: TimeInterval = 5 * 60
-    
+
     private init() {
         startMonitoring()
     }
-    
+
     // MARK: - Permission
 
     func requestPermission() async -> Bool {
@@ -95,87 +97,81 @@ final class AlarmKitService {
         }
     }
 
-    func checkAuthorizationStatus() async -> Bool {
-        do {
-            let status = manager.authorizationState
-            return status == .authorized
-        }
+    func checkAuthorizationStatus() -> Bool {
+        let status = manager.authorizationState
+        return status == .authorized
     }
-    
+
     // MARK: - Monitoring
-    
-    /// 알람이 울릴 때 호출될 핸들러 등록
+
     func observeAlertingAlarms(_ handler: @escaping (UUID) -> Void) {
         self.onAlerting = handler
     }
-    
+
     func stopMonitoring() {
         monitorTask?.cancel()
         monitorTask = nil
     }
-    
+
     func resumeMonitoring() {
         if monitorTask == nil {
             startMonitoring()
         }
     }
-    
+
     private func startMonitoring() {
         monitorTask?.cancel()
-        
+
         monitorTask = Task {
             for await alarms in manager.alarmUpdates {
                 if Task.isCancelled { break }
-                
-                // 알람이 없으면 currentAlarmId 초기화
+
                 if alarms.isEmpty {
                     self.currentAlarmId = nil
                 }
-                
-                // 울리는 중인 알람 처리
+
                 for alarm in alarms where alarm.state == .alerting {
                     self.onAlerting?(alarm.id)
                 }
             }
         }
     }
-    
+
     // MARK: - Schedule Alarm
-    
-    /// 앱의 Alarm 모델을 받아서 AlarmKit 타이머로 스케줄
+
     func scheduleAlarm(for alarm: Alarm) async {
         guard alarm.isEnabled else { return }
-        
+
         // 권한 확인
         guard await requestPermission() else {
             print("[AlarmKit] Not authorized")
             return
         }
-        
+
         // 기존 알람 모두 중지
         await stopAllAlarms()
-        
+
         do {
             let id = UUID()
             currentAlarmId = id
-            
+            currentSoundId = alarm.soundName  // 사운드 ID 저장
+
             // 다음 알람까지의 시간 계산
             guard let triggerDate = alarm.nextTriggerDate() else { return }
             let duration = triggerDate.timeIntervalSinceNow
-            
-            // duration이 0보다 작으면 스케줄 불가
+
             guard duration > 0 else {
                 print("[AlarmKit] Trigger date is in the past")
                 return
             }
-            
+
             // AlarmAttributes 생성
             let attributes = createAlarmAttributes(
                 title: alarm.displayTitle,
                 message: "알람이 울립니다"
             )
-            
-            // Configuration 생성 (타이머 형식)
+
+            // Configuration 생성 (AlarmKit은 시스템 사운드 사용)
             typealias Config = AlarmManager.AlarmConfiguration<BetterAlarmMetadata>
             let config = Config.timer(
                 duration: duration,
@@ -183,22 +179,22 @@ final class AlarmKitService {
                 stopIntent: StopAlarmIntent(alarmID: id.uuidString),
                 secondaryIntent: SnoozeAlarmIntent(alarmID: id.uuidString)
             )
-            
+
             // 알람 스케줄
             _ = try await manager.schedule(id: id, configuration: config)
-            
+
             print("[AlarmKit] Scheduled alarm: \(alarm.displayTitle) in \(duration) seconds")
-            
+
         } catch {
             print("[AlarmKit] Failed to schedule alarm: \(error)")
         }
     }
-    
+
     // MARK: - Cancel/Stop
-    
+
     func cancelAlarm(for alarm: Alarm) {
         guard let alarmId = currentAlarmId else { return }
-        
+
         do {
             try manager.stop(id: alarmId)
             currentAlarmId = nil
@@ -207,7 +203,7 @@ final class AlarmKitService {
             print("[AlarmKit] Failed to cancel alarm: \(error)")
         }
     }
-    
+
     func stopAllAlarms() async {
         do {
             let existingAlarms = try manager.alarms
@@ -219,26 +215,25 @@ final class AlarmKitService {
             print("[AlarmKit] Failed to stop alarms: \(error)")
         }
     }
-    
+
     // MARK: - Snooze
-    
-    /// Intent에서 호출되는 스누즈 함수
+
     nonisolated func snoozeFromIntent(alarmID: String) async {
         let manager = AlarmManager.shared
-        
+
         // 현재 알람 중지
         if let id = UUID(uuidString: alarmID) {
             try? manager.stop(id: id)
         }
-        
+
         // 새 알람 예약 (5분 후)
         let newId = UUID()
-        
+
         let attributes = await Self.createAlarmAttributesStatic(
             title: "스누즈 알람",
             message: "다시 알람이 울립니다"
         )
-        
+
         typealias Config = AlarmManager.AlarmConfiguration<BetterAlarmMetadata>
         let config = await Config.timer(
             duration: Self.snoozeInterval,
@@ -246,19 +241,21 @@ final class AlarmKitService {
             stopIntent: StopAlarmIntent(alarmID: newId.uuidString),
             secondaryIntent: SnoozeAlarmIntent(alarmID: newId.uuidString)
         )
-        
+
         _ = try? await manager.schedule(id: newId, configuration: config)
+
+        print("[AlarmKit] Snoozed alarm")
     }
-    
-    // MARK: - Helper
-    
+
+    // MARK: - Alarm Attributes Helper
+
     private func createAlarmAttributes(
         title: String,
         message: String? = nil
     ) -> AlarmAttributes<BetterAlarmMetadata> {
         Self.createAlarmAttributesStatic(title: title, message: message)
     }
-    
+
     private static func createAlarmAttributesStatic(
         title: String,
         message: String? = nil
@@ -269,7 +266,7 @@ final class AlarmKitService {
         } else {
             fullTitle = title
         }
-        
+
         let alert = AlarmPresentation.Alert(
             title: LocalizedStringResource(stringLiteral: fullTitle),
             stopButton: AlarmButton(
@@ -284,16 +281,20 @@ final class AlarmKitService {
             ),
             secondaryButtonBehavior: .custom
         )
-        
+
         return AlarmAttributes(
             presentation: AlarmPresentation(alert: alert),
             tintColor: .blue
         )
     }
-    
+
     // MARK: - Getters
-    
+
     func getCurrentAlarmId() -> UUID? {
         return currentAlarmId
+    }
+
+    func getCurrentSoundId() -> String {
+        return currentSoundId
     }
 }

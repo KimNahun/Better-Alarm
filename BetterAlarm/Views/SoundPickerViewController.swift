@@ -5,12 +5,17 @@ protocol SoundPickerDelegate: AnyObject {
     func soundPicker(_ picker: SoundPickerViewController, didSelectSound sound: AlarmSound)
 }
 
-struct AlarmSound: Equatable {
+struct AlarmSound: Equatable, Codable {
     let id: String
     let name: String
-    let systemSoundID: SystemSoundID
+    let systemSoundID: UInt32
 
-    // Unique iOS system sounds for alarms
+    // SystemSoundID 변환
+    var soundID: SystemSoundID {
+        return SystemSoundID(systemSoundID)
+    }
+
+    // 사용 가능한 알람 사운드 목록
     static let availableSounds: [AlarmSound] = [
         AlarmSound(id: "default", name: "기본 알람", systemSoundID: 1005),
         AlarmSound(id: "tritone", name: "트라이톤", systemSoundID: 1007),
@@ -37,6 +42,11 @@ struct AlarmSound: Equatable {
     static func sound(forId id: String) -> AlarmSound {
         return availableSounds.first { $0.id == id } ?? availableSounds[0]
     }
+
+    // Equatable
+    static func == (lhs: AlarmSound, rhs: AlarmSound) -> Bool {
+        return lhs.id == rhs.id
+    }
 }
 
 class SoundPickerViewController: UIViewController {
@@ -45,7 +55,6 @@ class SoundPickerViewController: UIViewController {
 
     weak var delegate: SoundPickerDelegate?
     private var selectedSound: AlarmSound
-    private var lastPlayedIndex: Int?
 
     // MARK: - UI Components
 
@@ -87,6 +96,17 @@ class SoundPickerViewController: UIViewController {
         return table
     }()
 
+    private let infoLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "앱이 열려있을 때만 선택한 소리가 재생됩니다.\n백그라운드에서는 시스템 알람 소리가 사용됩니다."
+        label.font = .systemFont(ofSize: 12)
+        label.textColor = .textTertiary
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        return label
+    }()
+
     // MARK: - Initialization
 
     init(selectedSoundId: String) {
@@ -120,6 +140,7 @@ class SoundPickerViewController: UIViewController {
         headerView.addSubview(titleLabel)
         headerView.addSubview(doneButton)
         view.addSubview(tableView)
+        view.addSubview(infoLabel)
     }
 
     private func setupConstraints() {
@@ -138,7 +159,11 @@ class SoundPickerViewController: UIViewController {
             tableView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            tableView.bottomAnchor.constraint(equalTo: infoLabel.topAnchor, constant: -16),
+
+            infoLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            infoLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            infoLabel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
         ])
     }
 
@@ -150,10 +175,10 @@ class SoundPickerViewController: UIViewController {
         dismiss(animated: true)
     }
 
-    // MARK: - Sound Playback
+    // MARK: - Sound Playback (미리듣기용 - SystemSound 사용)
 
     private func playSound(_ sound: AlarmSound) {
-        AudioServicesPlaySystemSound(sound.systemSoundID)
+        AudioServicesPlaySystemSound(sound.soundID)
     }
 }
 

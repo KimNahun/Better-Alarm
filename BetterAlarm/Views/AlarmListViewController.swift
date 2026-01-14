@@ -218,7 +218,7 @@ class AlarmListViewController: UIViewController {
 
     private func checkAlarmPermission() {
         Task {
-            let isAuthorized = await AlarmKitService.shared.checkAuthorizationStatus()
+            let isAuthorized = AlarmKitService.shared.checkAuthorizationStatus()
             await MainActor.run {
                 hasAlarmPermission = isAuthorized
                 updatePermissionUI()
