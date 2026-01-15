@@ -180,53 +180,47 @@ class AlarmCell: UITableViewCell {
 
     // MARK: - Configuration
 
+    // AlarmCell.swift - configure 메서드 전체 교체
+
     func configure(with alarm: Alarm) {
         self.alarm = alarm
 
         timeLabel.text = alarm.timeString
         titleLabel.text = alarm.displayTitle
-        repeatLabel.text = alarm.repeatDescription
+        repeatLabel.text = alarm.repeatDescriptionWithoutSkip  // 스킵 정보 제외한 기본 설명
 
         configureTypeIndicator(for: alarm)
         configureSkipInfo(for: alarm)
 
-        toggleSwitch.setOn(alarm.isEnabled, animated: false)
+        // 스킵 중이면 스위치 Off로 표시
+        let switchOn = alarm.isEnabled && !alarm.isSkippingNext
+        toggleSwitch.setOn(switchOn, animated: false)
         updateAppearance(isEnabled: alarm.isEnabled, isSkipping: alarm.isSkippingNext)
     }
 
+    // AlarmCell.swift - configureSkipInfo 메서드 전체 교체
+
     private func configureSkipInfo(for alarm: Alarm) {
-        guard alarm.isEnabled, alarm.isSkippingNext, let skippedDate = alarm.skippedDate else {
+        guard alarm.isEnabled, alarm.isSkippingNext else {
             skipBadgeView.isHidden = true
             nextAlarmInfoLabel.isHidden = true
             return
         }
 
         skipBadgeView.isHidden = false
+        nextAlarmInfoLabel.isHidden = true  // progress 제거
 
-        let calendar = Calendar.current
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ko_KR")
-
-        // 스킵된 날짜 포맷
-        let skippedMonth = calendar.component(.month, from: skippedDate)
-        let skippedDay = calendar.component(.day, from: skippedDate)
-        let skippedWeekday = calendar.component(.weekday, from: skippedDate)
-        let skippedWeekdayName = Weekday(rawValue: skippedWeekday)?.shortName ?? ""
-
-        skipIconLabel.text = "\(skippedMonth)/\(skippedDay)(\(skippedWeekdayName)) 건너뛰기"
-
-        // 다음 알람 날짜 계산
+        // 다음 알람 날짜 계산해서 표시
         if let nextDate = alarm.nextTriggerDate() {
-            nextAlarmInfoLabel.isHidden = false
-            
+            let calendar = Calendar.current
             let nextMonth = calendar.component(.month, from: nextDate)
             let nextDay = calendar.component(.day, from: nextDate)
             let nextWeekday = calendar.component(.weekday, from: nextDate)
             let nextWeekdayName = Weekday(rawValue: nextWeekday)?.shortName ?? ""
             
-            nextAlarmInfoLabel.text = "다음 알람: \(nextMonth)/\(nextDay)(\(nextWeekdayName))"
+            skipIconLabel.text = "다음 1회 건너뜀 (\(nextMonth)/\(nextDay) \(nextWeekdayName)요일 울림)"
         } else {
-            nextAlarmInfoLabel.isHidden = true
+            skipIconLabel.text = "다음 1회 건너뜀"
         }
     }
 
@@ -267,6 +261,8 @@ class AlarmCell: UITableViewCell {
         }
     }
 
+    // AlarmCell.swift - updateAppearance 메서드 전체 교체
+
     private func updateAppearance(isEnabled: Bool, isSkipping: Bool = false) {
         let alpha: CGFloat
         let containerAlpha: CGFloat
@@ -282,16 +278,15 @@ class AlarmCell: UITableViewCell {
             containerAlpha = 1.0
         }
 
-        UIView.animate(withDuration: 0.2) {
-            self.timeLabel.alpha = alpha
-            self.titleLabel.alpha = alpha
-            self.repeatLabel.alpha = alpha
-            self.typeLabel.alpha = alpha
-            self.accentLine.alpha = alpha
-            self.containerView.alpha = containerAlpha
-            self.skipBadgeView.alpha = 1.0
-            self.nextAlarmInfoLabel.alpha = 1.0
-        }
+        // 애니메이션 제거 - 즉시 적용
+        self.timeLabel.alpha = alpha
+        self.titleLabel.alpha = alpha
+        self.repeatLabel.alpha = alpha
+        self.typeLabel.alpha = alpha
+        self.accentLine.alpha = alpha
+        self.containerView.alpha = containerAlpha
+        self.skipBadgeView.alpha = 1.0
+        self.nextAlarmInfoLabel.alpha = 1.0
     }
 
     // MARK: - Actions

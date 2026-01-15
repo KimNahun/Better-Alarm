@@ -41,6 +41,7 @@ enum Weekday: Int, Codable, CaseIterable, Hashable {
         @unknown default: return nil
         }
     }
+    
 }
 
 // MARK: - Alarm Schedule
@@ -101,33 +102,29 @@ struct Alarm: Codable, Identifiable, Equatable {
         return title.isEmpty ? "알람" : title
     }
 
-    var repeatDescription: String {
-        let baseDescription: String
+    // Alarm.swift - repeatDescriptionWithoutSkip 프로퍼티 추가 (repeatDescription 아래에)
+
+    var repeatDescriptionWithoutSkip: String {
         switch schedule {
         case .once:
-            baseDescription = "1회"
+            return "1회"
         case .weekly(let days):
             if days.count == 7 {
-                baseDescription = "매일"
+                return "매일"
             } else if days == Set([Weekday.saturday, .sunday]) {
-                baseDescription = "주말"
+                return "주말"
             } else if days == Set([Weekday.monday, .tuesday, .wednesday, .thursday, .friday]) {
-                baseDescription = "주중"
+                return "주중"
             } else {
                 let sorted = days.sorted { $0.rawValue < $1.rawValue }
-                baseDescription = sorted.map { $0.shortName }.joined(separator: ", ")
+                return sorted.map { $0.shortName }.joined(separator: ", ")
             }
         case .specificDate(let date):
             let formatter = DateFormatter()
             formatter.locale = Locale(identifier: "ko_KR")
             formatter.dateFormat = "M월 d일"
-            baseDescription = formatter.string(from: date)
+            return formatter.string(from: date)
         }
-
-        if isSkippingNext {
-            return baseDescription + " (다음 1회 건너뜀)"
-        }
-        return baseDescription
     }
 
     var isWeeklyAlarm: Bool {

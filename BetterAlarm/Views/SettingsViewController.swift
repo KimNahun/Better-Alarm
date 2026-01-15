@@ -146,39 +146,60 @@ class SettingsViewController: UIViewController {
     
     // MARK: - Toast
     
-    private func showToast(message: String) {
-        let toastLabel = UILabel()
-        toastLabel.translatesAutoresizingMaskIntoConstraints = false
-        toastLabel.backgroundColor = UIColor(white: 0.1, alpha: 0.95)
-        toastLabel.textColor = .white
-        toastLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        toastLabel.textAlignment = .center
-        toastLabel.text = message
-        toastLabel.numberOfLines = 0
-        toastLabel.layer.cornerRadius = 10
-        toastLabel.clipsToBounds = true
-        
-        view.addSubview(toastLabel)
-        
+    // SettingsViewController.swift - showToast 메서드 전체 교체
+
+    private func showToast(message: String, duration: TimeInterval = 2.5) {
+        let toastContainer = UIView()
+        toastContainer.translatesAutoresizingMaskIntoConstraints = false
+        toastContainer.backgroundColor = UIColor(white: 0.1, alpha: 0.95)
+        toastContainer.layer.cornerRadius = 12
+        toastContainer.isUserInteractionEnabled = false
+
+        let iconView = UIImageView()
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        iconView.image = UIImage(systemName: "exclamationmark.circle.fill")
+        iconView.tintColor = .systemOrange
+        iconView.contentMode = .scaleAspectFit
+
+        let messageLabel = UILabel()
+        messageLabel.translatesAutoresizingMaskIntoConstraints = false
+        messageLabel.text = message
+        messageLabel.textColor = .white
+        messageLabel.font = .systemFont(ofSize: 15, weight: .medium)
+        messageLabel.numberOfLines = 0
+
+        toastContainer.addSubview(iconView)
+        toastContainer.addSubview(messageLabel)
+        view.addSubview(toastContainer)
+
         NSLayoutConstraint.activate([
-            toastLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            toastLabel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -100),
-            toastLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 32),
-            toastLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -32)
+            toastContainer.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            toastContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            toastContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+
+            iconView.leadingAnchor.constraint(equalTo: toastContainer.leadingAnchor, constant: 16),
+            iconView.centerYAnchor.constraint(equalTo: toastContainer.centerYAnchor),
+            iconView.widthAnchor.constraint(equalToConstant: 24),
+            iconView.heightAnchor.constraint(equalToConstant: 24),
+
+            messageLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 12),
+            messageLabel.trailingAnchor.constraint(equalTo: toastContainer.trailingAnchor, constant: -16),
+            messageLabel.topAnchor.constraint(equalTo: toastContainer.topAnchor, constant: 14),
+            messageLabel.bottomAnchor.constraint(equalTo: toastContainer.bottomAnchor, constant: -14)
         ])
-        
-        // 패딩 추가
-        toastLabel.layoutMargins = UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)
-        
-        toastLabel.alpha = 0
-        UIView.animate(withDuration: 0.3) {
-            toastLabel.alpha = 1
+
+        toastContainer.alpha = 0
+        toastContainer.transform = CGAffineTransform(translationX: 0, y: -20)
+
+        UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.5) {
+            toastContainer.alpha = 1
+            toastContainer.transform = .identity
         }
-        
-        UIView.animate(withDuration: 0.3, delay: 2.5, options: .curveEaseOut) {
-            toastLabel.alpha = 0
+
+        UIView.animate(withDuration: 0.5, delay: duration, options: .curveEaseOut) {
+            toastContainer.alpha = 0
         } completion: { _ in
-            toastLabel.removeFromSuperview()
+            toastContainer.removeFromSuperview()
         }
     }
 }

@@ -70,16 +70,22 @@ class LiveActivityManager {
     
     // MARK: - End All Activities (중복 방지)
     
+    // LiveActivityManager.swift - endAllActivities 메서드 전체 교체
+
     private func endAllActivities() async {
+        // 현재 참조 먼저 nil로
+        currentActivity = nil
+        
         // 시스템의 모든 Live Activity 종료
         for activity in Activity<AlarmActivityAttributes>.activities {
             await activity.end(nil, dismissalPolicy: .immediate)
         }
-        currentActivity = nil
+        
+        // 종료 확인을 위한 짧은 대기
+        try? await Task.sleep(nanoseconds: 50_000_000) // 0.05초
     }
 
-    // MARK: - Start Activity
-
+    // startActivity 메서드 전체 교체
     func startActivity(with alarm: Alarm) {
         guard isLiveActivityEnabled else {
             print("[LiveActivity] Live Activity is disabled by user")
@@ -91,14 +97,34 @@ class LiveActivityManager {
             return
         }
 
-        // 먼저 모든 기존 Activity 종료
         Task {
+            // 기존 Activity 모두 종료하고 대기
             await endAllActivities()
             
-            // 짧은 딜레이 후 새 Activity 시작
+            // 충분한 딜레이
+            try? await Task.sleep(nanoseconds: 200_000_000) // 0.2초
+            
+            // 다시 한번 확인하고 종료
+            for activity in Activity<AlarmActivityAttributes>.activities {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            }
+            
             try? await Task.sleep(nanoseconds: 100_000_000) // 0.1초
             
             await MainActor.run {
+                // 이미 Activity가 있으면 생성하지 않음
+                guard Activity<AlarmActivityAttributes>.activities.isEmpty else {
+                    print("[LiveActivity] Activity already exists, updating instead")
+                    if let existing = Activity<AlarmActivityAttributes>.activities.first {
+                        currentActivity = existing
+                        let contentState = createContentState(for: alarm)
+                        Task {
+                            await existing.update(ActivityContent(state: contentState, staleDate: nil))
+                        }
+                    }
+                    return
+                }
+                
                 let attributes = AlarmActivityAttributes(alarmId: alarm.id.uuidString)
                 let contentState = createContentState(for: alarm)
 
@@ -116,9 +142,8 @@ class LiveActivityManager {
             }
         }
     }
-    
-    // MARK: - Start Empty Activity
-    
+
+    // startEmptyActivity 메서드 전체 교체
     func startEmptyActivity() {
         guard isLiveActivityEnabled else {
             print("[LiveActivity] Live Activity is disabled by user")
@@ -133,9 +158,27 @@ class LiveActivityManager {
         Task {
             await endAllActivities()
             
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            
+            for activity in Activity<AlarmActivityAttributes>.activities {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            }
+            
             try? await Task.sleep(nanoseconds: 100_000_000)
             
             await MainActor.run {
+                guard Activity<AlarmActivityAttributes>.activities.isEmpty else {
+                    print("[LiveActivity] Activity already exists, updating instead")
+                    if let existing = Activity<AlarmActivityAttributes>.activities.first {
+                        currentActivity = existing
+                        let contentState = createEmptyContentState()
+                        Task {
+                            await existing.update(ActivityContent(state: contentState, staleDate: nil))
+                        }
+                    }
+                    return
+                }
+                
                 let attributes = AlarmActivityAttributes(alarmId: "empty")
                 let contentState = createEmptyContentState()
 

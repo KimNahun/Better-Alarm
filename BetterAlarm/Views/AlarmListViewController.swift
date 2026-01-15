@@ -566,25 +566,38 @@ extension AlarmListViewController: UITableViewDelegate {
 // MARK: - AlarmCellDelegate
 
 extension AlarmListViewController: AlarmCellDelegate {
+    // AlarmListViewController.swift - alarmCell 델리게이트 메서드 전체 교체
+
     func alarmCell(_ cell: AlarmCell, didToggleAlarm alarm: Alarm, isOn: Bool) {
+        // 현재 알람의 실제 상태 다시 확인 (stale 데이터 방지)
+        guard let currentAlarm = alarmStore.alarms.first(where: { $0.id == alarm.id }) else {
+            return
+        }
+        
         if isOn {
-            if !alarm.isEnabled {
+            // 스위치를 켜는 경우
+            if currentAlarm.isSkippingNext {
+                // 스킵 상태였다면 스킵 해제
                 UIView.hapticFeedback(style: .light)
-                alarmStore.toggleAlarm(alarm, enabled: true)
-                showToast(message: "알람이 켜졌습니다")
-            } else if alarm.isSkippingNext {
-                UIView.hapticFeedback(style: .light)
-                alarmStore.clearSkipOnceAlarm(alarm)
+                alarmStore.clearSkipOnceAlarm(currentAlarm)
                 showToast(message: "건너뛰기가 취소되었습니다")
+            } else if !currentAlarm.isEnabled {
+                // 꺼져있었다면 켜기
+                UIView.hapticFeedback(style: .light)
+                alarmStore.toggleAlarm(currentAlarm, enabled: true)
+                showToast(message: "알람이 켜졌습니다")
             }
         } else {
-            if alarm.isEnabled {
-                if alarm.isWeeklyAlarm && !alarm.isSkippingNext {
+            // 스위치를 끄는 경우
+            if currentAlarm.isEnabled && !currentAlarm.isSkippingNext {
+                if currentAlarm.isWeeklyAlarm {
+                    // 주간 알람은 선택지 제공
                     guard let indexPath = tableView.indexPath(for: cell) else { return }
-                    showSkipOrTurnOffActionSheet(for: alarm, at: indexPath)
+                    showSkipOrTurnOffActionSheet(for: currentAlarm, at: indexPath)
                 } else {
+                    // 1회성 알람은 바로 끄기
                     UIView.hapticFeedback(style: .light)
-                    alarmStore.toggleAlarm(alarm, enabled: false)
+                    alarmStore.toggleAlarm(currentAlarm, enabled: false)
                     showToast(message: "알람이 꺼졌습니다")
                 }
             }
