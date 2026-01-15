@@ -408,11 +408,6 @@ class AlarmStore {
             baseString = String(format: "%@ %@ %d시 %02d분", dateString, period, displayHour, minute)
         }
         
-        // ⭐ 스킵 중인 알람이면 표시 추가
-        if alarm.isSkippingNext {
-            baseString += " (건너뜀)"
-        }
-        
         return baseString
     }
     

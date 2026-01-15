@@ -104,20 +104,7 @@ struct BetterAlarmWidgetLiveActivity: Widget {
                 }
 
                 DynamicIslandExpandedRegion(.trailing) {
-                    if !context.state.isEmpty && context.state.isSkipped {
-                        HStack(spacing: 4) {
-                            Image(systemName: "forward.fill")
-                                .font(.caption2)
-                            Text("스킵")
-                                .font(.caption2)
-                                .fontWeight(.semibold)
-                        }
-                        .foregroundColor(.skipOrange)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.skipOrange.opacity(0.2))
-                        .clipShape(Capsule())
-                    }
+                    EmptyView()
                 }
 
                 DynamicIslandExpandedRegion(.bottom) {
@@ -166,7 +153,7 @@ struct BetterAlarmWidgetLiveActivity: Widget {
                     Text(context.state.nextAlarmTime)
                         .font(.caption)
                         .fontWeight(.bold)
-                        .foregroundColor(context.state.isSkipped ? .skipOrange : .accentLavender)
+                        .foregroundColor(.accentLavender)
                 }
             } minimal: {
                 ZStack {
@@ -265,26 +252,10 @@ struct LockScreenView: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 8) {
-                    Text("다음 알람")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.accentLavender)
-
-                    if context.state.isSkipped {
-                        HStack(spacing: 3) {
-                            Image(systemName: "forward.fill")
-                                .font(.system(size: 8))
-                            Text("건너뛰기")
-                                .font(.system(size: 10, weight: .semibold))
-                        }
-                        .foregroundColor(.skipOrange)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(Color.skipOrange.opacity(0.2))
-                        .clipShape(Capsule())
-                    }
-                }
+                Text("다음 알람")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.accentLavender)
 
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(context.state.nextAlarmTime)

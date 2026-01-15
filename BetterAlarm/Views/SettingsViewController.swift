@@ -36,12 +36,8 @@ class SettingsViewController: UIViewController {
     // MARK: - Settings Data
 
     private enum SettingsItem {
-        case alarmSound
-        case snoozeTime
-        case vibration
         case alarmPermission
         case liveActivity
-        case use24HourFormat
         case appVersion
         case feedback
     }
@@ -60,15 +56,9 @@ class SettingsViewController: UIViewController {
 
     private var sections: [SettingsSection] {
         [
-            SettingsSection(title: "알람", rows: [
-                SettingsRow(icon: "speaker.wave.3.fill", title: "알람 소리", detail: "기본", item: .alarmSound),
-                SettingsRow(icon: "moon.zzz.fill", title: "스누즈 시간", detail: "5분", item: .snoozeTime),
-                SettingsRow(icon: "iphone.radiowaves.left.and.right", title: "진동", detail: nil, item: .vibration)
-            ]),
             SettingsSection(title: "일반", rows: [
                 SettingsRow(icon: "alarm.fill", title: "알람 권한", detail: nil, item: .alarmPermission),
-                SettingsRow(icon: "rectangle.stack.fill", title: "잠금화면 위젯", detail: nil, item: .liveActivity),
-                SettingsRow(icon: "clock.fill", title: "24시간제", detail: nil, item: .use24HourFormat)
+                SettingsRow(icon: "rectangle.stack.fill", title: "잠금화면 위젯", detail: nil, item: .liveActivity)
             ]),
             SettingsSection(title: "정보", rows: [
                 SettingsRow(icon: "info.circle.fill", title: "앱 버전", detail: appVersion, item: .appVersion),
@@ -378,7 +368,7 @@ extension SettingsViewController: UITableViewDataSource {
             cell.onToggleChanged = { [weak self] isOn in
                 self?.handleLiveActivityToggle(isOn: isOn, cell: cell)
             }
-            
+
         case .appVersion:
             cell.configure(
                 icon: row.icon,
@@ -387,8 +377,8 @@ extension SettingsViewController: UITableViewDataSource {
                 showChevron: false,
                 showToggle: false
             )
-            
-        default:
+
+        case .alarmPermission, .feedback:
             cell.configure(
                 icon: row.icon,
                 title: row.title,
@@ -455,10 +445,6 @@ extension SettingsViewController: UITableViewDelegate {
             sendFeedbackEmail()
         case .appVersion, .liveActivity:
             AppLogger.debug("Non-interactive cell tapped: \(row.title)", category: .action)
-            break
-        default:
-            UIView.hapticFeedback(style: .light)
-            AppLogger.debug("Settings item selected: \(row.title)", category: .settings)
         }
     }
 
