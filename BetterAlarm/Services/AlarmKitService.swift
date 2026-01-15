@@ -32,8 +32,11 @@ struct StopAlarmIntent: LiveActivityIntent {
     }
 
     func perform() async throws -> some IntentResult {
+        AppLogger.info("StopAlarmIntent perform called, alarmID: \(alarmID)", category: .alarmKit)
+
         if let id = UUID(uuidString: alarmID) {
             try? AlarmManager.shared.stop(id: id)
+            AppLogger.info("Alarm stopped via intent: \(id)", category: .alarmKit)
         }
 
         // UserDefaults에 알람 해제 정보 저장 (앱이 foreground로 올 때 처리)
@@ -41,6 +44,8 @@ struct StopAlarmIntent: LiveActivityIntent {
         userDefaults.set(true, forKey: AlarmIntentKeys.alarmDismissedKey)
         userDefaults.set(Date().timeIntervalSince1970, forKey: AlarmIntentKeys.alarmDismissedTimeKey)
         userDefaults.synchronize()
+
+        AppLogger.debug("Alarm dismissed flag saved to UserDefaults", category: .alarmKit)
 
         return .result()
     }
@@ -63,13 +68,17 @@ struct SnoozeAlarmIntent: LiveActivityIntent {
     }
 
     func perform() async throws -> some IntentResult {
+        AppLogger.info("SnoozeAlarmIntent perform called, alarmID: \(alarmID)", category: .alarmKit)
+
         await AlarmKitService.shared.snoozeFromIntent(alarmID: alarmID)
-        
+
         // 스누즈 정보 저장
         let userDefaults = UserDefaults.standard
         userDefaults.set(true, forKey: AlarmIntentKeys.alarmSnoozedKey)
         userDefaults.synchronize()
-        
+
+        AppLogger.debug("Snooze flag saved to UserDefaults", category: .alarmKit)
+
         return .result()
     }
 }
@@ -84,7 +93,7 @@ final class AlarmKitService {
 
     // 스케줄된 알람 ID 추적
     private var currentAlarmId: UUID?
-    
+
     // 현재 스케줄된 앱 알람 (Alarm 모델)
     private var currentScheduledAlarm: Alarm?
 
@@ -93,7 +102,7 @@ final class AlarmKitService {
 
     // 알람이 울릴 때 콜백
     private var onAlerting: ((UUID) -> Void)?
-    
+
     // 알람이 완료될 때 콜백
     private var onAlarmCompleted: ((Alarm) -> Void)?
 
@@ -101,57 +110,72 @@ final class AlarmKitService {
     static let snoozeInterval: TimeInterval = 5 * 60
 
     private init() {
+        AppLogger.info("AlarmKitService initializing", category: .alarmKit)
         startMonitoring()
+        AppLogger.info("AlarmKitService initialized", category: .alarmKit)
     }
 
     // MARK: - Permission
 
     func requestPermission() async -> Bool {
+        AppLogger.info("Requesting AlarmKit permission", category: .permission)
         do {
             let status = try await manager.requestAuthorization()
-            return status == .authorized
+            let authorized = status == .authorized
+            AppLogger.info("AlarmKit permission result: \(authorized)", category: .permission)
+            return authorized
         } catch {
-            print("[AlarmKit] Failed to request permission: \(error)")
+            AppLogger.error("Failed to request AlarmKit permission: \(error)", category: .permission)
             return false
         }
     }
 
     func checkAuthorizationStatus() -> Bool {
         let status = manager.authorizationState
-        return status == .authorized
+        let authorized = status == .authorized
+        AppLogger.debug("AlarmKit authorization status: \(authorized)", category: .permission)
+        return authorized
     }
 
     // MARK: - Monitoring
 
     func observeAlertingAlarms(_ handler: @escaping (UUID) -> Void) {
+        AppLogger.debug("Registering alerting alarms observer", category: .alarmKit)
         self.onAlerting = handler
     }
-    
+
     func observeAlarmCompleted(_ handler: @escaping (Alarm) -> Void) {
+        AppLogger.debug("Registering alarm completed observer", category: .alarmKit)
         self.onAlarmCompleted = handler
     }
 
     func stopMonitoring() {
+        AppLogger.info("Stopping alarm monitoring", category: .alarmKit)
         monitorTask?.cancel()
         monitorTask = nil
     }
 
     func resumeMonitoring() {
         if monitorTask == nil {
+            AppLogger.info("Resuming alarm monitoring", category: .alarmKit)
             startMonitoring()
         }
     }
 
     private func startMonitoring() {
+        AppLogger.debug("Starting alarm monitoring task", category: .alarmKit)
         monitorTask?.cancel()
 
         monitorTask = Task {
             for await alarms in manager.alarmUpdates {
                 if Task.isCancelled { break }
 
+                AppLogger.debug("Alarm updates received, count: \(alarms.count)", category: .alarmKit)
+
                 if alarms.isEmpty {
                     // 알람이 없어졌다면 (정지됨) - 완료 콜백 호출
                     if let completedAlarm = self.currentScheduledAlarm {
+                        AppLogger.info("Alarm completed detected: \(completedAlarm.displayTitle)", category: .alarmKit)
                         self.onAlarmCompleted?(completedAlarm)
                     }
                     self.currentAlarmId = nil
@@ -159,49 +183,58 @@ final class AlarmKitService {
                 }
 
                 for alarm in alarms where alarm.state == .alerting {
+                    AppLogger.info("Alarm alerting: \(alarm.id)", category: .alarmKit)
                     self.onAlerting?(alarm.id)
                 }
             }
         }
     }
-    
+
     // MARK: - Check for Intent Actions (앱이 foreground로 올 때 호출)
-    
+
     func checkForPendingIntentActions() {
+        AppLogger.debug("Checking for pending intent actions", category: .alarmKit)
         let userDefaults = UserDefaults.standard
-        
+
         // 알람 해제 확인
         if userDefaults.bool(forKey: AlarmIntentKeys.alarmDismissedKey) {
+            AppLogger.info("Found pending alarm dismissal from intent", category: .alarmKit)
             userDefaults.set(false, forKey: AlarmIntentKeys.alarmDismissedKey)
-            
+
             // 완료된 알람 처리
             if let alarm = currentScheduledAlarm {
+                AppLogger.info("Processing completed alarm: \(alarm.displayTitle)", category: .alarmKit)
                 onAlarmCompleted?(alarm)
             }
-            
+
             currentAlarmId = nil
             currentScheduledAlarm = nil
-            
-            print("[AlarmKit] Processed alarm dismissal from intent")
+
+            AppLogger.info("Processed alarm dismissal from intent", category: .alarmKit)
         }
-        
+
         // 스누즈 확인
         if userDefaults.bool(forKey: AlarmIntentKeys.alarmSnoozedKey) {
             userDefaults.set(false, forKey: AlarmIntentKeys.alarmSnoozedKey)
-            print("[AlarmKit] Processed snooze from intent")
+            AppLogger.info("Processed snooze from intent", category: .alarmKit)
         }
-        
+
         userDefaults.synchronize()
     }
 
     // MARK: - Schedule Alarm
 
     func scheduleAlarm(for alarm: Alarm) async {
-        guard alarm.isEnabled else { return }
+        AppLogger.info("Scheduling alarm: \(alarm.displayTitle)", category: .alarmKit)
+
+        guard alarm.isEnabled else {
+            AppLogger.debug("Alarm is disabled, skipping schedule", category: .alarmKit)
+            return
+        }
 
         // 권한 확인
         guard await requestPermission() else {
-            print("[AlarmKit] Not authorized")
+            AppLogger.warning("AlarmKit not authorized, cannot schedule", category: .alarmKit)
             return
         }
 
@@ -214,13 +247,18 @@ final class AlarmKitService {
             currentScheduledAlarm = alarm
 
             // 다음 알람까지의 시간 계산
-            guard let triggerDate = alarm.nextTriggerDate() else { return }
+            guard let triggerDate = alarm.nextTriggerDate() else {
+                AppLogger.warning("No trigger date for alarm", category: .alarmKit)
+                return
+            }
             let duration = triggerDate.timeIntervalSinceNow
 
             guard duration > 0 else {
-                print("[AlarmKit] Trigger date is in the past")
+                AppLogger.warning("Trigger date is in the past: \(triggerDate)", category: .alarmKit)
                 return
             }
+
+            AppLogger.debug("Alarm will trigger in \(Int(duration)) seconds at \(triggerDate)", category: .alarmKit)
 
             // AlarmAttributes 생성
             let attributes = createAlarmAttributes(
@@ -238,53 +276,65 @@ final class AlarmKitService {
 
             _ = try await manager.schedule(id: id, configuration: config)
 
-            print("[AlarmKit] Scheduled alarm: \(alarm.displayTitle) in \(duration) seconds")
+            AppLogger.alarmScheduled("\(alarm.displayTitle) id=\(id.uuidString.prefix(8))", triggerDate: triggerDate)
 
         } catch {
-            print("[AlarmKit] Failed to schedule alarm: \(error)")
+            AppLogger.error("Failed to schedule alarm: \(error)", category: .alarmKit)
         }
     }
 
     // MARK: - Cancel/Stop
 
     func cancelAlarm(for alarm: Alarm) {
-        guard let alarmId = currentAlarmId else { return }
+        AppLogger.info("Cancelling alarm: \(alarm.displayTitle)", category: .alarmKit)
+
+        guard let alarmId = currentAlarmId else {
+            AppLogger.debug("No current alarm to cancel", category: .alarmKit)
+            return
+        }
 
         do {
             try manager.stop(id: alarmId)
             currentAlarmId = nil
             currentScheduledAlarm = nil
-            print("[AlarmKit] Cancelled alarm")
+            AppLogger.info("Alarm cancelled successfully", category: .alarmKit)
         } catch {
-            print("[AlarmKit] Failed to cancel alarm: \(error)")
+            AppLogger.error("Failed to cancel alarm: \(error)", category: .alarmKit)
         }
     }
 
     func stopAllAlarms() async {
+        AppLogger.debug("Stopping all alarms", category: .alarmKit)
         do {
             let existingAlarms = try manager.alarms
+            AppLogger.debug("Found \(existingAlarms.count) existing alarms to stop", category: .alarmKit)
             for alarm in existingAlarms {
                 try manager.stop(id: alarm.id)
             }
             currentAlarmId = nil
             currentScheduledAlarm = nil
+            AppLogger.debug("All alarms stopped", category: .alarmKit)
         } catch {
-            print("[AlarmKit] Failed to stop alarms: \(error)")
+            AppLogger.error("Failed to stop alarms: \(error)", category: .alarmKit)
         }
     }
 
     // MARK: - Snooze
 
     nonisolated func snoozeFromIntent(alarmID: String) async {
+        AppLogger.info("Snoozing alarm from intent: \(alarmID)", category: .alarmKit)
         let manager = AlarmManager.shared
 
         // 현재 알람 중지
         if let id = UUID(uuidString: alarmID) {
             try? manager.stop(id: id)
+            AppLogger.debug("Original alarm stopped for snooze", category: .alarmKit)
         }
 
         // 새 알람 예약 (5분 후)
         let newId = UUID()
+        let snoozeTime = Date().addingTimeInterval(Self.snoozeInterval)
+        AppLogger.debug("Snooze alarm will trigger at: \(snoozeTime)", category: .alarmKit)
 
         let attributes = await Self.createAlarmAttributesStatic(
             title: "스누즈 알람",
@@ -301,7 +351,7 @@ final class AlarmKitService {
 
         _ = try? await manager.schedule(id: newId, configuration: config)
 
-        print("[AlarmKit] Snoozed alarm")
+        AppLogger.info("Snooze alarm scheduled, id=\(newId.uuidString.prefix(8))", category: .alarmKit)
     }
 
     // MARK: - Alarm Attributes Helper
@@ -350,7 +400,7 @@ final class AlarmKitService {
     func getCurrentAlarmId() -> UUID? {
         return currentAlarmId
     }
-    
+
     func getCurrentScheduledAlarm() -> Alarm? {
         return currentScheduledAlarm
     }

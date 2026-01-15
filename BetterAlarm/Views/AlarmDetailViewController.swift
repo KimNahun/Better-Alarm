@@ -201,6 +201,7 @@ class AlarmDetailViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        AppLogger.viewDidLoad("AlarmDetailViewController (isNew: \(isNewAlarm))")
         setupUI()
         setupConstraints()
         setupWeekdayButtons()
@@ -216,6 +217,7 @@ class AlarmDetailViewController: UIViewController {
     // MARK: - Configuration
 
     func configure(with alarm: Alarm) {
+        AppLogger.info("Configuring with alarm: \(alarm.displayTitle)", category: .ui)
         existingAlarm = alarm
         selectedHour = alarm.hour
         selectedMinute = alarm.minute
@@ -224,12 +226,15 @@ class AlarmDetailViewController: UIViewController {
         switch alarm.schedule {
         case .once:
             repeatMode = 0
+            AppLogger.debug("Repeat mode: once", category: .ui)
         case .weekly(let days):
             repeatMode = 1
             selectedWeekdays = days
+            AppLogger.debug("Repeat mode: weekly, days: \(days.map { $0.shortName })", category: .ui)
         case .specificDate(let date):
             repeatMode = 2
             specificDate = date
+            AppLogger.debug("Repeat mode: specific date: \(date)", category: .ui)
         }
     }
 
@@ -435,11 +440,13 @@ class AlarmDetailViewController: UIViewController {
     // MARK: - Actions
 
     @objc private func cancelTapped() {
+        AppLogger.buttonTapped("cancel")
         UIView.hapticFeedback(style: .light)
         dismiss(animated: true)
     }
 
     @objc private func saveTapped() {
+        AppLogger.buttonTapped("save")
         UIView.hapticFeedback(style: .medium)
 
         let calendar = Calendar.current
@@ -459,6 +466,8 @@ class AlarmDetailViewController: UIViewController {
             break
         }
 
+        AppLogger.info("Saving alarm: \(alarmTitle.isEmpty ? "Untitled" : alarmTitle) at \(selectedHour):\(selectedMinute)", category: .action)
+
         delegate?.alarmDetailViewController(
             self,
             didSaveAlarm: selectedHour,
@@ -471,24 +480,30 @@ class AlarmDetailViewController: UIViewController {
         )
         dismiss(animated: true)
     }
-    
+
     @objc private func deleteTapped() {
+        AppLogger.buttonTapped("delete")
         UIView.hapticFeedback(style: .medium)
-        
+
         guard let alarm = existingAlarm else { return }
-        
+
+        AppLogger.info("Showing delete confirmation for: \(alarm.displayTitle)", category: .action)
+
         let alert = UIAlertController(
             title: "알람 삭제",
             message: "'\(alarm.displayTitle)' 알람을 삭제하시겠습니까?",
             preferredStyle: .alert
         )
-        
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel) { _ in
+            AppLogger.debug("Delete cancelled", category: .action)
+        })
         alert.addAction(UIAlertAction(title: "삭제", style: .destructive) { [weak self] _ in
+            AppLogger.info("Delete confirmed: \(alarm.displayTitle)", category: .action)
             self?.onDeleteAlarm?(alarm)
             self?.dismiss(animated: true)
         })
-        
+
         present(alert, animated: true)
     }
 
@@ -504,6 +519,8 @@ class AlarmDetailViewController: UIViewController {
     @objc private func repeatTypeChanged() {
         UIView.hapticFeedback(style: .light)
         repeatMode = repeatSegmentControl.selectedSegmentIndex
+        let modeNames = ["once", "weekly", "specific"]
+        AppLogger.debug("Repeat type changed to: \(modeNames[repeatMode])", category: .action)
         updateRepeatSectionVisibility(animated: true)
     }
 
@@ -516,8 +533,10 @@ class AlarmDetailViewController: UIViewController {
 
         if selectedWeekdays.contains(weekday) {
             selectedWeekdays.remove(weekday)
+            AppLogger.debug("Weekday deselected: \(weekday.shortName)", category: .action)
         } else {
             selectedWeekdays.insert(weekday)
+            AppLogger.debug("Weekday selected: \(weekday.shortName)", category: .action)
         }
 
         updateWeekdayButtons()

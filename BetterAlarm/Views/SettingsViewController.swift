@@ -81,12 +81,14 @@ class SettingsViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        AppLogger.viewDidLoad("SettingsViewController")
         setupUI()
         setupConstraints()
     }
-    
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        AppLogger.viewWillAppear("SettingsViewController")
         tableView.reloadData()
     }
 
@@ -114,19 +116,23 @@ class SettingsViewController: UIViewController {
     // MARK: - Actions
 
     private func openAppSettings() {
+        AppLogger.info("Opening app settings", category: .settings)
         if let url = URL(string: UIApplication.openSettingsURLString) {
             UIApplication.shared.open(url)
         }
     }
 
     private func sendFeedbackEmail() {
+        AppLogger.buttonTapped("Send Feedback Email")
         guard MFMailComposeViewController.canSendMail() else {
+            AppLogger.warning("Mail not configured on device", category: .settings)
             let alert = UIAlertController(
                 title: "메일 설정 필요",
                 message: "메일 앱이 설정되어 있지 않습니다.\nrlaskgns0212@naver.com으로 피드백을 보내주세요.",
                 preferredStyle: .alert
             )
             alert.addAction(UIAlertAction(title: "복사하기", style: .default) { _ in
+                AppLogger.buttonTapped("Copy Email Address")
                 UIPasteboard.general.string = "rlaskgns0212@naver.com"
                 UIView.hapticFeedback(style: .light)
             })
@@ -135,6 +141,7 @@ class SettingsViewController: UIViewController {
             return
         }
 
+        AppLogger.debug("Presenting mail composer", category: .settings)
         let mailVC = MFMailComposeViewController()
         mailVC.mailComposeDelegate = self
         mailVC.setToRecipients(["rlaskgns0212@naver.com"])
@@ -145,10 +152,11 @@ class SettingsViewController: UIViewController {
     }
     
     // MARK: - Toast
-    
+
     // SettingsViewController.swift - showToast 메서드 전체 교체
 
     private func showToast(message: String, duration: TimeInterval = 2.5) {
+        AppLogger.debug("Showing toast: \(message)", category: .ui)
         let toastContainer = UIView()
         toastContainer.translatesAutoresizingMaskIntoConstraints = false
         toastContainer.backgroundColor = UIColor(white: 0.1, alpha: 0.95)
@@ -394,18 +402,20 @@ extension SettingsViewController: UITableViewDataSource {
     }
     
     private func handleLiveActivityToggle(isOn: Bool, cell: SettingsCell) {
+        AppLogger.switchToggled("Live Activity", value: isOn)
         UIView.hapticFeedback(style: .light)
-        
+
         if isOn {
             // 시스템에서 Live Activity가 허용되어 있는지 확인
             let authInfo = ActivityAuthorizationInfo()
-            
+
             if !authInfo.areActivitiesEnabled {
                 // 시스템에서 비활성화됨 - 스위치를 다시 끄고 안내
+                AppLogger.warning("Live Activity not enabled in system settings", category: .permission)
                 cell.setToggleValue(false)
-                
+
                 showToast(message: "설정에서 실시간 현황을 켜주세요")
-                
+
                 // 1초 후 설정으로 이동
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
                     self?.openAppSettings()
@@ -413,8 +423,9 @@ extension SettingsViewController: UITableViewDataSource {
                 return
             }
         }
-        
+
         // 정상적으로 토글
+        AppLogger.info("Toggling Live Activity to: \(isOn)", category: .liveActivity)
         Task { @MainActor in
             let nextAlarm = AlarmStore.shared.nextAlarm
             LiveActivityManager.shared.setEnabled(isOn, with: nextAlarm)
@@ -433,6 +444,7 @@ extension SettingsViewController: UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
 
         let row = sections[indexPath.section].rows[indexPath.row]
+        AppLogger.cellSelected("Settings: \(row.title)")
 
         switch row.item {
         case .alarmPermission:
@@ -442,10 +454,11 @@ extension SettingsViewController: UITableViewDelegate {
             UIView.hapticFeedback(style: .light)
             sendFeedbackEmail()
         case .appVersion, .liveActivity:
+            AppLogger.debug("Non-interactive cell tapped: \(row.title)", category: .action)
             break
         default:
             UIView.hapticFeedback(style: .light)
-            print("Selected: \(row.title)")
+            AppLogger.debug("Settings item selected: \(row.title)", category: .settings)
         }
     }
 
@@ -460,6 +473,7 @@ extension SettingsViewController: UITableViewDelegate {
 
 extension SettingsViewController: MFMailComposeViewControllerDelegate {
     func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+        AppLogger.info("Mail compose finished with result: \(result.rawValue)", category: .settings)
         controller.dismiss(animated: true) { [weak self] in
             self?.showMailResult(result, error: error)
         }
@@ -471,16 +485,21 @@ extension SettingsViewController: MFMailComposeViewControllerDelegate {
 
         switch result {
         case .sent:
+            AppLogger.info("Feedback email sent successfully", category: .settings)
             UIView.hapticFeedback(style: .medium)
             message = "피드백이 전송되었습니다.\n감사합니다!"
         case .saved:
+            AppLogger.info("Feedback email saved to drafts", category: .settings)
             message = "이메일이 임시보관함에 저장되었습니다."
         case .cancelled:
+            AppLogger.debug("Feedback email cancelled", category: .settings)
             showAlert = false
             message = ""
         case .failed:
+            AppLogger.error("Feedback email failed: \(error?.localizedDescription ?? "unknown")", category: .settings)
             message = "이메일 전송에 실패했습니다.\n\(error?.localizedDescription ?? "알 수 없는 오류")"
         @unknown default:
+            AppLogger.warning("Unknown mail compose result", category: .settings)
             showAlert = false
             message = ""
         }

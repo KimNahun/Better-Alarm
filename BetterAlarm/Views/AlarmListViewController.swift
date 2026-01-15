@@ -155,6 +155,7 @@ class AlarmListViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        AppLogger.viewDidLoad("AlarmListViewController")
         setupUI()
         setupConstraints()
         configureDataSource()
@@ -186,12 +187,14 @@ class AlarmListViewController: UIViewController {
     }
 
     @objc private func handleAppDidBecomeActive() {
+        AppLogger.debug("App did become active", category: .lifecycle)
         checkAlarmPermission()
         checkForCompletedAlarms()
         restartLiveActivityIfNeeded()
     }
 
     @objc private func handleAppWillEnterForeground() {
+        AppLogger.debug("App will enter foreground", category: .lifecycle)
         checkAlarmPermission()
         checkForCompletedAlarms()
         restartLiveActivityIfNeeded()
@@ -209,6 +212,7 @@ class AlarmListViewController: UIViewController {
     }
 
     @objc private func handleAlarmsDidUpdate() {
+        AppLogger.debug("Alarms did update notification received", category: .alarm)
         applySnapshot()
         reconfigureVisibleCells()
         updateUI()
@@ -216,6 +220,7 @@ class AlarmListViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        AppLogger.viewWillAppear("AlarmListViewController")
         alarmStore.loadAlarms()
         applySnapshot(animatingDifferences: false)
         checkAlarmPermission()
@@ -224,8 +229,10 @@ class AlarmListViewController: UIViewController {
     }
 
     private func checkAlarmPermission() {
+        AppLogger.debug("Checking alarm permission", category: .permission)
         Task {
             let isAuthorized = AlarmKitService.shared.checkAuthorizationStatus()
+            AppLogger.debug("Alarm permission status: \(isAuthorized)", category: .permission)
             await MainActor.run {
                 hasAlarmPermission = isAuthorized
                 updatePermissionUI()
@@ -244,6 +251,7 @@ class AlarmListViewController: UIViewController {
     }
 
     @objc private func openSettingsTapped() {
+        AppLogger.buttonTapped("openSettings")
         UIView.hapticFeedback(style: .light)
         if let url = URL(string: UIApplication.openSettingsURLString) {
             UIApplication.shared.open(url)
@@ -455,6 +463,7 @@ class AlarmListViewController: UIViewController {
     // MARK: - Actions
 
     @objc private func addAlarmTapped() {
+        AppLogger.buttonTapped("addAlarm")
         UIView.hapticFeedback(style: .medium)
 
         let addVC = AlarmDetailViewController()
@@ -466,6 +475,7 @@ class AlarmListViewController: UIViewController {
             sheet.prefersGrabberVisible = true
         }
 
+        AppLogger.info("Presenting AlarmDetailViewController for new alarm", category: .navigation)
         present(addVC, animated: true)
     }
 
@@ -524,11 +534,13 @@ extension AlarmListViewController: UITableViewDelegate {
         guard let alarmId = dataSource.itemIdentifier(for: indexPath),
               let alarm = alarmStore.alarms.first(where: { $0.id == alarmId }) else { return }
 
+        AppLogger.cellSelected("Alarm: \(alarm.displayTitle)")
         UIView.hapticFeedback(style: .light)
 
         let editVC = AlarmDetailViewController()
         editVC.delegate = self
         editVC.onDeleteAlarm = { [weak self] deletedAlarm in
+            AppLogger.info("Delete alarm callback: \(deletedAlarm.displayTitle)", category: .alarm)
             self?.alarmStore.deleteAlarm(deletedAlarm)
             self?.showToast(message: "알람이 삭제되었습니다")
         }
@@ -540,6 +552,7 @@ extension AlarmListViewController: UITableViewDelegate {
             sheet.prefersGrabberVisible = true
         }
 
+        AppLogger.info("Presenting AlarmDetailViewController for edit: \(alarm.displayTitle)", category: .navigation)
         present(editVC, animated: true)
     }
 
@@ -569,20 +582,25 @@ extension AlarmListViewController: AlarmCellDelegate {
     // AlarmListViewController.swift - alarmCell 델리게이트 메서드 전체 교체
 
     func alarmCell(_ cell: AlarmCell, didToggleAlarm alarm: Alarm, isOn: Bool) {
+        AppLogger.switchToggled("alarm: \(alarm.displayTitle)", value: isOn)
+
         // 현재 알람의 실제 상태 다시 확인 (stale 데이터 방지)
         guard let currentAlarm = alarmStore.alarms.first(where: { $0.id == alarm.id }) else {
+            AppLogger.warning("Alarm not found for toggle: \(alarm.id)", category: .alarm)
             return
         }
-        
+
         if isOn {
             // 스위치를 켜는 경우
             if currentAlarm.isSkippingNext {
                 // 스킵 상태였다면 스킵 해제
+                AppLogger.info("Clearing skip for alarm: \(currentAlarm.displayTitle)", category: .action)
                 UIView.hapticFeedback(style: .light)
                 alarmStore.clearSkipOnceAlarm(currentAlarm)
                 showToast(message: "건너뛰기가 취소되었습니다")
             } else if !currentAlarm.isEnabled {
                 // 꺼져있었다면 켜기
+                AppLogger.info("Enabling alarm: \(currentAlarm.displayTitle)", category: .action)
                 UIView.hapticFeedback(style: .light)
                 alarmStore.toggleAlarm(currentAlarm, enabled: true)
                 showToast(message: "알람이 켜졌습니다")
@@ -592,10 +610,12 @@ extension AlarmListViewController: AlarmCellDelegate {
             if currentAlarm.isEnabled && !currentAlarm.isSkippingNext {
                 if currentAlarm.isWeeklyAlarm {
                     // 주간 알람은 선택지 제공
+                    AppLogger.info("Showing skip/turn off action sheet for weekly alarm", category: .action)
                     guard let indexPath = tableView.indexPath(for: cell) else { return }
                     showSkipOrTurnOffActionSheet(for: currentAlarm, at: indexPath)
                 } else {
                     // 1회성 알람은 바로 끄기
+                    AppLogger.info("Disabling one-time alarm: \(currentAlarm.displayTitle)", category: .action)
                     UIView.hapticFeedback(style: .light)
                     alarmStore.toggleAlarm(currentAlarm, enabled: false)
                     showToast(message: "알람이 꺼졌습니다")
@@ -609,10 +629,14 @@ extension AlarmListViewController: AlarmCellDelegate {
 
 extension AlarmListViewController: AlarmDetailViewControllerDelegate {
     func alarmDetailViewController(_ controller: AlarmDetailViewController, didSaveAlarm hour: Int, minute: Int, title: String, weekdays: Set<Weekday>?, specificDate: Date?, soundName: String, existingAlarm: Alarm?) {
+        AppLogger.info("Save alarm delegate called: \(title.isEmpty ? "Untitled" : title) at \(hour):\(minute)", category: .alarm)
+
         if let existing = existingAlarm {
+            AppLogger.info("Updating existing alarm: \(existing.displayTitle)", category: .alarm)
             alarmStore.updateAlarm(existing, hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate, soundName: soundName)
             showToast(message: "알람이 수정되었습니다")
         } else {
+            AppLogger.info("Creating new alarm", category: .alarm)
             alarmStore.createAlarm(hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate, soundName: soundName)
             showToast(message: "알람이 추가되었습니다")
         }

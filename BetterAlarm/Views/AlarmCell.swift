@@ -184,6 +184,7 @@ class AlarmCell: UITableViewCell {
 
     func configure(with alarm: Alarm) {
         self.alarm = alarm
+        AppLogger.debug("Configuring cell for alarm: \(alarm.displayTitle), enabled: \(alarm.isEnabled), skipping: \(alarm.isSkippingNext)", category: .ui)
 
         timeLabel.text = alarm.timeString
         titleLabel.text = alarm.displayTitle
@@ -292,7 +293,11 @@ class AlarmCell: UITableViewCell {
     // MARK: - Actions
 
     @objc private func switchToggled() {
-        guard let alarm = alarm else { return }
+        guard let alarm = alarm else {
+            AppLogger.warning("Switch toggled but no alarm set", category: .action)
+            return
+        }
+        AppLogger.switchToggled("AlarmCell switch for \(alarm.displayTitle)", value: toggleSwitch.isOn)
         UIView.hapticFeedback(style: .medium)
         delegate?.alarmCell(self, didToggleAlarm: alarm, isOn: toggleSwitch.isOn)
     }

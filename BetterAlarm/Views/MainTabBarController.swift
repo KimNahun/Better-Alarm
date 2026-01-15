@@ -10,9 +10,11 @@ class MainTabBarController: UITabBarController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        AppLogger.viewDidLoad("MainTabBarController")
         setupBackground()
         setupTabBar()
         setupViewControllers()
+        AppLogger.debug("Tab bar setup completed with \(viewControllers?.count ?? 0) tabs", category: .ui)
     }
 
     override func viewDidLayoutSubviews() {

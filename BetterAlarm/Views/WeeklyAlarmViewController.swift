@@ -93,6 +93,7 @@ class WeeklyAlarmViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        AppLogger.viewDidLoad("WeeklyAlarmViewController")
         setupUI()
         setupConstraints()
         configureDataSource()
@@ -102,6 +103,7 @@ class WeeklyAlarmViewController: UIViewController {
         let todayWeekday = Calendar.current.component(.weekday, from: Date())
         if let weekday = Weekday(rawValue: todayWeekday) {
             selectedWeekday = weekday
+            AppLogger.debug("Initial weekday set to: \(weekday.shortName)", category: .ui)
         }
 
         setupNotificationObserver()
@@ -114,9 +116,11 @@ class WeeklyAlarmViewController: UIViewController {
             name: .alarmsDidUpdate,
             object: nil
         )
+        AppLogger.debug("Notification observer registered for alarmsDidUpdate", category: .lifecycle)
     }
 
     @objc private func handleAlarmsDidUpdate() {
+        AppLogger.debug("Alarms did update notification received", category: .alarm)
         applySnapshot()
         reconfigureVisibleCells()
         updateUI()
@@ -124,6 +128,7 @@ class WeeklyAlarmViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        AppLogger.viewWillAppear("WeeklyAlarmViewController")
         updateSelectedWeekdayButton()
         applySnapshot(animatingDifferences: false)
         updateUI()
@@ -291,7 +296,11 @@ class WeeklyAlarmViewController: UIViewController {
     @objc private func weekdayButtonTapped(_ sender: UIButton) {
         UIView.hapticFeedback(style: .light)
 
-        guard let weekday = Weekday(rawValue: sender.tag) else { return }
+        guard let weekday = Weekday(rawValue: sender.tag) else {
+            AppLogger.warning("Invalid weekday tag: \(sender.tag)", category: .action)
+            return
+        }
+        AppLogger.buttonTapped("Weekday: \(weekday.shortName)")
         selectedWeekday = weekday
 
         updateSelectedWeekdayButton()
@@ -309,8 +318,12 @@ extension WeeklyAlarmViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard let alarmId = dataSource.itemIdentifier(for: indexPath),
-              let alarm = filteredAlarms().first(where: { $0.id == alarmId }) else { return }
+              let alarm = filteredAlarms().first(where: { $0.id == alarmId }) else {
+            AppLogger.warning("Could not find alarm for indexPath: \(indexPath)", category: .ui)
+            return
+        }
 
+        AppLogger.cellSelected("Alarm: \(alarm.displayTitle) at \(indexPath)")
         UIView.hapticFeedback(style: .light)
 
         let editVC = AlarmDetailViewController()
@@ -323,6 +336,7 @@ extension WeeklyAlarmViewController: UITableViewDelegate {
             sheet.prefersGrabberVisible = true
         }
 
+        AppLogger.debug("Presenting AlarmDetailViewController for editing", category: .navigation)
         present(editVC, animated: true)
     }
 
@@ -330,10 +344,12 @@ extension WeeklyAlarmViewController: UITableViewDelegate {
         let deleteAction = UIContextualAction(style: .destructive, title: nil) { [weak self] _, _, completion in
             guard let alarmId = self?.dataSource.itemIdentifier(for: indexPath),
                   let alarm = self?.filteredAlarms().first(where: { $0.id == alarmId }) else {
+                AppLogger.warning("Could not find alarm for swipe delete", category: .action)
                 completion(false)
                 return
             }
 
+            AppLogger.buttonTapped("Swipe Delete: \(alarm.displayTitle)")
             UIView.hapticFeedback(style: .medium)
             self?.alarmStore.deleteAlarm(alarm)
             completion(true)
@@ -350,20 +366,25 @@ extension WeeklyAlarmViewController: UITableViewDelegate {
 
 extension WeeklyAlarmViewController: AlarmCellDelegate {
     func alarmCell(_ cell: AlarmCell, didToggleAlarm alarm: Alarm, isOn: Bool) {
+        AppLogger.switchToggled("Alarm: \(alarm.displayTitle)", value: isOn)
+
         if isOn {
             // Turning ON
             if alarm.isSkippingNext {
                 // Clear skip status
+                AppLogger.info("Clearing skip status for alarm: \(alarm.displayTitle)", category: .alarm)
                 UIView.hapticFeedback(style: .light)
                 alarmStore.clearSkipOnceAlarm(alarm)
             } else if !alarm.isEnabled {
                 // Enable disabled alarm
+                AppLogger.info("Enabling alarm: \(alarm.displayTitle)", category: .alarm)
                 UIView.hapticFeedback(style: .light)
                 alarmStore.toggleAlarm(alarm, enabled: true)
             }
         } else {
             // Turning OFF
             if alarm.isEnabled && !alarm.isSkippingNext {
+                AppLogger.debug("Showing skip option action sheet", category: .ui)
                 // Show skip option for weekly alarms
                 let actionSheet = UIAlertController(
                     title: alarm.displayTitle,
@@ -372,18 +393,21 @@ extension WeeklyAlarmViewController: AlarmCellDelegate {
                 )
 
                 let skipOnceAction = UIAlertAction(title: "1번만 끄기", style: .default) { [weak self] _ in
+                    AppLogger.buttonTapped("Skip Once: \(alarm.displayTitle)")
                     UIView.hapticFeedback(style: .light)
                     self?.alarmStore.skipOnceAlarm(alarm)
                 }
                 actionSheet.addAction(skipOnceAction)
 
                 let deleteAction = UIAlertAction(title: "완전히 끄기", style: .destructive) { [weak self] _ in
+                    AppLogger.buttonTapped("Delete Completely: \(alarm.displayTitle)")
                     UIView.hapticFeedback(style: .medium)
                     self?.alarmStore.deleteAlarm(alarm)
                 }
                 actionSheet.addAction(deleteAction)
 
                 let cancelAction = UIAlertAction(title: "취소", style: .cancel) { [weak self] _ in
+                    AppLogger.buttonTapped("Cancel skip/delete action sheet")
                     self?.applySnapshot()
                     self?.reconfigureVisibleCells()
                 }
@@ -399,9 +423,13 @@ extension WeeklyAlarmViewController: AlarmCellDelegate {
 
 extension WeeklyAlarmViewController: AlarmDetailViewControllerDelegate {
     func alarmDetailViewController(_ controller: AlarmDetailViewController, didSaveAlarm hour: Int, minute: Int, title: String, weekdays: Set<Weekday>?, specificDate: Date?, soundName: String, existingAlarm: Alarm?) {
+        AppLogger.info("AlarmDetailViewController delegate called, isEdit: \(existingAlarm != nil)", category: .alarm)
+
         if let existing = existingAlarm {
+            AppLogger.debug("Updating existing alarm: \(existing.displayTitle)", category: .alarm)
             alarmStore.updateAlarm(existing, hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate, soundName: soundName)
         } else {
+            AppLogger.debug("Creating new alarm at \(hour):\(minute)", category: .alarm)
             alarmStore.createAlarm(hour: hour, minute: minute, title: title, weekdays: weekdays, specificDate: specificDate, soundName: soundName)
         }
     }
