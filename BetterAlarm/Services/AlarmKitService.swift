@@ -109,6 +109,9 @@ final class AlarmKitService {
     // 스누즈 시간 (5분)
     static let snoozeInterval: TimeInterval = 5 * 60
 
+    // ⭐ 스케줄링 중 플래그 - 스케줄링 중에는 완료 콜백 무시
+    private var isScheduling = false
+
     private init() {
         AppLogger.info("AlarmKitService initializing", category: .alarmKit)
         startMonitoring()
@@ -173,8 +176,11 @@ final class AlarmKitService {
                 AppLogger.debug("Alarm updates received, count: \(alarms.count)", category: .alarmKit)
 
                 if alarms.isEmpty {
-                    // 알람이 없어졌다면 (정지됨) - 완료 콜백 호출
-                    if let completedAlarm = self.currentScheduledAlarm {
+                    // ⭐ 스케줄링 중이면 완료 콜백 무시 (stopAllAlarms로 인한 빈 상태)
+                    if self.isScheduling {
+                        AppLogger.debug("Ignoring empty alarms during scheduling", category: .alarmKit)
+                    } else if let completedAlarm = self.currentScheduledAlarm {
+                        // 알람이 없어졌다면 (정지됨) - 완료 콜백 호출
                         AppLogger.info("Alarm completed detected: \(completedAlarm.displayTitle)", category: .alarmKit)
                         self.onAlarmCompleted?(completedAlarm)
                     }
@@ -238,6 +244,9 @@ final class AlarmKitService {
             return
         }
 
+        // ⭐ 스케줄링 시작 표시
+        isScheduling = true
+
         // 기존 알람 모두 중지
         await stopAllAlarms()
 
@@ -249,12 +258,14 @@ final class AlarmKitService {
             // 다음 알람까지의 시간 계산
             guard let triggerDate = alarm.nextTriggerDate() else {
                 AppLogger.warning("No trigger date for alarm", category: .alarmKit)
+                isScheduling = false
                 return
             }
             let duration = triggerDate.timeIntervalSinceNow
 
             guard duration > 0 else {
                 AppLogger.warning("Trigger date is in the past: \(triggerDate)", category: .alarmKit)
+                isScheduling = false
                 return
             }
 
@@ -281,6 +292,9 @@ final class AlarmKitService {
         } catch {
             AppLogger.error("Failed to schedule alarm: \(error)", category: .alarmKit)
         }
+
+        // ⭐ 스케줄링 완료 표시
+        isScheduling = false
     }
 
     // MARK: - Cancel/Stop

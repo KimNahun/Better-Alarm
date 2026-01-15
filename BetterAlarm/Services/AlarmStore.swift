@@ -269,6 +269,12 @@ class AlarmStore {
 
         let existingAlarm = alarms[index]
 
+        // ⭐ 이미 비활성화된 알람은 중복 처리 방지
+        guard existingAlarm.isEnabled else {
+            AppLogger.debug("Alarm already disabled, skipping completion handling: \(existingAlarm.displayTitle)", category: .alarm)
+            return
+        }
+
         switch existingAlarm.schedule {
         case .once, .specificDate:
             // 1회성 알람은 비활성화
