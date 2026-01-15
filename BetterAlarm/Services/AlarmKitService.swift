@@ -69,9 +69,6 @@ final class AlarmKitService {
     // 스케줄된 알람 ID 추적
     private var currentAlarmId: UUID?
 
-    // 현재 알람의 사운드 ID 저장
-    private var currentSoundId: String = "default"
-
     // 알람 모니터링 Task
     private var monitorTask: Task<Void, Never>?
 
@@ -154,7 +151,6 @@ final class AlarmKitService {
         do {
             let id = UUID()
             currentAlarmId = id
-            currentSoundId = alarm.soundName  // 사운드 ID 저장
 
             // 다음 알람까지의 시간 계산
             guard let triggerDate = alarm.nextTriggerDate() else { return }
@@ -292,9 +288,5 @@ final class AlarmKitService {
 
     func getCurrentAlarmId() -> UUID? {
         return currentAlarmId
-    }
-
-    func getCurrentSoundId() -> String {
-        return currentSoundId
     }
 }

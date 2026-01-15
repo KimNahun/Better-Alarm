@@ -27,7 +27,6 @@ class AlarmDetailViewController: UIViewController {
     private var selectedWeekdays: Set<Weekday> = []
     private var specificDate: Date?
     private var repeatMode: Int = 0
-    private var selectedSoundId: String = "default"
 
     private var gradientLayer: CAGradientLayer?
 
@@ -129,40 +128,6 @@ class AlarmDetailViewController: UIViewController {
         return field
     }()
 
-    private let soundCard: GlassCardView = {
-        let view = GlassCardView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.cornerRadius = 16
-        return view
-    }()
-
-    private let soundFieldLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "알람 소리"
-        label.font = .systemFont(ofSize: 13, weight: .medium)
-        label.textColor = .textSecondary
-        return label
-    }()
-
-    private let soundValueLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "기본"
-        label.font = .systemFont(ofSize: 17)
-        label.textColor = .textPrimary
-        return label
-    }()
-
-    private let soundArrowIcon: UIImageView = {
-        let imageView = UIImageView()
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.image = UIImage(systemName: "chevron.right")
-        imageView.tintColor = .textTertiary
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
-
     private let repeatCard: GlassCardView = {
         let view = GlassCardView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -238,7 +203,6 @@ class AlarmDetailViewController: UIViewController {
         selectedHour = alarm.hour
         selectedMinute = alarm.minute
         alarmTitle = alarm.title
-        selectedSoundId = alarm.soundName
 
         switch alarm.schedule {
         case .once:
@@ -269,16 +233,6 @@ class AlarmDetailViewController: UIViewController {
         contentView.addSubview(titleCard)
         titleCard.addSubview(titleFieldLabel)
         titleCard.addSubview(titleTextField)
-
-        contentView.addSubview(soundCard)
-        soundCard.addSubview(soundFieldLabel)
-        soundCard.addSubview(soundValueLabel)
-        soundCard.addSubview(soundArrowIcon)
-
-        // Add tap gesture to sound card
-        let soundTapGesture = UITapGestureRecognizer(target: self, action: #selector(soundCardTapped))
-        soundCard.addGestureRecognizer(soundTapGesture)
-        soundCard.isUserInteractionEnabled = true
 
         contentView.addSubview(repeatCard)
         repeatCard.addSubview(repeatLabel)
@@ -357,24 +311,7 @@ class AlarmDetailViewController: UIViewController {
             titleTextField.bottomAnchor.constraint(equalTo: titleCard.bottomAnchor, constant: -14),
             titleTextField.heightAnchor.constraint(equalToConstant: 36),
 
-            // Sound card constraints
-            soundCard.topAnchor.constraint(equalTo: titleCard.bottomAnchor, constant: 16),
-            soundCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            soundCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-
-            soundFieldLabel.topAnchor.constraint(equalTo: soundCard.topAnchor, constant: 14),
-            soundFieldLabel.leadingAnchor.constraint(equalTo: soundCard.leadingAnchor, constant: 16),
-
-            soundValueLabel.topAnchor.constraint(equalTo: soundFieldLabel.bottomAnchor, constant: 8),
-            soundValueLabel.leadingAnchor.constraint(equalTo: soundCard.leadingAnchor, constant: 16),
-            soundValueLabel.bottomAnchor.constraint(equalTo: soundCard.bottomAnchor, constant: -14),
-
-            soundArrowIcon.centerYAnchor.constraint(equalTo: soundCard.centerYAnchor),
-            soundArrowIcon.trailingAnchor.constraint(equalTo: soundCard.trailingAnchor, constant: -16),
-            soundArrowIcon.widthAnchor.constraint(equalToConstant: 12),
-            soundArrowIcon.heightAnchor.constraint(equalToConstant: 16),
-
-            repeatCard.topAnchor.constraint(equalTo: soundCard.bottomAnchor, constant: 16),
+            repeatCard.topAnchor.constraint(equalTo: titleCard.bottomAnchor, constant: 16),
             repeatCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             repeatCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             repeatCard.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -40),
@@ -431,7 +368,6 @@ class AlarmDetailViewController: UIViewController {
 
         titleTextField.text = alarmTitle
         repeatSegmentControl.selectedSegmentIndex = repeatMode
-        updateSoundLabel()
 
         if repeatMode == 2, let date = specificDate {
             datePicker.date = date
@@ -516,7 +452,7 @@ class AlarmDetailViewController: UIViewController {
             title: alarmTitle,
             weekdays: weekdays,
             specificDate: date,
-            soundName: selectedSoundId,
+            soundName: "default",
             existingAlarm: existingAlarm
         )
         dismiss(animated: true)
@@ -571,27 +507,6 @@ class AlarmDetailViewController: UIViewController {
     @objc private func dismissKeyboard() {
         view.endEditing(true)
     }
-
-    @objc private func soundCardTapped() {
-        UIView.hapticFeedback(style: .light)
-        dismissKeyboard()
-
-        let soundPicker = SoundPickerViewController(selectedSoundId: selectedSoundId)
-        soundPicker.delegate = self
-        soundPicker.modalPresentationStyle = .pageSheet
-
-        if let sheet = soundPicker.sheetPresentationController {
-            sheet.detents = [.medium()]
-            sheet.prefersGrabberVisible = true
-        }
-
-        present(soundPicker, animated: true)
-    }
-
-    private func updateSoundLabel() {
-        let sound = AlarmSound.sound(forId: selectedSoundId)
-        soundValueLabel.text = sound.name
-    }
 }
 
 // MARK: - UITextFieldDelegate
@@ -600,14 +515,5 @@ extension AlarmDetailViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         return true
-    }
-}
-
-// MARK: - SoundPickerDelegate
-
-extension AlarmDetailViewController: SoundPickerDelegate {
-    func soundPicker(_ picker: SoundPickerViewController, didSelectSound sound: AlarmSound) {
-        selectedSoundId = sound.id
-        updateSoundLabel()
     }
 }
