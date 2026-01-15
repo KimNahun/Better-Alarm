@@ -34,6 +34,14 @@ class AlarmCell: UITableViewCell {
         return label
     }()
 
+    private let periodLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 16, weight: .medium)
+        label.textColor = .textSecondary
+        return label
+    }()
+
     private let typeLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -62,6 +70,7 @@ class AlarmCell: UITableViewCell {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = .systemFont(ofSize: 12, weight: .medium)
         label.textColor = UIColor(red: 1.0, green: 0.6, blue: 0.2, alpha: 1.0)  // Orange
+        label.numberOfLines = 2
         label.isHidden = true
         return label
     }()
@@ -130,7 +139,6 @@ class AlarmCell: UITableViewCell {
 
             timeLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 14),
             timeLabel.leadingAnchor.constraint(equalTo: accentLine.trailingAnchor, constant: 14),
-            // Fixed minimum width for consistent type label positioning
             timeLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 110),
 
             typeLabel.firstBaselineAnchor.constraint(equalTo: timeLabel.firstBaselineAnchor),
@@ -158,14 +166,15 @@ class AlarmCell: UITableViewCell {
         configureTypeIndicator(for: alarm)
         configureSkipInfo(for: alarm)
 
-        // If alarm is skipping next, show switch as OFF and dim the cell
-        let isActivelyOn = alarm.isEnabled && !alarm.isSkippingNext
-        toggleSwitch.setOn(isActivelyOn, animated: false)
-        updateAppearance(isEnabled: isActivelyOn, isSkipping: alarm.isSkippingNext)
+        // 스위치 상태 설정
+        // 스킵 중이면 스위치는 ON이지만 dimmed 상태
+        toggleSwitch.setOn(alarm.isEnabled, animated: false)
+        updateAppearance(isEnabled: alarm.isEnabled, isSkipping: alarm.isSkippingNext)
     }
 
     private func configureSkipInfo(for alarm: Alarm) {
-        guard alarm.isSkippingNext, let skippedDate = alarm.skippedDate else {
+        // 스킵 중이 아니면 숨김
+        guard alarm.isEnabled, alarm.isSkippingNext, let skippedDate = alarm.skippedDate else {
             skipInfoLabel.isHidden = true
             skipInfoLabel.text = nil
             return
@@ -177,20 +186,25 @@ class AlarmCell: UITableViewCell {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ko_KR")
 
-        // Get the skipped weekday
+        // 스킵된 날짜의 요일
         let skippedWeekday = calendar.component(.weekday, from: skippedDate)
         let skippedWeekdayName = Weekday(rawValue: skippedWeekday)?.shortName ?? ""
+        
+        // 스킵된 날짜 포맷
+        let skippedMonth = calendar.component(.month, from: skippedDate)
+        let skippedDay = calendar.component(.day, from: skippedDate)
 
-        // Get next trigger date after the skipped one
+        // 다음 울릴 날짜 계산 (스킵된 날짜 이후)
         if let nextDate = alarm.nextTriggerDate() {
             let nextMonth = calendar.component(.month, from: nextDate)
             let nextDay = calendar.component(.day, from: nextDate)
             let nextWeekday = calendar.component(.weekday, from: nextDate)
             let nextWeekdayName = Weekday(rawValue: nextWeekday)?.shortName ?? ""
 
-            skipInfoLabel.text = "\(skippedWeekdayName)요일 스킵됨. 다음 알람은 \(nextMonth)월 \(nextDay)일 \(nextWeekdayName)요일"
+            // "이번 주 수요일 스킵됨\n다음 알람: 1월 22일 (수)"
+            skipInfoLabel.text = "⏭️ \(skippedMonth)월 \(skippedDay)일 (\(skippedWeekdayName)) 스킵됨\n➡️ 다음 알람: \(nextMonth)월 \(nextDay)일 (\(nextWeekdayName))"
         } else {
-            skipInfoLabel.text = "\(skippedWeekdayName)요일 스킵됨"
+            skipInfoLabel.text = "⏭️ \(skippedMonth)월 \(skippedDay)일 (\(skippedWeekdayName)) 스킵됨"
         }
     }
 
@@ -232,8 +246,22 @@ class AlarmCell: UITableViewCell {
     }
 
     private func updateAppearance(isEnabled: Bool, isSkipping: Bool = false) {
-        let alpha: CGFloat = isEnabled ? 1.0 : 0.5
-        let containerAlpha: CGFloat = isEnabled ? 1.0 : 0.7
+        let alpha: CGFloat
+        let containerAlpha: CGFloat
+        
+        if !isEnabled {
+            // 완전히 비활성화
+            alpha = 0.4
+            containerAlpha = 0.6
+        } else if isSkipping {
+            // 스킵 중 (활성화되어 있지만 다음 알람 스킵)
+            alpha = 0.7
+            containerAlpha = 0.85
+        } else {
+            // 정상 활성화
+            alpha = 1.0
+            containerAlpha = 1.0
+        }
 
         UIView.animate(withDuration: 0.2) {
             self.timeLabel.alpha = alpha
@@ -243,8 +271,8 @@ class AlarmCell: UITableViewCell {
             self.accentLine.alpha = alpha
             self.containerView.alpha = containerAlpha
 
-            // Skip info label should remain visible when skipping
-            self.skipInfoLabel.alpha = isSkipping ? 1.0 : alpha
+            // 스킵 정보는 항상 밝게
+            self.skipInfoLabel.alpha = 1.0
         }
     }
 
@@ -280,9 +308,11 @@ class AlarmCell: UITableViewCell {
         toggleSwitch.isOn = false
         containerView.transform = .identity
         containerView.alpha = 1.0
+        timeLabel.alpha = 1.0
+        titleLabel.alpha = 1.0
+        repeatLabel.alpha = 1.0
         typeLabel.alpha = 1.0
         accentLine.alpha = 1.0
         skipInfoLabel.alpha = 1.0
     }
-
 }

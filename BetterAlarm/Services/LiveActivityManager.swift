@@ -2,8 +2,6 @@ import Foundation
 import ActivityKit
 
 // MARK: - Alarm Activity Attributes
-// This definition must exist in both main app and widget targets
-// as they are separate compilation units
 
 struct AlarmActivityAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
@@ -11,6 +9,15 @@ struct AlarmActivityAttributes: ActivityAttributes {
         var nextAlarmDate: String
         var alarmTitle: String
         var isSkipped: Bool
+        var isEmpty: Bool  // 알람 없음 상태
+        
+        init(nextAlarmTime: String, nextAlarmDate: String, alarmTitle: String, isSkipped: Bool, isEmpty: Bool = false) {
+            self.nextAlarmTime = nextAlarmTime
+            self.nextAlarmDate = nextAlarmDate
+            self.alarmTitle = alarmTitle
+            self.isSkipped = isSkipped
+            self.isEmpty = isEmpty
+        }
     }
 
     var alarmId: String
@@ -24,12 +31,10 @@ class LiveActivityManager {
 
     private var currentActivity: Activity<AlarmActivityAttributes>?
 
-    // UserDefaults key for Live Activity enabled state
     private let liveActivityEnabledKey = "liveActivityEnabled"
 
     var isLiveActivityEnabled: Bool {
         get {
-            // Default to true if not set
             if UserDefaults.standard.object(forKey: liveActivityEnabledKey) == nil {
                 return true
             }
@@ -40,30 +45,24 @@ class LiveActivityManager {
         }
     }
 
-    // Check if Live Activities are supported and authorized
     var areActivitiesAvailable: Bool {
         return ActivityAuthorizationInfo().areActivitiesEnabled
     }
 
-    // Check if there's currently an active Live Activity
     var hasActiveActivity: Bool {
-        // Check both our reference and the system's active activities
         if let activity = currentActivity {
-            // Verify the activity is still active in the system
             return Activity<AlarmActivityAttributes>.activities.contains { $0.id == activity.id }
         }
         return !Activity<AlarmActivityAttributes>.activities.isEmpty
     }
 
     private init() {
-        // Sync with any existing activity on init
         syncWithExistingActivity()
     }
 
     // MARK: - Sync with System
 
     private func syncWithExistingActivity() {
-        // If there's an existing activity in the system, sync our reference
         if let existingActivity = Activity<AlarmActivityAttributes>.activities.first {
             currentActivity = existingActivity
         }
@@ -99,20 +98,50 @@ class LiveActivityManager {
             print("[LiveActivity] Failed to start: \(error)")
         }
     }
-
-    // MARK: - Restart Activity (if dismissed by user)
-
-    func restartActivityIfNeeded(with alarm: Alarm?) {
-        guard isLiveActivityEnabled else { return }
-        guard let alarm = alarm else {
-            endActivity()
+    
+    // MARK: - Start Empty Activity (알람 없음 상태)
+    
+    func startEmptyActivity() {
+        guard isLiveActivityEnabled else {
+            print("[LiveActivity] Live Activity is disabled by user")
             return
         }
 
-        // If user has enabled Live Activity but there's no active one, restart it
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            print("[LiveActivity] Live Activities are not enabled in system")
+            return
+        }
+
+        endActivity()
+
+        let attributes = AlarmActivityAttributes(alarmId: "empty")
+        let contentState = createEmptyContentState()
+
+        do {
+            let activity = try Activity.request(
+                attributes: attributes,
+                content: .init(state: contentState, staleDate: nil),
+                pushType: nil
+            )
+            currentActivity = activity
+            print("[LiveActivity] Started empty activity")
+        } catch {
+            print("[LiveActivity] Failed to start empty activity: \(error)")
+        }
+    }
+
+    // MARK: - Restart Activity
+
+    func restartActivityIfNeeded(with alarm: Alarm?) {
+        guard isLiveActivityEnabled else { return }
+        
         if !hasActiveActivity {
             print("[LiveActivity] No active activity found, restarting...")
-            startActivity(with: alarm)
+            if let alarm = alarm {
+                startActivity(with: alarm)
+            } else {
+                startEmptyActivity()
+            }
         }
     }
 
@@ -124,6 +153,8 @@ class LiveActivityManager {
         if enabled {
             if let alarm = alarm {
                 startActivity(with: alarm)
+            } else {
+                startEmptyActivity()
             }
         } else {
             endActivity()
@@ -133,6 +164,8 @@ class LiveActivityManager {
     // MARK: - Update Activity
 
     func updateActivity(with alarm: Alarm) {
+        guard isLiveActivityEnabled else { return }
+        
         guard let activity = currentActivity else {
             startActivity(with: alarm)
             return
@@ -143,6 +176,24 @@ class LiveActivityManager {
         Task {
             await activity.update(ActivityContent(state: contentState, staleDate: nil))
             print("[LiveActivity] Updated activity for: \(alarm.displayTitle)")
+        }
+    }
+    
+    // MARK: - Update Empty State
+    
+    func updateEmptyState() {
+        guard isLiveActivityEnabled else { return }
+        
+        guard let activity = currentActivity else {
+            startEmptyActivity()
+            return
+        }
+
+        let contentState = createEmptyContentState()
+
+        Task {
+            await activity.update(ActivityContent(state: contentState, staleDate: nil))
+            print("[LiveActivity] Updated to empty state")
         }
     }
 
@@ -159,15 +210,20 @@ class LiveActivityManager {
     }
 
     // MARK: - Helper
+    
+    private func createEmptyContentState() -> AlarmActivityAttributes.ContentState {
+        return AlarmActivityAttributes.ContentState(
+            nextAlarmTime: "--:--",
+            nextAlarmDate: "설정된 알람 없음",
+            alarmTitle: "알람을 추가해주세요",
+            isSkipped: false,
+            isEmpty: true
+        )
+    }
 
     private func createContentState(for alarm: Alarm) -> AlarmActivityAttributes.ContentState {
         guard let nextDate = alarm.nextTriggerDate() else {
-            return AlarmActivityAttributes.ContentState(
-                nextAlarmTime: "--:--",
-                nextAlarmDate: "알람 없음",
-                alarmTitle: "",
-                isSkipped: false
-            )
+            return createEmptyContentState()
         }
 
         let calendar = Calendar.current
@@ -189,12 +245,19 @@ class LiveActivityManager {
             dateFormatter.dateFormat = "M월 d일 (E)"
             dateString = dateFormatter.string(from: nextDate)
         }
+        
+        // 스킵 상태면 표시
+        var title = alarm.displayTitle
+        if alarm.isSkippingNext {
+            title = "⏭️ " + title + " (스킵됨)"
+        }
 
         return AlarmActivityAttributes.ContentState(
             nextAlarmTime: timeString,
             nextAlarmDate: dateString,
-            alarmTitle: alarm.displayTitle,
-            isSkipped: alarm.isSkippingNext
+            alarmTitle: title,
+            isSkipped: alarm.isSkippingNext,
+            isEmpty: false
         )
     }
 }

@@ -85,7 +85,7 @@ class AlarmStore {
         alarms.append(alarm)
         sortAlarms()
         saveAlarms()
-        scheduleAlarm(alarm)
+        scheduleNextAlarm()
         notifyUpdate()
         updateLiveActivity()
     }
@@ -109,19 +109,18 @@ class AlarmStore {
         updated.schedule = schedule
         updated.soundName = soundName
 
-        cancelAlarm(alarm)
         alarms[index] = updated
         sortAlarms()
         saveAlarms()
-        scheduleAlarm(updated)
+        scheduleNextAlarm()
         notifyUpdate()
         updateLiveActivity()
     }
 
     func deleteAlarm(_ alarm: Alarm) {
-        cancelAlarm(alarm)
         alarms.removeAll { $0.id == alarm.id }
         saveAlarms()
+        scheduleNextAlarm()
         notifyUpdate()
         updateLiveActivity()
     }
@@ -140,13 +139,11 @@ class AlarmStore {
 
         if enabled {
             updated.skippedDate = nil
-            scheduleAlarm(updated)
-        } else {
-            cancelAlarm(updated)
         }
 
         alarms[index] = updated
         saveAlarms()
+        scheduleNextAlarm()
         notifyUpdate()
         updateLiveActivity()
     }
@@ -160,12 +157,10 @@ class AlarmStore {
         var updated = alarm
         updated.skippedDate = nextDate
 
-        cancelAlarm(alarm)
-        scheduleAlarm(updated)
-
         alarms[index] = updated
         sortAlarms()
         saveAlarms()
+        scheduleNextAlarm()
         notifyUpdate()
         updateLiveActivity()
     }
@@ -177,22 +172,22 @@ class AlarmStore {
         var updated = alarm
         updated.skippedDate = nil
 
-        cancelAlarm(alarm)
-        scheduleAlarm(updated)
-
         alarms[index] = updated
         sortAlarms()
         saveAlarms()
+        scheduleNextAlarm()
         notifyUpdate()
         updateLiveActivity()
     }
 
-    // MARK: - One-time Alarm Cleanup
+    // MARK: - One-time Alarm Completion
+    // 1회성 알람이 완료되면 삭제하지 않고 비활성화만 함
 
     func handleAlarmCompleted(_ alarm: Alarm) {
         switch alarm.schedule {
         case .once, .specificDate:
-            deleteAlarm(alarm)
+            // 삭제하지 않고 비활성화만!
+            toggleAlarm(alarm, enabled: false)
         case .weekly:
             if alarm.skippedDate != nil {
                 clearSkipOnceAlarm(alarm)
@@ -200,12 +195,14 @@ class AlarmStore {
         }
     }
 
+    // 사용자가 수동으로 만료된 1회성 알람 정리 (선택적)
     func cleanupExpiredOneTimeAlarms() {
         let now = Date()
         let alarmsToDelete = alarms.filter { alarm in
             switch alarm.schedule {
             case .once, .specificDate:
-                return alarm.nextTriggerDate(from: now) == nil
+                // 비활성화되어 있고, 다음 트리거 날짜가 없는 경우만
+                return !alarm.isEnabled && alarm.nextTriggerDate(from: now) == nil
             case .weekly:
                 return false
             }
@@ -220,8 +217,25 @@ class AlarmStore {
 
     var nextAlarm: Alarm? {
         return alarms
+            .filter { $0.isEnabled && !$0.isSkippingNext }
+            .compactMap { alarm -> (Alarm, Date)? in
+                guard let date = alarm.nextTriggerDate() else { return nil }
+                return (alarm, date)
+            }
+            .min { $0.1 < $1.1 }?
+            .0
+    }
+    
+    // 스킵 중인 알람 포함해서 다음 알람 (Live Activity용)
+    var nextAlarmIncludingSkipped: Alarm? {
+        return alarms
             .filter { $0.isEnabled }
-            .min { ($0.nextTriggerDate() ?? .distantFuture) < ($1.nextTriggerDate() ?? .distantFuture) }
+            .compactMap { alarm -> (Alarm, Date)? in
+                guard let date = alarm.nextTriggerDate() else { return nil }
+                return (alarm, date)
+            }
+            .min { $0.1 < $1.1 }?
+            .0
     }
 
     var nextAlarmDisplayString: String? {
@@ -248,45 +262,44 @@ class AlarmStore {
     }
 
     // MARK: - Alarm Scheduling
+    // AlarmKit은 한 번에 하나의 알람만 스케줄 가능하므로
+    // 가장 가까운 다음 알람만 스케줄
 
-    private func scheduleAlarm(_ alarm: Alarm) {
+    private func scheduleNextAlarm() {
         Task { @MainActor in
-            await AlarmKitService.shared.scheduleAlarm(for: alarm)
-        }
-    }
-
-    private func cancelAlarm(_ alarm: Alarm) {
-        Task { @MainActor in
-            AlarmKitService.shared.cancelAlarm(for: alarm)
+            await AlarmKitService.shared.stopAllAlarms()
+            
+            if let next = nextAlarm {
+                await AlarmKitService.shared.scheduleAlarm(for: next)
+            }
         }
     }
 
     func rescheduleAllAlarms() {
-        Task { @MainActor in
-            await AlarmKitService.shared.stopAllAlarms()
-            if let nextAlarm = nextAlarm, nextAlarm.isEnabled {
-                await AlarmKitService.shared.scheduleAlarm(for: nextAlarm)
-            }
-        }
+        scheduleNextAlarm()
     }
 
     // MARK: - Live Activity
 
     func updateLiveActivity() {
-        let alarm = nextAlarm
         Task { @MainActor in
-            guard let alarm = alarm else {
-                LiveActivityManager.shared.endActivity()
-                return
+            // 활성화된 알람이 있으면 Live Activity 업데이트
+            if let alarm = nextAlarmIncludingSkipped {
+                LiveActivityManager.shared.updateActivity(with: alarm)
+            } else {
+                // 알람이 없으면 빈 상태로 업데이트 (종료하지 않음)
+                LiveActivityManager.shared.updateEmptyState()
             }
-            LiveActivityManager.shared.updateActivity(with: alarm)
         }
     }
 
     func startLiveActivity() {
-        guard let alarm = nextAlarm else { return }
         Task { @MainActor in
-            LiveActivityManager.shared.startActivity(with: alarm)
+            if let alarm = nextAlarmIncludingSkipped {
+                LiveActivityManager.shared.startActivity(with: alarm)
+            } else {
+                LiveActivityManager.shared.startEmptyActivity()
+            }
         }
     }
 }

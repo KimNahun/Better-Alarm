@@ -17,6 +17,16 @@ struct AlarmActivityAttributes: ActivityAttributes {
         var nextAlarmDate: String
         var alarmTitle: String
         var isSkipped: Bool
+        var isEmpty: Bool  // 알람 없음 상태 추가
+        
+        // 기존 코드 호환을 위한 기본값 init
+        init(nextAlarmTime: String, nextAlarmDate: String, alarmTitle: String, isSkipped: Bool, isEmpty: Bool = false) {
+            self.nextAlarmTime = nextAlarmTime
+            self.nextAlarmDate = nextAlarmDate
+            self.alarmTitle = alarmTitle
+            self.isSkipped = isSkipped
+            self.isEmpty = isEmpty
+        }
     }
 
     var alarmId: String
@@ -32,6 +42,7 @@ private extension Color {
     static let backgroundPurple = Color(red: 0.12, green: 0.1, blue: 0.22)
     static let glassWhite = Color.white.opacity(0.1)
     static let glassBorder = Color.white.opacity(0.2)
+    static let emptyGray = Color(red: 0.5, green: 0.5, blue: 0.55)
 }
 
 // MARK: - Live Activity Widget
@@ -45,106 +56,146 @@ struct BetterAlarmWidgetLiveActivity: Widget {
             DynamicIsland {
                 // Expanded UI
                 DynamicIslandExpandedRegion(.leading) {
-                    HStack(spacing: 10) {
-                        // Alarm icon with gradient background
-                        ZStack {
-                            Circle()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [.accentLavender, .accentPink],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .frame(width: 36, height: 36)
-
-                            Image(systemName: "alarm.fill")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.white)
-                        }
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(context.state.nextAlarmDate)
-                                .font(.caption2)
+                    if context.state.isEmpty {
+                        // 빈 상태
+                        HStack(spacing: 10) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.emptyGray.opacity(0.3))
+                                    .frame(width: 36, height: 36)
+                                
+                                Image(systemName: "alarm")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.emptyGray)
+                            }
+                            
+                            Text("알람 없음")
+                                .font(.subheadline)
                                 .fontWeight(.medium)
-                                .foregroundColor(.white.opacity(0.6))
+                                .foregroundColor(.emptyGray)
+                        }
+                    } else {
+                        // 알람 있는 상태
+                        HStack(spacing: 10) {
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [.accentLavender, .accentPink],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: 36, height: 36)
 
-                            Text(context.state.nextAlarmTime)
-                                .font(.title3)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
+                                Image(systemName: "alarm.fill")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.white)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(context.state.nextAlarmDate)
+                                    .font(.caption2)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.white.opacity(0.6))
+
+                                Text(context.state.nextAlarmTime)
+                                    .font(.title3)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.white)
+                            }
                         }
                     }
                 }
 
                 DynamicIslandExpandedRegion(.trailing) {
-                    VStack(alignment: .trailing, spacing: 4) {
-                        if context.state.isSkipped {
-                            HStack(spacing: 4) {
-                                Image(systemName: "forward.fill")
-                                    .font(.caption2)
-                                Text("스킵")
-                                    .font(.caption2)
-                                    .fontWeight(.semibold)
+                    if !context.state.isEmpty {
+                        VStack(alignment: .trailing, spacing: 4) {
+                            if context.state.isSkipped {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "forward.fill")
+                                        .font(.caption2)
+                                    Text("스킵")
+                                        .font(.caption2)
+                                        .fontWeight(.semibold)
+                                }
+                                .foregroundColor(.skipOrange)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.skipOrange.opacity(0.2))
+                                .clipShape(Capsule())
                             }
-                            .foregroundColor(.skipOrange)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.skipOrange.opacity(0.2))
-                            .clipShape(Capsule())
                         }
                     }
                 }
 
                 DynamicIslandExpandedRegion(.bottom) {
-                    HStack {
-                        Text(context.state.alarmTitle)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(.white.opacity(0.9))
+                    if context.state.isEmpty {
+                        Text("알람을 추가해주세요")
+                            .font(.caption)
+                            .foregroundColor(.emptyGray)
+                            .padding(.top, 4)
+                    } else {
+                        HStack {
+                            Text(context.state.alarmTitle)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white.opacity(0.9))
 
-                        Spacer()
+                            Spacer()
+                        }
+                        .padding(.top, 4)
                     }
-                    .padding(.top, 4)
                 }
             } compactLeading: {
                 ZStack {
                     Circle()
                         .fill(
-                            LinearGradient(
-                                colors: [.accentLavender, .accentPink],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
+                            context.state.isEmpty
+                                ? AnyShapeStyle(Color.emptyGray.opacity(0.3))
+                                : AnyShapeStyle(LinearGradient(
+                                    colors: [.accentLavender, .accentPink],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ))
                         )
                         .frame(width: 24, height: 24)
 
-                    Image(systemName: "alarm.fill")
+                    Image(systemName: context.state.isEmpty ? "alarm" : "alarm.fill")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundColor(context.state.isEmpty ? .emptyGray : .white)
                 }
             } compactTrailing: {
-                Text(context.state.nextAlarmTime)
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundColor(.accentLavender)
+                if context.state.isEmpty {
+                    Text("--:--")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.emptyGray)
+                } else {
+                    Text(context.state.nextAlarmTime)
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(context.state.isSkipped ? .skipOrange : .accentLavender)
+                }
             } minimal: {
                 ZStack {
                     Circle()
                         .fill(
-                            LinearGradient(
-                                colors: [.accentLavender, .accentPink],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
+                            context.state.isEmpty
+                                ? AnyShapeStyle(Color.emptyGray.opacity(0.3))
+                                : AnyShapeStyle(LinearGradient(
+                                    colors: [.accentLavender, .accentPink],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ))
                         )
 
-                    Image(systemName: "alarm.fill")
+                    Image(systemName: context.state.isEmpty ? "alarm" : "alarm.fill")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundColor(context.state.isEmpty ? .emptyGray : .white)
                 }
             }
-            .keylineTint(.accentLavender)
+            .keylineTint(context.state.isEmpty ? .emptyGray : .accentLavender)
         }
     }
 }
@@ -163,99 +214,165 @@ struct LockScreenView: View {
                 endPoint: .bottomTrailing
             )
 
-            // Content
-            HStack(spacing: 16) {
-                // Alarm icon with gradient circle
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [.accentLavender, .accentPink],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 52, height: 52)
-
-                    Image(systemName: "alarm.fill")
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundColor(.white)
-                }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    // Title and skip badge row
-                    HStack(spacing: 8) {
-                        Text("다음 알람")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.accentLavender)
-
-                        if context.state.isSkipped {
-                            HStack(spacing: 3) {
-                                Image(systemName: "forward.fill")
-                                    .font(.system(size: 8))
-                                Text("1회 스킵")
-                                    .font(.system(size: 10, weight: .semibold))
-                            }
-                            .foregroundColor(.skipOrange)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(Color.skipOrange.opacity(0.2))
-                            .clipShape(Capsule())
-                        }
-                    }
-
-                    // Time and date row
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text(context.state.nextAlarmTime)
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
-
-                        Text(context.state.nextAlarmDate)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(.white.opacity(0.6))
-                    }
-
-                    // Alarm title
-                    Text(context.state.alarmTitle)
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.8))
-                        .lineLimit(1)
-                }
-
-                Spacer()
-
-                // Decorative element
-                VStack {
-                    Image(systemName: "bell.and.waves.left.and.right.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(.white.opacity(0.15))
-                }
+            if context.state.isEmpty {
+                // 빈 상태 UI
+                emptyStateContent
+            } else {
+                // 알람이 있는 상태 UI
+                alarmContent
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
         }
         .activityBackgroundTint(.clear)
         .activitySystemActionForegroundColor(.white)
+    }
+    
+    // MARK: - Empty State Content
+    
+    private var emptyStateContent: some View {
+        HStack(spacing: 16) {
+            // Empty alarm icon
+            ZStack {
+                Circle()
+                    .fill(Color.emptyGray.opacity(0.2))
+                    .frame(width: 52, height: 52)
+                
+                Image(systemName: "alarm")
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundColor(.emptyGray)
+            }
+            
+            VStack(alignment: .leading, spacing: 8) {
+                Text("설정된 알람 없음")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.emptyGray)
+                
+                Text("알람을 추가해주세요")
+                    .font(.subheadline)
+                    .foregroundColor(.emptyGray.opacity(0.7))
+            }
+            
+            Spacer()
+            
+            // Decorative plus icon
+            Image(systemName: "plus.circle")
+                .font(.system(size: 24))
+                .foregroundColor(.emptyGray.opacity(0.3))
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+    }
+    
+    // MARK: - Alarm Content
+    
+    private var alarmContent: some View {
+        HStack(spacing: 16) {
+            // Alarm icon with gradient circle
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [.accentLavender, .accentPink],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 52, height: 52)
+
+                Image(systemName: "alarm.fill")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                // Title and skip badge row
+                HStack(spacing: 8) {
+                    Text("다음 알람")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.accentLavender)
+
+                    if context.state.isSkipped {
+                        HStack(spacing: 3) {
+                            Image(systemName: "forward.fill")
+                                .font(.system(size: 8))
+                            Text("1회 스킵")
+                                .font(.system(size: 10, weight: .semibold))
+                        }
+                        .foregroundColor(.skipOrange)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color.skipOrange.opacity(0.2))
+                        .clipShape(Capsule())
+                    }
+                }
+
+                // Time and date row
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(context.state.nextAlarmTime)
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+
+                    Text(context.state.nextAlarmDate)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white.opacity(0.6))
+                }
+
+                // Alarm title
+                Text(context.state.alarmTitle)
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.8))
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            // Decorative element
+            VStack {
+                Image(systemName: "bell.and.waves.left.and.right.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(.white.opacity(0.15))
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
     }
 }
 
 // MARK: - Previews
 
-#Preview("Notification", as: .content, using: AlarmActivityAttributes(alarmId: "preview")) {
+#Preview("With Alarm", as: .content, using: AlarmActivityAttributes(alarmId: "preview")) {
    BetterAlarmWidgetLiveActivity()
 } contentStates: {
     AlarmActivityAttributes.ContentState(
         nextAlarmTime: "오전 7:30",
         nextAlarmDate: "내일",
         alarmTitle: "출근 알람",
-        isSkipped: false
+        isSkipped: false,
+        isEmpty: false
     )
+}
+
+#Preview("Skipped", as: .content, using: AlarmActivityAttributes(alarmId: "preview")) {
+   BetterAlarmWidgetLiveActivity()
+} contentStates: {
     AlarmActivityAttributes.ContentState(
         nextAlarmTime: "오전 7:30",
-        nextAlarmDate: "1월 15일",
+        nextAlarmDate: "1월 22일",
         alarmTitle: "출근 알람",
-        isSkipped: true
+        isSkipped: true,
+        isEmpty: false
+    )
+}
+
+#Preview("Empty State", as: .content, using: AlarmActivityAttributes(alarmId: "empty")) {
+   BetterAlarmWidgetLiveActivity()
+} contentStates: {
+    AlarmActivityAttributes.ContentState(
+        nextAlarmTime: "--:--",
+        nextAlarmDate: "설정된 알람 없음",
+        alarmTitle: "알람을 추가해주세요",
+        isSkipped: false,
+        isEmpty: true
     )
 }

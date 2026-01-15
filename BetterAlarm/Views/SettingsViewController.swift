@@ -28,7 +28,7 @@ class SettingsViewController: UIViewController {
         table.backgroundColor = .clear
         table.delegate = self
         table.dataSource = self
-        table.register(UITableViewCell.self, forCellReuseIdentifier: "SettingsCell")
+        table.register(SettingsCell.self, forCellReuseIdentifier: SettingsCell.identifier)
         return table
     }()
 
@@ -87,7 +87,6 @@ class SettingsViewController: UIViewController {
     // MARK: - Setup
 
     private func setupUI() {
-        // Use solid background color to prevent white flash on tab switch
         view.backgroundColor = .backgroundTop
 
         view.addSubview(titleLabel)
@@ -116,7 +115,6 @@ class SettingsViewController: UIViewController {
 
     private func sendFeedbackEmail() {
         guard MFMailComposeViewController.canSendMail() else {
-            // Show alert if mail is not configured
             let alert = UIAlertController(
                 title: "메일 설정 필요",
                 message: "메일 앱이 설정되어 있지 않습니다.\nrlaskgns0212@naver.com으로 피드백을 보내주세요.",
@@ -141,6 +139,132 @@ class SettingsViewController: UIViewController {
     }
 }
 
+// MARK: - Settings Cell
+
+class SettingsCell: UITableViewCell {
+    static let identifier = "SettingsCell"
+    
+    private let iconImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.contentMode = .scaleAspectFit
+        imageView.tintColor = .accentPrimary
+        return imageView
+    }()
+    
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 17)
+        label.textColor = .textPrimary
+        return label
+    }()
+    
+    private let detailLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 17)
+        label.textColor = .textTertiary
+        return label
+    }()
+    
+    private let chevronImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.image = UIImage(systemName: "chevron.right")
+        imageView.contentMode = .scaleAspectFit
+        imageView.tintColor = UIColor.white.withAlphaComponent(0.4)  // 흰색 계열
+        return imageView
+    }()
+    
+    private let toggleSwitch: UISwitch = {
+        let toggle = UISwitch()
+        toggle.translatesAutoresizingMaskIntoConstraints = false
+        toggle.onTintColor = .accentPrimary
+        toggle.isHidden = true
+        return toggle
+    }()
+    
+    var onToggleChanged: ((Bool) -> Void)?
+    
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        setupUI()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setupUI() {
+        backgroundColor = UIColor.white.withAlphaComponent(0.05)
+        selectionStyle = .default
+        
+        let selectedView = UIView()
+        selectedView.backgroundColor = UIColor.white.withAlphaComponent(0.1)
+        selectedBackgroundView = selectedView
+        
+        contentView.addSubview(iconImageView)
+        contentView.addSubview(titleLabel)
+        contentView.addSubview(detailLabel)
+        contentView.addSubview(chevronImageView)
+        contentView.addSubview(toggleSwitch)
+        
+        toggleSwitch.addTarget(self, action: #selector(toggleChanged), for: .valueChanged)
+        
+        NSLayoutConstraint.activate([
+            iconImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            iconImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            iconImageView.widthAnchor.constraint(equalToConstant: 28),
+            iconImageView.heightAnchor.constraint(equalToConstant: 28),
+            
+            titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 12),
+            titleLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            
+            chevronImageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            chevronImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            chevronImageView.widthAnchor.constraint(equalToConstant: 14),
+            chevronImageView.heightAnchor.constraint(equalToConstant: 20),
+            
+            detailLabel.trailingAnchor.constraint(equalTo: chevronImageView.leadingAnchor, constant: -8),
+            detailLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            
+            toggleSwitch.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            toggleSwitch.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
+        ])
+    }
+    
+    @objc private func toggleChanged() {
+        onToggleChanged?(toggleSwitch.isOn)
+    }
+    
+    func configure(icon: String, title: String, detail: String?, showChevron: Bool, showToggle: Bool, toggleValue: Bool = false) {
+        iconImageView.image = UIImage(systemName: icon)
+        titleLabel.text = title
+        detailLabel.text = detail
+        detailLabel.isHidden = detail == nil
+        
+        chevronImageView.isHidden = !showChevron || showToggle
+        toggleSwitch.isHidden = !showToggle
+        toggleSwitch.isOn = toggleValue
+        
+        selectionStyle = showToggle ? .none : .default
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        iconImageView.image = nil
+        titleLabel.text = nil
+        detailLabel.text = nil
+        detailLabel.isHidden = true
+        chevronImageView.isHidden = false
+        toggleSwitch.isHidden = true
+        toggleSwitch.isOn = false
+        onToggleChanged = nil
+        selectionStyle = .default
+    }
+}
+
 // MARK: - UITableViewDataSource
 
 extension SettingsViewController: UITableViewDataSource {
@@ -157,56 +281,54 @@ extension SettingsViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "SettingsCell", for: indexPath)
-        let row = sections[indexPath.section].rows[indexPath.row]
-
-        var config = cell.defaultContentConfiguration()
-        config.image = UIImage(systemName: row.icon)
-        config.imageProperties.tintColor = .accentPrimary
-        config.text = row.title
-        config.textProperties.color = .textPrimary
-
-        if let detail = row.detail {
-            config.secondaryText = detail
-            config.secondaryTextProperties.color = .textTertiary
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: SettingsCell.identifier, for: indexPath) as? SettingsCell else {
+            return UITableViewCell()
         }
-
-        cell.contentConfiguration = config
-        cell.backgroundColor = UIColor.white.withAlphaComponent(0.05)
-
-        // Configure accessory views
+        
+        let row = sections[indexPath.section].rows[indexPath.row]
+        
         switch row.item {
         case .liveActivity:
-            let toggle = UISwitch()
-            toggle.onTintColor = .accentPrimary
-            toggle.tag = 100 // Tag to identify this switch
-            toggle.addTarget(self, action: #selector(liveActivityToggleChanged(_:)), for: .valueChanged)
-            Task { @MainActor in
-                toggle.isOn = LiveActivityManager.shared.isLiveActivityEnabled
+            cell.configure(
+                icon: row.icon,
+                title: row.title,
+                detail: nil,
+                showChevron: false,
+                showToggle: true,
+                toggleValue: LiveActivityManager.shared.isLiveActivityEnabled
+            )
+            cell.onToggleChanged = { [weak self] isOn in
+                UIView.hapticFeedback(style: .light)
+                Task { @MainActor in
+                    let nextAlarm = AlarmStore.shared.nextAlarm
+                    LiveActivityManager.shared.setEnabled(isOn, with: nextAlarm)
+                }
             }
-            cell.accessoryView = toggle
-            cell.selectionStyle = .none
-        case .alarmPermission, .feedback:
-            cell.accessoryView = nil
-            cell.accessoryType = .disclosureIndicator
+            
         case .appVersion:
-            cell.accessoryView = nil
-            cell.accessoryType = .none
-            cell.selectionStyle = .none
+            cell.configure(
+                icon: row.icon,
+                title: row.title,
+                detail: row.detail,
+                showChevron: false,
+                showToggle: false
+            )
+            
         default:
-            cell.accessoryView = nil
-            cell.accessoryType = .disclosureIndicator
+            cell.configure(
+                icon: row.icon,
+                title: row.title,
+                detail: row.detail,
+                showChevron: true,
+                showToggle: false
+            )
         }
 
         return cell
     }
-
-    @objc private func liveActivityToggleChanged(_ sender: UISwitch) {
-        UIView.hapticFeedback(style: .light)
-        Task { @MainActor in
-            let nextAlarm = AlarmStore.shared.nextAlarm
-            LiveActivityManager.shared.setEnabled(sender.isOn, with: nextAlarm)
-        }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 52
     }
 }
 
@@ -225,8 +347,7 @@ extension SettingsViewController: UITableViewDelegate {
         case .feedback:
             UIView.hapticFeedback(style: .light)
             sendFeedbackEmail()
-        case .appVersion:
-            // Do nothing for app version
+        case .appVersion, .liveActivity:
             break
         default:
             UIView.hapticFeedback(style: .light)
