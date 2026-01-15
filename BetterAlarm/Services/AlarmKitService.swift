@@ -11,6 +11,7 @@ nonisolated struct BetterAlarmMetadata: AlarmMetadata {}
 enum AlarmIntentKeys {
     static let alarmDismissedKey = "alarmDismissedFromIntent"
     static let alarmDismissedTimeKey = "alarmDismissedTime"
+    static let alarmDismissedAlarmIdKey = "alarmDismissedAlarmId"  // ⭐ 추가: 완료된 앱 알람 ID
     static let alarmSnoozedKey = "alarmSnoozedFromIntent"
 }
 
@@ -43,6 +44,14 @@ struct StopAlarmIntent: LiveActivityIntent {
         let userDefaults = UserDefaults.standard
         userDefaults.set(true, forKey: AlarmIntentKeys.alarmDismissedKey)
         userDefaults.set(Date().timeIntervalSince1970, forKey: AlarmIntentKeys.alarmDismissedTimeKey)
+        
+        // ⭐ 매핑에서 앱 알람 ID 가져와서 저장
+        let mapping = userDefaults.dictionary(forKey: "alarmKitToAppAlarmIdMapping") as? [String: String] ?? [:]
+        if let appAlarmId = mapping[alarmID] {
+            userDefaults.set(appAlarmId, forKey: AlarmIntentKeys.alarmDismissedAlarmIdKey)
+            AppLogger.debug("Saved app alarm ID for dismissal: \(appAlarmId)", category: .alarmKit)
+        }
+        
         userDefaults.synchronize()
 
         AppLogger.debug("Alarm dismissed flag saved to UserDefaults", category: .alarmKit)
@@ -91,7 +100,7 @@ final class AlarmKitService {
 
     private let manager = AlarmManager.shared
 
-    // 스케줄된 알람 ID 추적
+    // 스케줄된 알람 ID 추적 (AlarmKit ID)
     private var currentAlarmId: UUID?
 
     // 현재 스케줄된 앱 알람 (Alarm 모델)
@@ -111,6 +120,9 @@ final class AlarmKitService {
 
     // ⭐ 스케줄링 중 플래그 - 스케줄링 중에는 완료 콜백 무시
     private var isScheduling = false
+    
+    // ⭐ AlarmKit ID -> Alarm 모델 ID 매핑 저장 키
+    private let alarmIdMappingKey = "alarmKitToAppAlarmIdMapping"
 
     private init() {
         AppLogger.info("AlarmKitService initializing", category: .alarmKit)
@@ -198,19 +210,26 @@ final class AlarmKitService {
 
     // MARK: - Check for Intent Actions (앱이 foreground로 올 때 호출)
 
-    func checkForPendingIntentActions() {
+    func checkForPendingIntentActions() -> UUID? {
         AppLogger.debug("Checking for pending intent actions", category: .alarmKit)
         let userDefaults = UserDefaults.standard
+        var completedAlarmId: UUID? = nil
 
         // 알람 해제 확인
         if userDefaults.bool(forKey: AlarmIntentKeys.alarmDismissedKey) {
             AppLogger.info("Found pending alarm dismissal from intent", category: .alarmKit)
             userDefaults.set(false, forKey: AlarmIntentKeys.alarmDismissedKey)
 
-            // 완료된 알람 처리
-            if let alarm = currentScheduledAlarm {
-                AppLogger.info("Processing completed alarm: \(alarm.displayTitle)", category: .alarmKit)
-                onAlarmCompleted?(alarm)
+            // ⭐ 저장된 앱 알람 ID 가져오기
+            if let appAlarmIdString = userDefaults.string(forKey: AlarmIntentKeys.alarmDismissedAlarmIdKey),
+               let appAlarmId = UUID(uuidString: appAlarmIdString) {
+                AppLogger.info("Found completed app alarm ID: \(appAlarmIdString)", category: .alarmKit)
+                completedAlarmId = appAlarmId
+                userDefaults.removeObject(forKey: AlarmIntentKeys.alarmDismissedAlarmIdKey)
+            } else if let alarm = currentScheduledAlarm {
+                // 폴백: 현재 스케줄된 알람으로 처리
+                AppLogger.info("Using current scheduled alarm as fallback: \(alarm.displayTitle)", category: .alarmKit)
+                completedAlarmId = alarm.id
             }
 
             currentAlarmId = nil
@@ -226,6 +245,18 @@ final class AlarmKitService {
         }
 
         userDefaults.synchronize()
+        
+        return completedAlarmId
+    }
+    
+    // MARK: - Alarm ID Mapping
+    
+    private func saveAlarmIdMapping(alarmKitId: UUID, appAlarmId: UUID) {
+        var mapping = UserDefaults.standard.dictionary(forKey: alarmIdMappingKey) as? [String: String] ?? [:]
+        mapping[alarmKitId.uuidString] = appAlarmId.uuidString
+        UserDefaults.standard.set(mapping, forKey: alarmIdMappingKey)
+        UserDefaults.standard.synchronize()
+        AppLogger.debug("Saved alarm ID mapping: \(alarmKitId.uuidString.prefix(8)) -> \(appAlarmId.uuidString.prefix(8))", category: .alarmKit)
     }
 
     // MARK: - Schedule Alarm
@@ -254,6 +285,9 @@ final class AlarmKitService {
             let id = UUID()
             currentAlarmId = id
             currentScheduledAlarm = alarm
+            
+            // ⭐ AlarmKit ID -> App Alarm ID 매핑 저장
+            saveAlarmIdMapping(alarmKitId: id, appAlarmId: alarm.id)
 
             // 다음 알람까지의 시간 계산
             guard let triggerDate = alarm.nextTriggerDate() else {

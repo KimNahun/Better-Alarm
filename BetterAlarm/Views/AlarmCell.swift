@@ -57,6 +57,7 @@ class AlarmCell: UITableViewCell {
         return label
     }()
 
+    // ⭐ 건너뛰기 뱃지 - 더 눈에 띄게 수정
     private let skipBadgeView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -72,15 +73,6 @@ class AlarmCell: UITableViewCell {
         label.font = .systemFont(ofSize: 11, weight: .semibold)
         label.textColor = UIColor(red: 1.0, green: 0.55, blue: 0.2, alpha: 1.0)
         label.text = "다음 알람 건너뛰기"
-        return label
-    }()
-    
-    private let nextAlarmInfoLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: 12, weight: .medium)
-        label.textColor = .textTertiary
-        label.isHidden = true
         return label
     }()
 
@@ -129,7 +121,6 @@ class AlarmCell: UITableViewCell {
         labelsStackView.addArrangedSubview(titleLabel)
         labelsStackView.addArrangedSubview(repeatLabel)
         labelsStackView.addArrangedSubview(skipBadgeView)
-        labelsStackView.addArrangedSubview(nextAlarmInfoLabel)
 
         contentView.addSubview(containerView)
         containerView.addSubview(accentLine)
@@ -180,37 +171,40 @@ class AlarmCell: UITableViewCell {
 
     // MARK: - Configuration
 
-    // AlarmCell.swift - configure 메서드 전체 교체
-
     func configure(with alarm: Alarm) {
         self.alarm = alarm
         AppLogger.debug("Configuring cell for alarm: \(alarm.displayTitle), enabled: \(alarm.isEnabled), skipping: \(alarm.isSkippingNext)", category: .ui)
 
         timeLabel.text = alarm.timeString
         titleLabel.text = alarm.displayTitle
-        repeatLabel.text = alarm.repeatDescriptionWithoutSkip  // 스킵 정보 제외한 기본 설명
+        
+        // ⭐ 건너뛰기 상태에 따라 다르게 표시
+        if alarm.isEnabled && alarm.isSkippingNext {
+            // 건너뛰기 중: 건너뛰기 정보를 메인으로 표시
+            configureSkipDisplay(for: alarm)
+        } else {
+            // 일반 상태: 반복 정보 표시
+            repeatLabel.text = alarm.repeatDescriptionWithoutSkip
+            repeatLabel.isHidden = false
+            skipBadgeView.isHidden = true
+        }
 
         configureTypeIndicator(for: alarm)
-        configureSkipInfo(for: alarm)
 
-        // 스킵 중이면 스위치 Off로 표시
+        // ⭐ 스위치 상태: enabled이고 skipping이 아닐 때만 On
         let switchOn = alarm.isEnabled && !alarm.isSkippingNext
         toggleSwitch.setOn(switchOn, animated: false)
         updateAppearance(isEnabled: alarm.isEnabled, isSkipping: alarm.isSkippingNext)
     }
 
-    // AlarmCell.swift - configureSkipInfo 메서드 전체 교체
-
-    private func configureSkipInfo(for alarm: Alarm) {
-        guard alarm.isEnabled, alarm.isSkippingNext else {
-            skipBadgeView.isHidden = true
-            nextAlarmInfoLabel.isHidden = true
-            return
-        }
-
+    // ⭐ 건너뛰기 상태 UI 구성
+    private func configureSkipDisplay(for alarm: Alarm) {
+        // repeatLabel 숨기기
+        repeatLabel.isHidden = true
+        
+        // 건너뛰기 뱃지 표시
         skipBadgeView.isHidden = false
-        nextAlarmInfoLabel.isHidden = true  // progress 제거
-
+        
         // 다음 알람 날짜 계산해서 표시
         if let nextDate = alarm.nextTriggerDate() {
             let calendar = Calendar.current
@@ -262,8 +256,6 @@ class AlarmCell: UITableViewCell {
         }
     }
 
-    // AlarmCell.swift - updateAppearance 메서드 전체 교체
-
     private func updateAppearance(isEnabled: Bool, isSkipping: Bool = false) {
         let alpha: CGFloat
         let containerAlpha: CGFloat
@@ -272,6 +264,7 @@ class AlarmCell: UITableViewCell {
             alpha = 0.4
             containerAlpha = 0.6
         } else if isSkipping {
+            // ⭐ 건너뛰기 상태: 약간 흐리게 but 활성화됨을 표시
             alpha = 0.7
             containerAlpha = 0.85
         } else {
@@ -286,8 +279,7 @@ class AlarmCell: UITableViewCell {
         self.typeLabel.alpha = alpha
         self.accentLine.alpha = alpha
         self.containerView.alpha = containerAlpha
-        self.skipBadgeView.alpha = 1.0
-        self.nextAlarmInfoLabel.alpha = 1.0
+        self.skipBadgeView.alpha = 1.0  // 건너뛰기 뱃지는 항상 선명하게
     }
 
     // MARK: - Actions
@@ -320,10 +312,9 @@ class AlarmCell: UITableViewCell {
         timeLabel.text = nil
         titleLabel.text = nil
         repeatLabel.text = nil
+        repeatLabel.isHidden = false
         typeLabel.text = nil
         skipBadgeView.isHidden = true
-        nextAlarmInfoLabel.isHidden = true
-        nextAlarmInfoLabel.text = nil
         toggleSwitch.isOn = false
         containerView.transform = .identity
         containerView.alpha = 1.0

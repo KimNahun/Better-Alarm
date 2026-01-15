@@ -290,6 +290,18 @@ class AlarmStore {
             AppLogger.info("Weekly alarm completed, scheduling next: \(existingAlarm.displayTitle)", category: .alarm)
         }
     }
+    
+    // ⭐ ID로 알람 완료 처리 (앱 재시작 시 사용)
+    func handleAlarmCompletedById(_ alarmId: UUID) {
+        AppLogger.info("Handling alarm completed by ID: \(alarmId)", category: .alarm)
+        
+        guard let alarm = alarms.first(where: { $0.id == alarmId }) else {
+            AppLogger.warning("Alarm not found for ID: \(alarmId)", category: .alarm)
+            return
+        }
+        
+        handleAlarmCompleted(alarm)
+    }
 
     // 시간으로 완료된 알람 찾기 (백업 방법)
     private func handleAlarmCompletedByTime(hour: Int, minute: Int) {
@@ -304,11 +316,15 @@ class AlarmStore {
         handleAlarmCompleted(alarm)
     }
 
-    // 앱이 foreground로 올 때 호출
+    // ⭐ 앱이 foreground로 올 때 호출 - 수정됨
     func checkForCompletedAlarms() {
         AppLogger.debug("Checking for completed alarms from intent", category: .alarm)
         Task { @MainActor in
-            AlarmKitService.shared.checkForPendingIntentActions()
+            // AlarmKitService에서 완료된 알람 ID 가져오기
+            if let completedAlarmId = AlarmKitService.shared.checkForPendingIntentActions() {
+                AppLogger.info("Processing completed alarm from intent, ID: \(completedAlarmId)", category: .alarm)
+                self.handleAlarmCompletedById(completedAlarmId)
+            }
         }
     }
 
