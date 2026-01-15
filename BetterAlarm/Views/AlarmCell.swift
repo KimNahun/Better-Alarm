@@ -34,14 +34,6 @@ class AlarmCell: UITableViewCell {
         return label
     }()
 
-    private let periodLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: 16, weight: .medium)
-        label.textColor = .textSecondary
-        return label
-    }()
-
     private let typeLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -65,12 +57,29 @@ class AlarmCell: UITableViewCell {
         return label
     }()
 
-    private let skipInfoLabel: UILabel = {
+    private let skipBadgeView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(red: 1.0, green: 0.6, blue: 0.2, alpha: 0.15)
+        view.layer.cornerRadius = 6
+        view.isHidden = true
+        return view
+    }()
+    
+    private let skipIconLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 11, weight: .semibold)
+        label.textColor = UIColor(red: 1.0, green: 0.55, blue: 0.2, alpha: 1.0)
+        label.text = "다음 알람 건너뛰기"
+        return label
+    }()
+    
+    private let nextAlarmInfoLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = .systemFont(ofSize: 12, weight: .medium)
-        label.textColor = UIColor(red: 1.0, green: 0.6, blue: 0.2, alpha: 1.0)  // Orange
-        label.numberOfLines = 2
+        label.textColor = .textTertiary
         label.isHidden = true
         return label
     }()
@@ -87,10 +96,13 @@ class AlarmCell: UITableViewCell {
         let stack = UIStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .vertical
-        stack.spacing = 2
+        stack.spacing = 3
         stack.alignment = .leading
         return stack
     }()
+    
+    // 동적 높이를 위한 bottom constraint
+    private var containerBottomConstraint: NSLayoutConstraint?
 
     // MARK: - Initialization
 
@@ -111,9 +123,13 @@ class AlarmCell: UITableViewCell {
         contentView.backgroundColor = .clear
         selectionStyle = .none
 
+        // Skip badge 구성
+        skipBadgeView.addSubview(skipIconLabel)
+        
         labelsStackView.addArrangedSubview(titleLabel)
         labelsStackView.addArrangedSubview(repeatLabel)
-        labelsStackView.addArrangedSubview(skipInfoLabel)
+        labelsStackView.addArrangedSubview(skipBadgeView)
+        labelsStackView.addArrangedSubview(nextAlarmInfoLabel)
 
         contentView.addSubview(containerView)
         containerView.addSubview(accentLine)
@@ -126,11 +142,13 @@ class AlarmCell: UITableViewCell {
     }
 
     private func setupConstraints() {
+        containerBottomConstraint = containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -6)
+        
         NSLayoutConstraint.activate([
             containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 6),
             containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -6),
+            containerBottomConstraint!,
 
             accentLine.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
             accentLine.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12),
@@ -144,13 +162,19 @@ class AlarmCell: UITableViewCell {
             typeLabel.firstBaselineAnchor.constraint(equalTo: timeLabel.firstBaselineAnchor),
             typeLabel.leadingAnchor.constraint(equalTo: timeLabel.trailingAnchor, constant: 8),
 
-            labelsStackView.topAnchor.constraint(equalTo: timeLabel.bottomAnchor, constant: 2),
+            labelsStackView.topAnchor.constraint(equalTo: timeLabel.bottomAnchor, constant: 4),
             labelsStackView.leadingAnchor.constraint(equalTo: accentLine.trailingAnchor, constant: 14),
             labelsStackView.trailingAnchor.constraint(lessThanOrEqualTo: toggleSwitch.leadingAnchor, constant: -16),
-            labelsStackView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -14),
+            labelsStackView.bottomAnchor.constraint(lessThanOrEqualTo: containerView.bottomAnchor, constant: -14),
 
             toggleSwitch.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            toggleSwitch.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -18)
+            toggleSwitch.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -18),
+            
+            // Skip badge constraints
+            skipIconLabel.topAnchor.constraint(equalTo: skipBadgeView.topAnchor, constant: 4),
+            skipIconLabel.bottomAnchor.constraint(equalTo: skipBadgeView.bottomAnchor, constant: -4),
+            skipIconLabel.leadingAnchor.constraint(equalTo: skipBadgeView.leadingAnchor, constant: 8),
+            skipIconLabel.trailingAnchor.constraint(equalTo: skipBadgeView.trailingAnchor, constant: -8)
         ])
     }
 
@@ -166,45 +190,43 @@ class AlarmCell: UITableViewCell {
         configureTypeIndicator(for: alarm)
         configureSkipInfo(for: alarm)
 
-        // 스위치 상태 설정
-        // 스킵 중이면 스위치는 ON이지만 dimmed 상태
         toggleSwitch.setOn(alarm.isEnabled, animated: false)
         updateAppearance(isEnabled: alarm.isEnabled, isSkipping: alarm.isSkippingNext)
     }
 
     private func configureSkipInfo(for alarm: Alarm) {
-        // 스킵 중이 아니면 숨김
         guard alarm.isEnabled, alarm.isSkippingNext, let skippedDate = alarm.skippedDate else {
-            skipInfoLabel.isHidden = true
-            skipInfoLabel.text = nil
+            skipBadgeView.isHidden = true
+            nextAlarmInfoLabel.isHidden = true
             return
         }
 
-        skipInfoLabel.isHidden = false
+        skipBadgeView.isHidden = false
 
         let calendar = Calendar.current
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ko_KR")
 
-        // 스킵된 날짜의 요일
-        let skippedWeekday = calendar.component(.weekday, from: skippedDate)
-        let skippedWeekdayName = Weekday(rawValue: skippedWeekday)?.shortName ?? ""
-        
         // 스킵된 날짜 포맷
         let skippedMonth = calendar.component(.month, from: skippedDate)
         let skippedDay = calendar.component(.day, from: skippedDate)
+        let skippedWeekday = calendar.component(.weekday, from: skippedDate)
+        let skippedWeekdayName = Weekday(rawValue: skippedWeekday)?.shortName ?? ""
 
-        // 다음 울릴 날짜 계산 (스킵된 날짜 이후)
+        skipIconLabel.text = "\(skippedMonth)/\(skippedDay)(\(skippedWeekdayName)) 건너뛰기"
+
+        // 다음 알람 날짜 계산
         if let nextDate = alarm.nextTriggerDate() {
+            nextAlarmInfoLabel.isHidden = false
+            
             let nextMonth = calendar.component(.month, from: nextDate)
             let nextDay = calendar.component(.day, from: nextDate)
             let nextWeekday = calendar.component(.weekday, from: nextDate)
             let nextWeekdayName = Weekday(rawValue: nextWeekday)?.shortName ?? ""
-
-            // "이번 주 수요일 스킵됨\n다음 알람: 1월 22일 (수)"
-            skipInfoLabel.text = "⏭️ \(skippedMonth)월 \(skippedDay)일 (\(skippedWeekdayName)) 스킵됨\n➡️ 다음 알람: \(nextMonth)월 \(nextDay)일 (\(nextWeekdayName))"
+            
+            nextAlarmInfoLabel.text = "다음 알람: \(nextMonth)/\(nextDay)(\(nextWeekdayName))"
         } else {
-            skipInfoLabel.text = "⏭️ \(skippedMonth)월 \(skippedDay)일 (\(skippedWeekdayName)) 스킵됨"
+            nextAlarmInfoLabel.isHidden = true
         }
     }
 
@@ -214,13 +236,13 @@ class AlarmCell: UITableViewCell {
 
         switch alarm.schedule {
         case .once:
-            accentColor = UIColor(red: 0.65, green: 0.55, blue: 0.95, alpha: 1.0)  // Soft purple
+            accentColor = UIColor(red: 0.65, green: 0.55, blue: 0.95, alpha: 1.0)
             typeText = "1회"
         case .weekly(let days):
-            accentColor = UIColor(red: 0.45, green: 0.7, blue: 0.95, alpha: 1.0)  // Soft blue
+            accentColor = UIColor(red: 0.45, green: 0.7, blue: 0.95, alpha: 1.0)
             typeText = formatWeekdays(days)
         case .specificDate(let date):
-            accentColor = UIColor(red: 0.95, green: 0.55, blue: 0.45, alpha: 1.0)  // Soft coral
+            accentColor = UIColor(red: 0.95, green: 0.55, blue: 0.45, alpha: 1.0)
             let formatter = DateFormatter()
             formatter.locale = Locale(identifier: "ko_KR")
             formatter.dateFormat = "M/d"
@@ -250,15 +272,12 @@ class AlarmCell: UITableViewCell {
         let containerAlpha: CGFloat
         
         if !isEnabled {
-            // 완전히 비활성화
             alpha = 0.4
             containerAlpha = 0.6
         } else if isSkipping {
-            // 스킵 중 (활성화되어 있지만 다음 알람 스킵)
             alpha = 0.7
             containerAlpha = 0.85
         } else {
-            // 정상 활성화
             alpha = 1.0
             containerAlpha = 1.0
         }
@@ -270,9 +289,8 @@ class AlarmCell: UITableViewCell {
             self.typeLabel.alpha = alpha
             self.accentLine.alpha = alpha
             self.containerView.alpha = containerAlpha
-
-            // 스킵 정보는 항상 밝게
-            self.skipInfoLabel.alpha = 1.0
+            self.skipBadgeView.alpha = 1.0
+            self.nextAlarmInfoLabel.alpha = 1.0
         }
     }
 
@@ -303,8 +321,9 @@ class AlarmCell: UITableViewCell {
         titleLabel.text = nil
         repeatLabel.text = nil
         typeLabel.text = nil
-        skipInfoLabel.text = nil
-        skipInfoLabel.isHidden = true
+        skipBadgeView.isHidden = true
+        nextAlarmInfoLabel.isHidden = true
+        nextAlarmInfoLabel.text = nil
         toggleSwitch.isOn = false
         containerView.transform = .identity
         containerView.alpha = 1.0
@@ -313,6 +332,5 @@ class AlarmCell: UITableViewCell {
         repeatLabel.alpha = 1.0
         typeLabel.alpha = 1.0
         accentLine.alpha = 1.0
-        skipInfoLabel.alpha = 1.0
     }
 }

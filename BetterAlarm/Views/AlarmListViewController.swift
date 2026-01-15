@@ -187,12 +187,19 @@ class AlarmListViewController: UIViewController {
 
     @objc private func handleAppDidBecomeActive() {
         checkAlarmPermission()
+        checkForCompletedAlarms()
         restartLiveActivityIfNeeded()
     }
 
     @objc private func handleAppWillEnterForeground() {
         checkAlarmPermission()
+        checkForCompletedAlarms()
         restartLiveActivityIfNeeded()
+    }
+    
+    private func checkForCompletedAlarms() {
+        // Intent에서 완료된 알람 처리
+        alarmStore.checkForCompletedAlarms()
     }
 
     private func restartLiveActivityIfNeeded() {
@@ -212,6 +219,7 @@ class AlarmListViewController: UIViewController {
         alarmStore.loadAlarms()
         applySnapshot(animatingDifferences: false)
         checkAlarmPermission()
+        checkForCompletedAlarms()
         updateUI()
     }
 
@@ -389,7 +397,7 @@ class AlarmListViewController: UIViewController {
 
     // MARK: - Toast Message
 
-    func showToast(message: String, duration: TimeInterval = 3.0) {
+    func showToast(message: String, duration: TimeInterval = 2.5) {
         let toastContainer = UIView()
         toastContainer.translatesAutoresizingMaskIntoConstraints = false
         toastContainer.backgroundColor = UIColor(white: 0.1, alpha: 0.95)
@@ -468,16 +476,16 @@ class AlarmListViewController: UIViewController {
             preferredStyle: .actionSheet
         )
 
-        // 1번만 끄기 (스킵)
-        let skipOnceAction = UIAlertAction(title: "1번만 끄기 (스킵)", style: .default) { [weak self] _ in
+        // 이번만 건너뛰기
+        let skipOnceAction = UIAlertAction(title: "이번만 건너뛰기", style: .default) { [weak self] _ in
             UIView.hapticFeedback(style: .light)
             self?.alarmStore.skipOnceAlarm(alarm)
-            self?.showToast(message: "다음 알람이 건너뛰어집니다")
+            self?.showToast(message: "다음 알람을 건너뜁니다")
         }
         actionSheet.addAction(skipOnceAction)
 
-        // 완전히 끄기 (비활성화, 삭제 아님!)
-        let turnOffAction = UIAlertAction(title: "완전히 끄기", style: .default) { [weak self] _ in
+        // 알람 끄기 (비활성화)
+        let turnOffAction = UIAlertAction(title: "알람 끄기", style: .default) { [weak self] _ in
             UIView.hapticFeedback(style: .light)
             self?.alarmStore.toggleAlarm(alarm, enabled: false)
             self?.showToast(message: "알람이 꺼졌습니다")
@@ -504,12 +512,12 @@ class AlarmListViewController: UIViewController {
 
 extension AlarmListViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        // 스킵된 알람은 더 높게
         guard let alarmId = dataSource.itemIdentifier(for: indexPath),
               let alarm = alarmStore.alarms.first(where: { $0.id == alarmId }) else {
             return 110
         }
-        return alarm.isSkippingNext ? 130 : 110
+        // 스킵 중인 알람은 더 높게
+        return alarm.isSkippingNext ? 135 : 110
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -520,6 +528,10 @@ extension AlarmListViewController: UITableViewDelegate {
 
         let editVC = AlarmDetailViewController()
         editVC.delegate = self
+        editVC.onDeleteAlarm = { [weak self] deletedAlarm in
+            self?.alarmStore.deleteAlarm(deletedAlarm)
+            self?.showToast(message: "알람이 삭제되었습니다")
+        }
         editVC.configure(with: alarm)
         editVC.modalPresentationStyle = .pageSheet
 
@@ -556,27 +568,21 @@ extension AlarmListViewController: UITableViewDelegate {
 extension AlarmListViewController: AlarmCellDelegate {
     func alarmCell(_ cell: AlarmCell, didToggleAlarm alarm: Alarm, isOn: Bool) {
         if isOn {
-            // 스위치 ON
             if !alarm.isEnabled {
-                // 비활성화된 알람 활성화
                 UIView.hapticFeedback(style: .light)
                 alarmStore.toggleAlarm(alarm, enabled: true)
                 showToast(message: "알람이 켜졌습니다")
             } else if alarm.isSkippingNext {
-                // 스킵 취소
                 UIView.hapticFeedback(style: .light)
                 alarmStore.clearSkipOnceAlarm(alarm)
-                showToast(message: "스킵이 취소되었습니다")
+                showToast(message: "건너뛰기가 취소되었습니다")
             }
         } else {
-            // 스위치 OFF
             if alarm.isEnabled {
                 if alarm.isWeeklyAlarm && !alarm.isSkippingNext {
-                    // 주간 알람: 스킵/끄기 옵션 표시
                     guard let indexPath = tableView.indexPath(for: cell) else { return }
                     showSkipOrTurnOffActionSheet(for: alarm, at: indexPath)
                 } else {
-                    // 1회성 알람 또는 이미 스킵 중인 알람: 완전히 끄기
                     UIView.hapticFeedback(style: .light)
                     alarmStore.toggleAlarm(alarm, enabled: false)
                     showToast(message: "알람이 꺼졌습니다")

@@ -6,6 +6,14 @@ import AppIntents
 
 nonisolated struct BetterAlarmMetadata: AlarmMetadata {}
 
+// MARK: - Keys for Intent Communication
+
+enum AlarmIntentKeys {
+    static let alarmDismissedKey = "alarmDismissedFromIntent"
+    static let alarmDismissedTimeKey = "alarmDismissedTime"
+    static let alarmSnoozedKey = "alarmSnoozedFromIntent"
+}
+
 // MARK: - App Intents (Live Activity 버튼용)
 
 struct StopAlarmIntent: LiveActivityIntent {
@@ -28,9 +36,11 @@ struct StopAlarmIntent: LiveActivityIntent {
             try? AlarmManager.shared.stop(id: id)
         }
 
-        // Lock Screen에서 알람 해제 시 표시
-        UserDefaults.standard.set(true, forKey: "alarmDismissedFromLockScreen")
-        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "alarmDismissedTime")
+        // UserDefaults에 알람 해제 정보 저장 (앱이 foreground로 올 때 처리)
+        let userDefaults = UserDefaults.standard
+        userDefaults.set(true, forKey: AlarmIntentKeys.alarmDismissedKey)
+        userDefaults.set(Date().timeIntervalSince1970, forKey: AlarmIntentKeys.alarmDismissedTimeKey)
+        userDefaults.synchronize()
 
         return .result()
     }
@@ -54,6 +64,12 @@ struct SnoozeAlarmIntent: LiveActivityIntent {
 
     func perform() async throws -> some IntentResult {
         await AlarmKitService.shared.snoozeFromIntent(alarmID: alarmID)
+        
+        // 스누즈 정보 저장
+        let userDefaults = UserDefaults.standard
+        userDefaults.set(true, forKey: AlarmIntentKeys.alarmSnoozedKey)
+        userDefaults.synchronize()
+        
         return .result()
     }
 }
@@ -68,12 +84,18 @@ final class AlarmKitService {
 
     // 스케줄된 알람 ID 추적
     private var currentAlarmId: UUID?
+    
+    // 현재 스케줄된 앱 알람 (Alarm 모델)
+    private var currentScheduledAlarm: Alarm?
 
     // 알람 모니터링 Task
     private var monitorTask: Task<Void, Never>?
 
     // 알람이 울릴 때 콜백
     private var onAlerting: ((UUID) -> Void)?
+    
+    // 알람이 완료될 때 콜백
+    private var onAlarmCompleted: ((Alarm) -> Void)?
 
     // 스누즈 시간 (5분)
     static let snoozeInterval: TimeInterval = 5 * 60
@@ -104,6 +126,10 @@ final class AlarmKitService {
     func observeAlertingAlarms(_ handler: @escaping (UUID) -> Void) {
         self.onAlerting = handler
     }
+    
+    func observeAlarmCompleted(_ handler: @escaping (Alarm) -> Void) {
+        self.onAlarmCompleted = handler
+    }
 
     func stopMonitoring() {
         monitorTask?.cancel()
@@ -124,7 +150,12 @@ final class AlarmKitService {
                 if Task.isCancelled { break }
 
                 if alarms.isEmpty {
+                    // 알람이 없어졌다면 (정지됨) - 완료 콜백 호출
+                    if let completedAlarm = self.currentScheduledAlarm {
+                        self.onAlarmCompleted?(completedAlarm)
+                    }
                     self.currentAlarmId = nil
+                    self.currentScheduledAlarm = nil
                 }
 
                 for alarm in alarms where alarm.state == .alerting {
@@ -132,6 +163,35 @@ final class AlarmKitService {
                 }
             }
         }
+    }
+    
+    // MARK: - Check for Intent Actions (앱이 foreground로 올 때 호출)
+    
+    func checkForPendingIntentActions() {
+        let userDefaults = UserDefaults.standard
+        
+        // 알람 해제 확인
+        if userDefaults.bool(forKey: AlarmIntentKeys.alarmDismissedKey) {
+            userDefaults.set(false, forKey: AlarmIntentKeys.alarmDismissedKey)
+            
+            // 완료된 알람 처리
+            if let alarm = currentScheduledAlarm {
+                onAlarmCompleted?(alarm)
+            }
+            
+            currentAlarmId = nil
+            currentScheduledAlarm = nil
+            
+            print("[AlarmKit] Processed alarm dismissal from intent")
+        }
+        
+        // 스누즈 확인
+        if userDefaults.bool(forKey: AlarmIntentKeys.alarmSnoozedKey) {
+            userDefaults.set(false, forKey: AlarmIntentKeys.alarmSnoozedKey)
+            print("[AlarmKit] Processed snooze from intent")
+        }
+        
+        userDefaults.synchronize()
     }
 
     // MARK: - Schedule Alarm
@@ -151,6 +211,7 @@ final class AlarmKitService {
         do {
             let id = UUID()
             currentAlarmId = id
+            currentScheduledAlarm = alarm
 
             // 다음 알람까지의 시간 계산
             guard let triggerDate = alarm.nextTriggerDate() else { return }
@@ -167,7 +228,6 @@ final class AlarmKitService {
                 message: "알람이 울립니다"
             )
 
-            // Configuration 생성 (AlarmKit은 시스템 사운드 사용)
             typealias Config = AlarmManager.AlarmConfiguration<BetterAlarmMetadata>
             let config = Config.timer(
                 duration: duration,
@@ -176,7 +236,6 @@ final class AlarmKitService {
                 secondaryIntent: SnoozeAlarmIntent(alarmID: id.uuidString)
             )
 
-            // 알람 스케줄
             _ = try await manager.schedule(id: id, configuration: config)
 
             print("[AlarmKit] Scheduled alarm: \(alarm.displayTitle) in \(duration) seconds")
@@ -194,6 +253,7 @@ final class AlarmKitService {
         do {
             try manager.stop(id: alarmId)
             currentAlarmId = nil
+            currentScheduledAlarm = nil
             print("[AlarmKit] Cancelled alarm")
         } catch {
             print("[AlarmKit] Failed to cancel alarm: \(error)")
@@ -207,6 +267,7 @@ final class AlarmKitService {
                 try manager.stop(id: alarm.id)
             }
             currentAlarmId = nil
+            currentScheduledAlarm = nil
         } catch {
             print("[AlarmKit] Failed to stop alarms: \(error)")
         }
@@ -288,5 +349,9 @@ final class AlarmKitService {
 
     func getCurrentAlarmId() -> UUID? {
         return currentAlarmId
+    }
+    
+    func getCurrentScheduledAlarm() -> Alarm? {
+        return currentScheduledAlarm
     }
 }

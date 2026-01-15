@@ -9,7 +9,7 @@ struct AlarmActivityAttributes: ActivityAttributes {
         var nextAlarmDate: String
         var alarmTitle: String
         var isSkipped: Bool
-        var isEmpty: Bool  // 알람 없음 상태
+        var isEmpty: Bool
         
         init(nextAlarmTime: String, nextAlarmDate: String, alarmTitle: String, isSkipped: Bool, isEmpty: Bool = false) {
             self.nextAlarmTime = nextAlarmTime
@@ -67,6 +67,16 @@ class LiveActivityManager {
             currentActivity = existingActivity
         }
     }
+    
+    // MARK: - End All Activities (중복 방지)
+    
+    private func endAllActivities() async {
+        // 시스템의 모든 Live Activity 종료
+        for activity in Activity<AlarmActivityAttributes>.activities {
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
+        currentActivity = nil
+    }
 
     // MARK: - Start Activity
 
@@ -81,25 +91,33 @@ class LiveActivityManager {
             return
         }
 
-        endActivity()
+        // 먼저 모든 기존 Activity 종료
+        Task {
+            await endAllActivities()
+            
+            // 짧은 딜레이 후 새 Activity 시작
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1초
+            
+            await MainActor.run {
+                let attributes = AlarmActivityAttributes(alarmId: alarm.id.uuidString)
+                let contentState = createContentState(for: alarm)
 
-        let attributes = AlarmActivityAttributes(alarmId: alarm.id.uuidString)
-        let contentState = createContentState(for: alarm)
-
-        do {
-            let activity = try Activity.request(
-                attributes: attributes,
-                content: .init(state: contentState, staleDate: nil),
-                pushType: nil
-            )
-            currentActivity = activity
-            print("[LiveActivity] Started activity for: \(alarm.displayTitle)")
-        } catch {
-            print("[LiveActivity] Failed to start: \(error)")
+                do {
+                    let activity = try Activity.request(
+                        attributes: attributes,
+                        content: .init(state: contentState, staleDate: nil),
+                        pushType: nil
+                    )
+                    currentActivity = activity
+                    print("[LiveActivity] Started activity for: \(alarm.displayTitle)")
+                } catch {
+                    print("[LiveActivity] Failed to start: \(error)")
+                }
+            }
         }
     }
     
-    // MARK: - Start Empty Activity (알람 없음 상태)
+    // MARK: - Start Empty Activity
     
     func startEmptyActivity() {
         guard isLiveActivityEnabled else {
@@ -112,21 +130,27 @@ class LiveActivityManager {
             return
         }
 
-        endActivity()
+        Task {
+            await endAllActivities()
+            
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            
+            await MainActor.run {
+                let attributes = AlarmActivityAttributes(alarmId: "empty")
+                let contentState = createEmptyContentState()
 
-        let attributes = AlarmActivityAttributes(alarmId: "empty")
-        let contentState = createEmptyContentState()
-
-        do {
-            let activity = try Activity.request(
-                attributes: attributes,
-                content: .init(state: contentState, staleDate: nil),
-                pushType: nil
-            )
-            currentActivity = activity
-            print("[LiveActivity] Started empty activity")
-        } catch {
-            print("[LiveActivity] Failed to start empty activity: \(error)")
+                do {
+                    let activity = try Activity.request(
+                        attributes: attributes,
+                        content: .init(state: contentState, staleDate: nil),
+                        pushType: nil
+                    )
+                    currentActivity = activity
+                    print("[LiveActivity] Started empty activity")
+                } catch {
+                    print("[LiveActivity] Failed to start empty activity: \(error)")
+                }
+            }
         }
     }
 
@@ -166,7 +190,9 @@ class LiveActivityManager {
     func updateActivity(with alarm: Alarm) {
         guard isLiveActivityEnabled else { return }
         
-        guard let activity = currentActivity else {
+        // Activity가 없으면 새로 시작
+        guard let activity = currentActivity,
+              Activity<AlarmActivityAttributes>.activities.contains(where: { $0.id == activity.id }) else {
             startActivity(with: alarm)
             return
         }
@@ -184,7 +210,8 @@ class LiveActivityManager {
     func updateEmptyState() {
         guard isLiveActivityEnabled else { return }
         
-        guard let activity = currentActivity else {
+        guard let activity = currentActivity,
+              Activity<AlarmActivityAttributes>.activities.contains(where: { $0.id == activity.id }) else {
             startEmptyActivity()
             return
         }
@@ -200,12 +227,9 @@ class LiveActivityManager {
     // MARK: - End Activity
 
     func endActivity() {
-        guard let activity = currentActivity else { return }
-
         Task {
-            await activity.end(nil, dismissalPolicy: .immediate)
-            currentActivity = nil
-            print("[LiveActivity] Ended activity")
+            await endAllActivities()
+            print("[LiveActivity] Ended all activities")
         }
     }
 
@@ -245,17 +269,11 @@ class LiveActivityManager {
             dateFormatter.dateFormat = "M월 d일 (E)"
             dateString = dateFormatter.string(from: nextDate)
         }
-        
-        // 스킵 상태면 표시
-        var title = alarm.displayTitle
-        if alarm.isSkippingNext {
-            title = "⏭️ " + title + " (스킵됨)"
-        }
 
         return AlarmActivityAttributes.ContentState(
             nextAlarmTime: timeString,
             nextAlarmDate: dateString,
-            alarmTitle: title,
+            alarmTitle: alarm.displayTitle,
             isSkipped: alarm.isSkippingNext,
             isEmpty: false
         )

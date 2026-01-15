@@ -17,6 +17,9 @@ class AlarmDetailViewController: UIViewController {
     // MARK: - Properties
 
     weak var delegate: AlarmDetailViewControllerDelegate?
+    
+    // 삭제 콜백
+    var onDeleteAlarm: ((Alarm) -> Void)?
 
     private var existingAlarm: Alarm?
     private var isNewAlarm: Bool { existingAlarm == nil }
@@ -92,7 +95,7 @@ class AlarmDetailViewController: UIViewController {
         picker.datePickerMode = .time
         picker.preferredDatePickerStyle = .wheels
         picker.locale = Locale(identifier: "ko_KR")
-        picker.overrideUserInterfaceStyle = .dark  // Force white text
+        picker.overrideUserInterfaceStyle = .dark
         picker.addTarget(self, action: #selector(timeChanged), for: .valueChanged)
         return picker
     }()
@@ -175,9 +178,23 @@ class AlarmDetailViewController: UIViewController {
         picker.locale = Locale(identifier: "ko_KR")
         picker.minimumDate = Date()
         picker.tintColor = .accentPrimary
-        picker.overrideUserInterfaceStyle = .dark  // Force white text
+        picker.overrideUserInterfaceStyle = .dark
         picker.addTarget(self, action: #selector(dateChanged), for: .valueChanged)
         return picker
+    }()
+    
+    // 삭제 버튼
+    private lazy var deleteButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitle("알람 삭제", for: .normal)
+        button.setTitleColor(.systemRed, for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 17, weight: .medium)
+        button.backgroundColor = UIColor.systemRed.withAlphaComponent(0.1)
+        button.layer.cornerRadius = 12
+        button.addTarget(self, action: #selector(deleteTapped), for: .touchUpInside)
+        button.isHidden = true  // 새 알람일 때는 숨김
+        return button
     }()
 
     // MARK: - Lifecycle
@@ -219,66 +236,48 @@ class AlarmDetailViewController: UIViewController {
     // MARK: - Setup
 
     private func setupUI() {
-        gradientLayer = view.addGradientBackground()
+        let gradient = CAGradientLayer()
+        gradient.colors = [
+            UIColor.backgroundTop.cgColor,
+            UIColor.backgroundBottom.cgColor
+        ]
+        gradient.locations = [0.0, 1.0]
+        view.layer.insertSublayer(gradient, at: 0)
+        gradientLayer = gradient
 
-        view.addSubview(cancelButton)
-        view.addSubview(saveButton)
-        view.addSubview(headerLabel)
+        headerLabel.text = isNewAlarm ? "새 알람" : "알람 편집"
+        deleteButton.isHidden = isNewAlarm
+
         view.addSubview(scrollView)
-
         scrollView.addSubview(contentView)
+
+        contentView.addSubview(headerLabel)
+        contentView.addSubview(cancelButton)
+        contentView.addSubview(saveButton)
         contentView.addSubview(timePickerCard)
         timePickerCard.addSubview(timePicker)
-
         contentView.addSubview(titleCard)
         titleCard.addSubview(titleFieldLabel)
         titleCard.addSubview(titleTextField)
-
         contentView.addSubview(repeatCard)
         repeatCard.addSubview(repeatLabel)
         repeatCard.addSubview(repeatSegmentControl)
         repeatCard.addSubview(weekdayStackView)
         repeatCard.addSubview(datePicker)
-
-        headerLabel.text = isNewAlarm ? "알람 추가" : "알람 편집"
-
-        // Initially hide optional elements
-        weekdayStackView.isHidden = true
-        weekdayStackView.alpha = 0
-        datePicker.isHidden = true
-        datePicker.alpha = 0
+        contentView.addSubview(deleteButton)
 
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         tapGesture.cancelsTouchesInView = false
         view.addGestureRecognizer(tapGesture)
+
+        repeatCardBottomToSegmentConstraint = repeatCard.bottomAnchor.constraint(equalTo: repeatSegmentControl.bottomAnchor, constant: 16)
+        repeatCardBottomToWeekdayConstraint = repeatCard.bottomAnchor.constraint(equalTo: weekdayStackView.bottomAnchor, constant: 16)
+        repeatCardBottomToDatePickerConstraint = repeatCard.bottomAnchor.constraint(equalTo: datePicker.bottomAnchor, constant: 16)
     }
 
     private func setupConstraints() {
-        // Create bottom constraints for different states
-        repeatCardBottomToSegmentConstraint = repeatCard.bottomAnchor.constraint(
-            equalTo: repeatSegmentControl.bottomAnchor, constant: 14
-        )
-        repeatCardBottomToWeekdayConstraint = repeatCard.bottomAnchor.constraint(
-            equalTo: weekdayStackView.bottomAnchor, constant: 14
-        )
-        repeatCardBottomToDatePickerConstraint = repeatCard.bottomAnchor.constraint(
-            equalTo: datePicker.bottomAnchor, constant: 14
-        )
-
-        // Initially activate the segment constraint
-        repeatCardBottomToSegmentConstraint?.isActive = true
-
         NSLayoutConstraint.activate([
-            cancelButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
-            cancelButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-
-            saveButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
-            saveButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-
-            headerLabel.topAnchor.constraint(equalTo: cancelButton.bottomAnchor, constant: 16),
-            headerLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-
-            scrollView.topAnchor.constraint(equalTo: headerLabel.bottomAnchor, constant: 20),
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -289,13 +288,22 @@ class AlarmDetailViewController: UIViewController {
             contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
 
-            timePickerCard.topAnchor.constraint(equalTo: contentView.topAnchor),
+            cancelButton.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            cancelButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+
+            saveButton.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            saveButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+
+            headerLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            headerLabel.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+
+            timePickerCard.topAnchor.constraint(equalTo: headerLabel.bottomAnchor, constant: 30),
             timePickerCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             timePickerCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
 
             timePicker.topAnchor.constraint(equalTo: timePickerCard.topAnchor, constant: 8),
-            timePicker.leadingAnchor.constraint(equalTo: timePickerCard.leadingAnchor, constant: 8),
-            timePicker.trailingAnchor.constraint(equalTo: timePickerCard.trailingAnchor, constant: -8),
+            timePicker.leadingAnchor.constraint(equalTo: timePickerCard.leadingAnchor),
+            timePicker.trailingAnchor.constraint(equalTo: timePickerCard.trailingAnchor),
             timePicker.bottomAnchor.constraint(equalTo: timePickerCard.bottomAnchor, constant: -8),
 
             titleCard.topAnchor.constraint(equalTo: timePickerCard.bottomAnchor, constant: 16),
@@ -314,7 +322,6 @@ class AlarmDetailViewController: UIViewController {
             repeatCard.topAnchor.constraint(equalTo: titleCard.bottomAnchor, constant: 16),
             repeatCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             repeatCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            repeatCard.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -40),
 
             repeatLabel.topAnchor.constraint(equalTo: repeatCard.topAnchor, constant: 14),
             repeatLabel.leadingAnchor.constraint(equalTo: repeatCard.leadingAnchor, constant: 16),
@@ -330,7 +337,14 @@ class AlarmDetailViewController: UIViewController {
             weekdayStackView.heightAnchor.constraint(equalToConstant: 44),
 
             datePicker.topAnchor.constraint(equalTo: repeatSegmentControl.bottomAnchor, constant: 16),
-            datePicker.centerXAnchor.constraint(equalTo: repeatCard.centerXAnchor)
+            datePicker.centerXAnchor.constraint(equalTo: repeatCard.centerXAnchor),
+            
+            // 삭제 버튼
+            deleteButton.topAnchor.constraint(equalTo: repeatCard.bottomAnchor, constant: 32),
+            deleteButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            deleteButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            deleteButton.heightAnchor.constraint(equalToConstant: 50),
+            deleteButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -40)
         ])
     }
 
@@ -368,6 +382,7 @@ class AlarmDetailViewController: UIViewController {
 
         titleTextField.text = alarmTitle
         repeatSegmentControl.selectedSegmentIndex = repeatMode
+        deleteButton.isHidden = false
 
         if repeatMode == 2, let date = specificDate {
             datePicker.date = date
@@ -379,28 +394,27 @@ class AlarmDetailViewController: UIViewController {
     private func updateRepeatSectionVisibility(animated: Bool) {
         let selectedIndex = repeatSegmentControl.selectedSegmentIndex
 
-        // Deactivate all bottom constraints
         repeatCardBottomToSegmentConstraint?.isActive = false
         repeatCardBottomToWeekdayConstraint?.isActive = false
         repeatCardBottomToDatePickerConstraint?.isActive = false
 
         let animations = {
             switch selectedIndex {
-            case 1: // 요일 반복
+            case 1:
                 self.weekdayStackView.isHidden = false
                 self.weekdayStackView.alpha = 1
                 self.datePicker.isHidden = true
                 self.datePicker.alpha = 0
                 self.repeatCardBottomToWeekdayConstraint?.isActive = true
 
-            case 2: // 특정 날짜
+            case 2:
                 self.weekdayStackView.isHidden = true
                 self.weekdayStackView.alpha = 0
                 self.datePicker.isHidden = false
                 self.datePicker.alpha = 1
                 self.repeatCardBottomToDatePickerConstraint?.isActive = true
 
-            default: // 반복 안 함
+            default:
                 self.weekdayStackView.isHidden = true
                 self.weekdayStackView.alpha = 0
                 self.datePicker.isHidden = true
@@ -456,6 +470,26 @@ class AlarmDetailViewController: UIViewController {
             existingAlarm: existingAlarm
         )
         dismiss(animated: true)
+    }
+    
+    @objc private func deleteTapped() {
+        UIView.hapticFeedback(style: .medium)
+        
+        guard let alarm = existingAlarm else { return }
+        
+        let alert = UIAlertController(
+            title: "알람 삭제",
+            message: "'\(alarm.displayTitle)' 알람을 삭제하시겠습니까?",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: "삭제", style: .destructive) { [weak self] _ in
+            self?.onDeleteAlarm?(alarm)
+            self?.dismiss(animated: true)
+        })
+        
+        present(alert, animated: true)
     }
 
     @objc private func timeChanged() {

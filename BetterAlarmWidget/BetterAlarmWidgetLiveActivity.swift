@@ -17,9 +17,8 @@ struct AlarmActivityAttributes: ActivityAttributes {
         var nextAlarmDate: String
         var alarmTitle: String
         var isSkipped: Bool
-        var isEmpty: Bool  // 알람 없음 상태 추가
+        var isEmpty: Bool
         
-        // 기존 코드 호환을 위한 기본값 init
         init(nextAlarmTime: String, nextAlarmDate: String, alarmTitle: String, isSkipped: Bool, isEmpty: Bool = false) {
             self.nextAlarmTime = nextAlarmTime
             self.nextAlarmDate = nextAlarmDate
@@ -40,8 +39,6 @@ private extension Color {
     static let skipOrange = Color(red: 1.0, green: 0.75, blue: 0.4)
     static let backgroundDark = Color(red: 0.08, green: 0.08, blue: 0.15)
     static let backgroundPurple = Color(red: 0.12, green: 0.1, blue: 0.22)
-    static let glassWhite = Color.white.opacity(0.1)
-    static let glassBorder = Color.white.opacity(0.2)
     static let emptyGray = Color(red: 0.5, green: 0.5, blue: 0.55)
 }
 
@@ -50,14 +47,13 @@ private extension Color {
 struct BetterAlarmWidgetLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: AlarmActivityAttributes.self) { context in
-            // Lock screen/banner UI goes here
+            // Lock screen/banner UI
             LockScreenView(context: context)
         } dynamicIsland: { context in
             DynamicIsland {
                 // Expanded UI
                 DynamicIslandExpandedRegion(.leading) {
                     if context.state.isEmpty {
-                        // 빈 상태
                         HStack(spacing: 10) {
                             ZStack {
                                 Circle()
@@ -75,7 +71,6 @@ struct BetterAlarmWidgetLiveActivity: Widget {
                                 .foregroundColor(.emptyGray)
                         }
                     } else {
-                        // 알람 있는 상태
                         HStack(spacing: 10) {
                             ZStack {
                                 Circle()
@@ -109,23 +104,19 @@ struct BetterAlarmWidgetLiveActivity: Widget {
                 }
 
                 DynamicIslandExpandedRegion(.trailing) {
-                    if !context.state.isEmpty {
-                        VStack(alignment: .trailing, spacing: 4) {
-                            if context.state.isSkipped {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "forward.fill")
-                                        .font(.caption2)
-                                    Text("스킵")
-                                        .font(.caption2)
-                                        .fontWeight(.semibold)
-                                }
-                                .foregroundColor(.skipOrange)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(Color.skipOrange.opacity(0.2))
-                                .clipShape(Capsule())
-                            }
+                    if !context.state.isEmpty && context.state.isSkipped {
+                        HStack(spacing: 4) {
+                            Image(systemName: "forward.fill")
+                                .font(.caption2)
+                            Text("스킵")
+                                .font(.caption2)
+                                .fontWeight(.semibold)
                         }
+                        .foregroundColor(.skipOrange)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.skipOrange.opacity(0.2))
+                        .clipShape(Capsule())
                     }
                 }
 
@@ -207,7 +198,6 @@ struct LockScreenView: View {
 
     var body: some View {
         ZStack {
-            // Gradient background
             LinearGradient(
                 colors: [.backgroundDark, .backgroundPurple],
                 startPoint: .topLeading,
@@ -215,10 +205,8 @@ struct LockScreenView: View {
             )
 
             if context.state.isEmpty {
-                // 빈 상태 UI
                 emptyStateContent
             } else {
-                // 알람이 있는 상태 UI
                 alarmContent
             }
         }
@@ -230,7 +218,6 @@ struct LockScreenView: View {
     
     private var emptyStateContent: some View {
         HStack(spacing: 16) {
-            // Empty alarm icon
             ZStack {
                 Circle()
                     .fill(Color.emptyGray.opacity(0.2))
@@ -252,11 +239,6 @@ struct LockScreenView: View {
             }
             
             Spacer()
-            
-            // Decorative plus icon
-            Image(systemName: "plus.circle")
-                .font(.system(size: 24))
-                .foregroundColor(.emptyGray.opacity(0.3))
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
@@ -266,7 +248,6 @@ struct LockScreenView: View {
     
     private var alarmContent: some View {
         HStack(spacing: 16) {
-            // Alarm icon with gradient circle
             ZStack {
                 Circle()
                     .fill(
@@ -284,7 +265,6 @@ struct LockScreenView: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                // Title and skip badge row
                 HStack(spacing: 8) {
                     Text("다음 알람")
                         .font(.caption)
@@ -295,7 +275,7 @@ struct LockScreenView: View {
                         HStack(spacing: 3) {
                             Image(systemName: "forward.fill")
                                 .font(.system(size: 8))
-                            Text("1회 스킵")
+                            Text("건너뛰기")
                                 .font(.system(size: 10, weight: .semibold))
                         }
                         .foregroundColor(.skipOrange)
@@ -306,7 +286,6 @@ struct LockScreenView: View {
                     }
                 }
 
-                // Time and date row
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(context.state.nextAlarmTime)
                         .font(.system(size: 28, weight: .bold, design: .rounded))
@@ -318,7 +297,6 @@ struct LockScreenView: View {
                         .foregroundColor(.white.opacity(0.6))
                 }
 
-                // Alarm title
                 Text(context.state.alarmTitle)
                     .font(.subheadline)
                     .foregroundColor(.white.opacity(0.8))
@@ -327,7 +305,6 @@ struct LockScreenView: View {
 
             Spacer()
 
-            // Decorative element
             VStack {
                 Image(systemName: "bell.and.waves.left.and.right.fill")
                     .font(.system(size: 20))

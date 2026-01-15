@@ -17,9 +17,23 @@ class AlarmStore {
     private let alarmsKey = "savedAlarms"
 
     private(set) var alarms: [Alarm] = []
+    
+    private var isInitialized = false
 
     private init() {
         loadAlarms()
+        setupAlarmCompletionObserver()
+        isInitialized = true
+    }
+    
+    // MARK: - Alarm Completion Observer
+    
+    private func setupAlarmCompletionObserver() {
+        Task { @MainActor in
+            AlarmKitService.shared.observeAlarmCompleted { [weak self] completedAlarm in
+                self?.handleAlarmCompleted(completedAlarm)
+            }
+        }
     }
 
     private func notifyUpdate() {
@@ -181,20 +195,49 @@ class AlarmStore {
     }
 
     // MARK: - One-time Alarm Completion
-    // 1회성 알람이 완료되면 삭제하지 않고 비활성화만 함
 
     func handleAlarmCompleted(_ alarm: Alarm) {
-        switch alarm.schedule {
+        // ID로 알람 찾기
+        guard let index = alarms.firstIndex(where: { $0.id == alarm.id }) else {
+            // ID로 못 찾으면 시간으로 매칭 시도
+            handleAlarmCompletedByTime(hour: alarm.hour, minute: alarm.minute)
+            return
+        }
+        
+        let existingAlarm = alarms[index]
+        
+        switch existingAlarm.schedule {
         case .once, .specificDate:
-            // 삭제하지 않고 비활성화만!
-            toggleAlarm(alarm, enabled: false)
+            // 1회성 알람은 비활성화
+            toggleAlarm(existingAlarm, enabled: false)
+            print("[AlarmStore] One-time alarm completed and disabled: \(existingAlarm.displayTitle)")
         case .weekly:
-            if alarm.skippedDate != nil {
-                clearSkipOnceAlarm(alarm)
+            // 주간 알람은 스킵 상태 초기화
+            if existingAlarm.skippedDate != nil {
+                clearSkipOnceAlarm(existingAlarm)
             }
+            // 다음 알람 스케줄
+            scheduleNextAlarm()
+            print("[AlarmStore] Weekly alarm completed, scheduling next: \(existingAlarm.displayTitle)")
         }
     }
-
+    
+    // 시간으로 완료된 알람 찾기 (백업 방법)
+    private func handleAlarmCompletedByTime(hour: Int, minute: Int) {
+        guard let alarm = alarms.first(where: {
+            $0.isEnabled && $0.hour == hour && $0.minute == minute
+        }) else { return }
+        
+        handleAlarmCompleted(alarm)
+    }
+    
+    // 앱이 foreground로 올 때 호출
+    func checkForCompletedAlarms() {
+        Task { @MainActor in
+            AlarmKitService.shared.checkForPendingIntentActions()
+        }
+    }
+    
     // 사용자가 수동으로 만료된 1회성 알람 정리 (선택적)
     func cleanupExpiredOneTimeAlarms() {
         let now = Date()
@@ -262,8 +305,6 @@ class AlarmStore {
     }
 
     // MARK: - Alarm Scheduling
-    // AlarmKit은 한 번에 하나의 알람만 스케줄 가능하므로
-    // 가장 가까운 다음 알람만 스케줄
 
     private func scheduleNextAlarm() {
         Task { @MainActor in
@@ -283,11 +324,9 @@ class AlarmStore {
 
     func updateLiveActivity() {
         Task { @MainActor in
-            // 활성화된 알람이 있으면 Live Activity 업데이트
             if let alarm = nextAlarmIncludingSkipped {
                 LiveActivityManager.shared.updateActivity(with: alarm)
             } else {
-                // 알람이 없으면 빈 상태로 업데이트 (종료하지 않음)
                 LiveActivityManager.shared.updateEmptyState()
             }
         }

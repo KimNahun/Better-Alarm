@@ -1,5 +1,6 @@
 import UIKit
 import MessageUI
+import ActivityKit
 
 class SettingsViewController: UIViewController {
 
@@ -83,6 +84,11 @@ class SettingsViewController: UIViewController {
         setupUI()
         setupConstraints()
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        tableView.reloadData()
+    }
 
     // MARK: - Setup
 
@@ -137,6 +143,44 @@ class SettingsViewController: UIViewController {
 
         present(mailVC, animated: true)
     }
+    
+    // MARK: - Toast
+    
+    private func showToast(message: String) {
+        let toastLabel = UILabel()
+        toastLabel.translatesAutoresizingMaskIntoConstraints = false
+        toastLabel.backgroundColor = UIColor(white: 0.1, alpha: 0.95)
+        toastLabel.textColor = .white
+        toastLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        toastLabel.textAlignment = .center
+        toastLabel.text = message
+        toastLabel.numberOfLines = 0
+        toastLabel.layer.cornerRadius = 10
+        toastLabel.clipsToBounds = true
+        
+        view.addSubview(toastLabel)
+        
+        NSLayoutConstraint.activate([
+            toastLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            toastLabel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -100),
+            toastLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 32),
+            toastLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -32)
+        ])
+        
+        // 패딩 추가
+        toastLabel.layoutMargins = UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)
+        
+        toastLabel.alpha = 0
+        UIView.animate(withDuration: 0.3) {
+            toastLabel.alpha = 1
+        }
+        
+        UIView.animate(withDuration: 0.3, delay: 2.5, options: .curveEaseOut) {
+            toastLabel.alpha = 0
+        } completion: { _ in
+            toastLabel.removeFromSuperview()
+        }
+    }
 }
 
 // MARK: - Settings Cell
@@ -173,7 +217,7 @@ class SettingsCell: UITableViewCell {
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.image = UIImage(systemName: "chevron.right")
         imageView.contentMode = .scaleAspectFit
-        imageView.tintColor = UIColor.white.withAlphaComponent(0.4)  // 흰색 계열
+        imageView.tintColor = UIColor.white.withAlphaComponent(0.4)
         return imageView
     }()
     
@@ -251,6 +295,10 @@ class SettingsCell: UITableViewCell {
         selectionStyle = showToggle ? .none : .default
     }
     
+    func setToggleValue(_ value: Bool) {
+        toggleSwitch.setOn(value, animated: false)
+    }
+    
     override func prepareForReuse() {
         super.prepareForReuse()
         iconImageView.image = nil
@@ -289,20 +337,17 @@ extension SettingsViewController: UITableViewDataSource {
         
         switch row.item {
         case .liveActivity:
+            let isEnabled = LiveActivityManager.shared.isLiveActivityEnabled
             cell.configure(
                 icon: row.icon,
                 title: row.title,
                 detail: nil,
                 showChevron: false,
                 showToggle: true,
-                toggleValue: LiveActivityManager.shared.isLiveActivityEnabled
+                toggleValue: isEnabled
             )
             cell.onToggleChanged = { [weak self] isOn in
-                UIView.hapticFeedback(style: .light)
-                Task { @MainActor in
-                    let nextAlarm = AlarmStore.shared.nextAlarm
-                    LiveActivityManager.shared.setEnabled(isOn, with: nextAlarm)
-                }
+                self?.handleLiveActivityToggle(isOn: isOn, cell: cell)
             }
             
         case .appVersion:
@@ -325,6 +370,34 @@ extension SettingsViewController: UITableViewDataSource {
         }
 
         return cell
+    }
+    
+    private func handleLiveActivityToggle(isOn: Bool, cell: SettingsCell) {
+        UIView.hapticFeedback(style: .light)
+        
+        if isOn {
+            // 시스템에서 Live Activity가 허용되어 있는지 확인
+            let authInfo = ActivityAuthorizationInfo()
+            
+            if !authInfo.areActivitiesEnabled {
+                // 시스템에서 비활성화됨 - 스위치를 다시 끄고 안내
+                cell.setToggleValue(false)
+                
+                showToast(message: "설정에서 실시간 현황을 켜주세요")
+                
+                // 1초 후 설정으로 이동
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                    self?.openAppSettings()
+                }
+                return
+            }
+        }
+        
+        // 정상적으로 토글
+        Task { @MainActor in
+            let nextAlarm = AlarmStore.shared.nextAlarm
+            LiveActivityManager.shared.setEnabled(isOn, with: nextAlarm)
+        }
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
