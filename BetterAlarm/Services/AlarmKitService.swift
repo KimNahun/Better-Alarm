@@ -381,7 +381,7 @@ final class AlarmKitService {
 
         // 새 알람 예약 (5분 후)
         let newId = UUID()
-        let snoozeTime = Date().addingTimeInterval(Self.snoozeInterval)
+        let snoozeTime = await Date().addingTimeInterval(Self.snoozeInterval)
         AppLogger.debug("Snooze alarm will trigger at: \(snoozeTime)", category: .alarmKit)
 
         let attributes = await Self.createAlarmAttributesStatic(

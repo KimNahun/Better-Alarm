@@ -313,7 +313,12 @@ class WeeklyAlarmViewController: UIViewController {
 
 extension WeeklyAlarmViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 110
+        guard let alarmId = dataSource.itemIdentifier(for: indexPath),
+              let alarm = filteredAlarms().first(where: { $0.id == alarmId }) else {
+            return 110
+        }
+        // 스킵 중인 알람은 더 높게
+        return alarm.isSkippingNext ? 135 : 110
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

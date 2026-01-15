@@ -262,14 +262,13 @@ class AlarmStore {
         // ID로 알람 찾기
         guard let index = alarms.firstIndex(where: { $0.id == alarm.id }) else {
             AppLogger.debug("Alarm not found by ID, trying time match", category: .alarm)
-            // ID로 못 찾으면 시간으로 매칭 시도
             handleAlarmCompletedByTime(hour: alarm.hour, minute: alarm.minute)
             return
         }
 
         let existingAlarm = alarms[index]
 
-        // ⭐ 이미 비활성화된 알람은 중복 처리 방지
+        // 이미 비활성화된 알람은 중복 처리 방지
         guard existingAlarm.isEnabled else {
             AppLogger.debug("Alarm already disabled, skipping completion handling: \(existingAlarm.displayTitle)", category: .alarm)
             return
@@ -316,15 +315,22 @@ class AlarmStore {
         handleAlarmCompleted(alarm)
     }
 
-    // ⭐ 앱이 foreground로 올 때 호출 - 수정됨
+    // ⭐ 앱이 foreground로 올 때 호출 - 여러 알람 처리
     func checkForCompletedAlarms() {
         AppLogger.debug("Checking for completed alarms from intent", category: .alarm)
         Task { @MainActor in
-            // AlarmKitService에서 완료된 알람 ID 가져오기
-            if let completedAlarmId = AlarmKitService.shared.checkForPendingIntentActions() {
-                AppLogger.info("Processing completed alarm from intent, ID: \(completedAlarmId)", category: .alarm)
-                self.handleAlarmCompletedById(completedAlarmId)
+            // AlarmKitService에서 완료된 알람 ID 배열 가져오기
+            let completedAlarmIds = AlarmKitService.shared.checkForPendingIntentActions()
+            
+            if !completedAlarmIds.isEmpty {
+                AppLogger.info("Processing \(completedAlarmIds.count) completed alarms from intent", category: .alarm)
+                for alarmId in completedAlarmIds {
+                    self.handleAlarmCompletedById(alarmId)
+                }
             }
+            
+            // ⭐ 완료 처리 후 다음 알람 reschedule
+            self.scheduleNextAlarm()
         }
     }
 
@@ -335,7 +341,6 @@ class AlarmStore {
         let alarmsToDelete = alarms.filter { alarm in
             switch alarm.schedule {
             case .once, .specificDate:
-                // 비활성화되어 있고, 다음 트리거 날짜가 없는 경우만
                 return !alarm.isEnabled && alarm.nextTriggerDate(from: now) == nil
             case .weekly:
                 return false
@@ -353,6 +358,7 @@ class AlarmStore {
 
     // MARK: - Next Alarm
 
+    // 스킵되지 않은 다음 알람 (AlarmKit 스케줄용)
     var nextAlarm: Alarm? {
         let next = alarms
             .filter { $0.isEnabled && !$0.isSkippingNext }
@@ -365,7 +371,7 @@ class AlarmStore {
         return next
     }
 
-    // 스킵 중인 알람 포함해서 다음 알람 (Live Activity용)
+    // 스킵 중인 알람 포함해서 다음 알람 (Live Activity 및 UI 표시용)
     var nextAlarmIncludingSkipped: Alarm? {
         return alarms
             .filter { $0.isEnabled }
@@ -377,8 +383,10 @@ class AlarmStore {
             .0
     }
 
+    // ⭐ 수정: 스킵된 알람도 포함하여 표시 (1번 문제 해결)
     var nextAlarmDisplayString: String? {
-        guard let alarm = nextAlarm, let date = alarm.nextTriggerDate() else { return nil }
+        // 스킵된 알람 포함해서 가져오기
+        guard let alarm = nextAlarmIncludingSkipped, let date = alarm.nextTriggerDate() else { return nil }
 
         let calendar = Calendar.current
         let hour = calendar.component(.hour, from: date)
@@ -389,15 +397,28 @@ class AlarmStore {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ko_KR")
 
+        var baseString: String
         if calendar.isDateInToday(date) {
-            return String(format: "오늘 %@ %d시 %02d분", period, displayHour, minute)
+            baseString = String(format: "오늘 %@ %d시 %02d분", period, displayHour, minute)
         } else if calendar.isDateInTomorrow(date) {
-            return String(format: "내일 %@ %d시 %02d분", period, displayHour, minute)
+            baseString = String(format: "내일 %@ %d시 %02d분", period, displayHour, minute)
         } else {
             formatter.dateFormat = "M월 d일 (E)"
             let dateString = formatter.string(from: date)
-            return String(format: "%@ %@ %d시 %02d분", dateString, period, displayHour, minute)
+            baseString = String(format: "%@ %@ %d시 %02d분", dateString, period, displayHour, minute)
         }
+        
+        // ⭐ 스킵 중인 알람이면 표시 추가
+        if alarm.isSkippingNext {
+            baseString += " (건너뜀)"
+        }
+        
+        return baseString
+    }
+    
+    // ⭐ 활성화된 알람이 있는지 확인 (스킵 포함)
+    var hasEnabledAlarms: Bool {
+        return alarms.contains { $0.isEnabled }
     }
 
     // MARK: - Alarm Scheduling
