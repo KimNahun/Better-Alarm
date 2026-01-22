@@ -11,7 +11,7 @@ nonisolated struct BetterAlarmMetadata: AlarmMetadata {}
 enum AlarmIntentKeys {
     static let alarmDismissedKey = "alarmDismissedFromIntent"
     static let alarmDismissedTimeKey = "alarmDismissedTime"
-    static let alarmDismissedAlarmIdsKey = "alarmDismissedAlarmIds"  // ⭐ 복수형으로 변경 (배열)
+    static let alarmDismissedAlarmIdsKey = "alarmDismissedAlarmIds"
     static let alarmSnoozedKey = "alarmSnoozedFromIntent"
 }
 
@@ -44,12 +44,9 @@ struct StopAlarmIntent: LiveActivityIntent {
         userDefaults.set(true, forKey: AlarmIntentKeys.alarmDismissedKey)
         userDefaults.set(Date().timeIntervalSince1970, forKey: AlarmIntentKeys.alarmDismissedTimeKey)
         
-        // ⭐ 매핑에서 앱 알람 ID 가져와서 배열에 추가
         let mapping = userDefaults.dictionary(forKey: "alarmKitToAppAlarmIdMapping") as? [String: String] ?? [:]
         if let appAlarmId = mapping[alarmID] {
-            // 기존 배열 가져오기
             var dismissedIds = userDefaults.stringArray(forKey: AlarmIntentKeys.alarmDismissedAlarmIdsKey) ?? []
-            // 중복 방지
             if !dismissedIds.contains(appAlarmId) {
                 dismissedIds.append(appAlarmId)
                 userDefaults.set(dismissedIds, forKey: AlarmIntentKeys.alarmDismissedAlarmIdsKey)
@@ -95,6 +92,11 @@ struct SnoozeAlarmIntent: LiveActivityIntent {
         return .result()
     }
 }
+
+// MARK: - Type Aliases for AlarmKit (이름 충돌 방지)
+
+typealias AKAlarm = AlarmKit.Alarm
+typealias AKSchedule = AlarmKit.Alarm.Schedule
 
 // MARK: - AlarmKit Service
 
@@ -192,7 +194,6 @@ final class AlarmKitService {
                 AppLogger.debug("Alarm updates received, count: \(alarms.count)", category: .alarmKit)
 
                 if alarms.isEmpty {
-                    // 스케줄링 중이면 완료 콜백 무시
                     if self.isScheduling {
                         AppLogger.debug("Ignoring empty alarms during scheduling", category: .alarmKit)
                     } else if let completedAlarm = self.currentScheduledAlarm {
@@ -211,31 +212,26 @@ final class AlarmKitService {
         }
     }
 
-    // MARK: - Check for Intent Actions (앱이 foreground로 올 때 호출)
+    // MARK: - Check for Intent Actions
 
     func checkForPendingIntentActions() -> [UUID] {
         AppLogger.debug("Checking for pending intent actions", category: .alarmKit)
         let userDefaults = UserDefaults.standard
         var completedAlarmIds: [UUID] = []
 
-        // 알람 해제 확인
         if userDefaults.bool(forKey: AlarmIntentKeys.alarmDismissedKey) {
             AppLogger.info("Found pending alarm dismissal from intent", category: .alarmKit)
             userDefaults.set(false, forKey: AlarmIntentKeys.alarmDismissedKey)
 
-            // ⭐ 저장된 모든 알람 ID 가져오기
             if let dismissedIdStrings = userDefaults.stringArray(forKey: AlarmIntentKeys.alarmDismissedAlarmIdsKey) {
                 AppLogger.info("Found \(dismissedIdStrings.count) completed alarm IDs", category: .alarmKit)
                 for idString in dismissedIdStrings {
                     if let alarmId = UUID(uuidString: idString) {
                         completedAlarmIds.append(alarmId)
-                        AppLogger.debug("Added completed alarm ID: \(idString)", category: .alarmKit)
                     }
                 }
-                // 처리 후 배열 비우기
                 userDefaults.removeObject(forKey: AlarmIntentKeys.alarmDismissedAlarmIdsKey)
             } else if let alarm = currentScheduledAlarm {
-                // 폴백: 현재 스케줄된 알람으로 처리
                 AppLogger.info("Using current scheduled alarm as fallback: \(alarm.displayTitle)", category: .alarmKit)
                 completedAlarmIds.append(alarm.id)
             }
@@ -246,7 +242,6 @@ final class AlarmKitService {
             AppLogger.info("Processed alarm dismissal from intent, count: \(completedAlarmIds.count)", category: .alarmKit)
         }
 
-        // 스누즈 확인
         if userDefaults.bool(forKey: AlarmIntentKeys.alarmSnoozedKey) {
             userDefaults.set(false, forKey: AlarmIntentKeys.alarmSnoozedKey)
             AppLogger.info("Processed snooze from intent", category: .alarmKit)
@@ -267,7 +262,13 @@ final class AlarmKitService {
         AppLogger.debug("Saved alarm ID mapping: \(alarmKitId.uuidString.prefix(8)) -> \(appAlarmId.uuidString.prefix(8))", category: .alarmKit)
     }
 
-    // MARK: - Schedule Alarm
+    // MARK: - Weekday 변환 (앱 Weekday → AlarmKit Weekday)
+    
+    private func convertToAlarmKitWeekday(_ weekday: Weekday) -> Locale.Weekday {
+        return weekday.localeWeekday
+    }
+
+    // MARK: - Schedule Alarm (⭐ Fixed/Relative 기반으로 변경)
 
     func scheduleAlarm(for alarm: Alarm) async {
         AppLogger.info("Scheduling alarm: \(alarm.displayTitle)", category: .alarmKit)
@@ -297,22 +298,6 @@ final class AlarmKitService {
             // AlarmKit ID -> App Alarm ID 매핑 저장
             saveAlarmIdMapping(alarmKitId: id, appAlarmId: alarm.id)
 
-            // 다음 알람까지의 시간 계산
-            guard let triggerDate = alarm.nextTriggerDate() else {
-                AppLogger.warning("No trigger date for alarm", category: .alarmKit)
-                isScheduling = false
-                return
-            }
-            let duration = triggerDate.timeIntervalSinceNow
-
-            guard duration > 0 else {
-                AppLogger.warning("Trigger date is in the past: \(triggerDate)", category: .alarmKit)
-                isScheduling = false
-                return
-            }
-
-            AppLogger.debug("Alarm will trigger in \(Int(duration)) seconds at \(triggerDate)", category: .alarmKit)
-
             // AlarmAttributes 생성
             let attributes = createAlarmAttributes(
                 title: alarm.displayTitle,
@@ -320,16 +305,86 @@ final class AlarmKitService {
             )
 
             typealias Config = AlarmManager.AlarmConfiguration<BetterAlarmMetadata>
-            let config = Config.timer(
-                duration: duration,
-                attributes: attributes,
-                stopIntent: StopAlarmIntent(alarmID: id.uuidString),
-                secondaryIntent: SnoozeAlarmIntent(alarmID: id.uuidString)
-            )
+            let config: Config
+            
+            switch alarm.schedule {
+            case .once:
+                // ⭐ 1회성 알람: Fixed Schedule 사용
+                guard let triggerDate = alarm.nextTriggerDate() else {
+                    AppLogger.warning("No trigger date for once alarm", category: .alarmKit)
+                    isScheduling = false
+                    return
+                }
+                
+                guard triggerDate.timeIntervalSinceNow > 0 else {
+                    AppLogger.warning("Trigger date is in the past: \(triggerDate)", category: .alarmKit)
+                    isScheduling = false
+                    return
+                }
+                
+                let schedule = AKSchedule.fixed(triggerDate)
+                config = Config(
+                    schedule: schedule,
+                    attributes: attributes,
+                    stopIntent: StopAlarmIntent(alarmID: id.uuidString),
+                    secondaryIntent: SnoozeAlarmIntent(alarmID: id.uuidString)
+                )
+                
+                AppLogger.info("Scheduled ONCE alarm with fixed date: \(triggerDate)", category: .alarmKit)
+                
+            case .weekly(let weekdays):
+                // ⭐ 주간 반복 알람: Relative Schedule 사용
+                let time = AKSchedule.Relative.Time(hour: alarm.hour, minute: alarm.minute)
+                let alarmKitWeekdays = weekdays.map { convertToAlarmKitWeekday($0) }
+                let recurrence = AKSchedule.Relative.Recurrence.weekly(alarmKitWeekdays)
+                let relativeSchedule = AKSchedule.Relative(time: time, repeats: recurrence)
+                let schedule = AKSchedule.relative(relativeSchedule)
+                
+                config = Config(
+                    schedule: schedule,
+                    attributes: attributes,
+                    stopIntent: StopAlarmIntent(alarmID: id.uuidString),
+                    secondaryIntent: SnoozeAlarmIntent(alarmID: id.uuidString)
+                )
+                
+                let weekdayNames = weekdays.map { $0.shortName }.joined(separator: ", ")
+                AppLogger.info("Scheduled WEEKLY alarm: \(alarm.hour):\(alarm.minute) on \(weekdayNames)", category: .alarmKit)
+                
+            case .specificDate(let date):
+                // ⭐ 특정 날짜 알람: Fixed Schedule 사용
+                var components = Calendar.current.dateComponents([.year, .month, .day], from: date)
+                components.hour = alarm.hour
+                components.minute = alarm.minute
+                components.second = 0
+                
+                guard let triggerDate = Calendar.current.date(from: components) else {
+                    AppLogger.warning("Failed to create trigger date from components", category: .alarmKit)
+                    isScheduling = false
+                    return
+                }
+                
+                guard triggerDate.timeIntervalSinceNow > 0 else {
+                    AppLogger.warning("Specific date is in the past: \(triggerDate)", category: .alarmKit)
+                    isScheduling = false
+                    return
+                }
+                
+                let schedule = AKSchedule.fixed(triggerDate)
+                config = Config(
+                    schedule: schedule,
+                    attributes: attributes,
+                    stopIntent: StopAlarmIntent(alarmID: id.uuidString),
+                    secondaryIntent: SnoozeAlarmIntent(alarmID: id.uuidString)
+                )
+                
+                AppLogger.info("Scheduled SPECIFIC DATE alarm: \(triggerDate)", category: .alarmKit)
+            }
 
             _ = try await manager.schedule(id: id, configuration: config)
 
-            AppLogger.alarmScheduled("\(alarm.displayTitle) id=\(id.uuidString.prefix(8))", triggerDate: triggerDate)
+            if let nextDate = alarm.nextTriggerDate() {
+                AppLogger.alarmScheduled("\(alarm.displayTitle) id=\(id.uuidString.prefix(8))", triggerDate: nextDate)
+            }
 
         } catch {
             AppLogger.error("Failed to schedule alarm: \(error)", category: .alarmKit)
@@ -375,7 +430,7 @@ final class AlarmKitService {
         }
     }
 
-    // MARK: - Snooze
+    // MARK: - Snooze (Fixed Schedule 사용)
 
     nonisolated func snoozeFromIntent(alarmID: String) async {
         AppLogger.info("Snoozing alarm from intent: \(alarmID)", category: .alarmKit)
@@ -398,8 +453,11 @@ final class AlarmKitService {
         )
 
         typealias Config = AlarmManager.AlarmConfiguration<BetterAlarmMetadata>
-        let config = await Config.timer(
-            duration: Self.snoozeInterval,
+        
+        // 스누즈도 fixed schedule 사용
+        let schedule = AKSchedule.fixed(snoozeTime)
+        let config = Config(
+            schedule: schedule,
             attributes: attributes,
             stopIntent: StopAlarmIntent(alarmID: newId.uuidString),
             secondaryIntent: SnoozeAlarmIntent(alarmID: newId.uuidString)
@@ -407,7 +465,7 @@ final class AlarmKitService {
 
         _ = try? await manager.schedule(id: newId, configuration: config)
 
-        AppLogger.info("Snooze alarm scheduled, id=\(newId.uuidString.prefix(8))", category: .alarmKit)
+        AppLogger.info("Snooze alarm scheduled with fixed date, id=\(newId.uuidString.prefix(8))", category: .alarmKit)
     }
 
     // MARK: - Alarm Attributes Helper

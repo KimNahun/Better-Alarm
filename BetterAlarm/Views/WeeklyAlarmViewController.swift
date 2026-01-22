@@ -32,20 +32,19 @@ class WeeklyAlarmViewController: UIViewController {
         return label
     }()
 
-    private let weekdayScrollView: UIScrollView = {
-        let scroll = UIScrollView()
-        scroll.translatesAutoresizingMaskIntoConstraints = false
-        scroll.showsHorizontalScrollIndicator = false
-        scroll.contentInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
-        return scroll
+    private let weekdayContainerView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
     }()
 
     private let weekdayStackView: UIStackView = {
         let stack = UIStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .horizontal
-        stack.spacing = 8
+        stack.spacing = 6
         stack.distribution = .fillEqually
+        stack.alignment = .center
         return stack
     }()
 
@@ -142,8 +141,8 @@ class WeeklyAlarmViewController: UIViewController {
 
         view.addSubview(headerView)
         headerView.addSubview(titleLabel)
-        headerView.addSubview(weekdayScrollView)
-        weekdayScrollView.addSubview(weekdayStackView)
+        headerView.addSubview(weekdayContainerView)
+        weekdayContainerView.addSubview(weekdayStackView)
 
         view.addSubview(tableView)
         view.addSubview(emptyStateView)
@@ -160,17 +159,17 @@ class WeeklyAlarmViewController: UIViewController {
             titleLabel.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 16),
             titleLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
 
-            weekdayScrollView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 20),
-            weekdayScrollView.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
-            weekdayScrollView.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
-            weekdayScrollView.heightAnchor.constraint(equalToConstant: 50),
-            weekdayScrollView.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -16),
+            weekdayContainerView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 20),
+            weekdayContainerView.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+            weekdayContainerView.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+            weekdayContainerView.heightAnchor.constraint(equalToConstant: 50),
+            weekdayContainerView.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -16),
 
-            weekdayStackView.topAnchor.constraint(equalTo: weekdayScrollView.topAnchor),
-            weekdayStackView.leadingAnchor.constraint(equalTo: weekdayScrollView.leadingAnchor),
-            weekdayStackView.trailingAnchor.constraint(equalTo: weekdayScrollView.trailingAnchor),
-            weekdayStackView.bottomAnchor.constraint(equalTo: weekdayScrollView.bottomAnchor),
-            weekdayStackView.heightAnchor.constraint(equalTo: weekdayScrollView.heightAnchor),
+            // 좌우 여백 없이 화면 전체 사용
+            weekdayStackView.topAnchor.constraint(equalTo: weekdayContainerView.topAnchor),
+            weekdayStackView.leadingAnchor.constraint(equalTo: weekdayContainerView.leadingAnchor, constant: 8),
+            weekdayStackView.trailingAnchor.constraint(equalTo: weekdayContainerView.trailingAnchor, constant: -8),
+            weekdayStackView.bottomAnchor.constraint(equalTo: weekdayContainerView.bottomAnchor),
 
             tableView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 8),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -199,7 +198,8 @@ class WeeklyAlarmViewController: UIViewController {
             weekdayButtons.append(button)
             weekdayStackView.addArrangedSubview(button)
 
-            button.widthAnchor.constraint(equalToConstant: 44).isActive = true
+            // 높이만 고정, 너비는 fillEqually로 자동 계산
+            button.heightAnchor.constraint(equalToConstant: 44).isActive = true
         }
     }
 
