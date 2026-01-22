@@ -51,129 +51,41 @@ struct BetterAlarmWidgetLiveActivity: Widget {
             LockScreenView(context: context)
         } dynamicIsland: { context in
             DynamicIsland {
-                // Expanded UI
+                // Expanded UI - 최소화 (길게 누르면 나타남)
                 DynamicIslandExpandedRegion(.leading) {
-                    if context.state.isEmpty {
-                        HStack(spacing: 10) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color.emptyGray.opacity(0.3))
-                                    .frame(width: 36, height: 36)
-                                
-                                Image(systemName: "alarm")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.emptyGray)
-                            }
-                            
-                            Text("알람 없음")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.emptyGray)
-                        }
-                    } else {
-                        HStack(spacing: 10) {
-                            ZStack {
-                                Circle()
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [.accentLavender, .accentPink],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
-                                    .frame(width: 36, height: 36)
-
-                                Image(systemName: "alarm.fill")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.white)
-                            }
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(context.state.nextAlarmDate)
-                                    .font(.caption2)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.white.opacity(0.6))
-
-                                Text(context.state.nextAlarmTime)
-                                    .font(.title3)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.white)
-                            }
-                        }
-                    }
+                    Text(" ")
+                        .font(.system(size: 1))
+                        .foregroundColor(.clear)
                 }
 
                 DynamicIslandExpandedRegion(.trailing) {
-                    EmptyView()
+                    Text(" ")
+                        .font(.system(size: 1))
+                        .foregroundColor(.clear)
                 }
 
                 DynamicIslandExpandedRegion(.bottom) {
-                    if context.state.isEmpty {
-                        Text("알람을 추가해주세요")
-                            .font(.caption)
-                            .foregroundColor(.emptyGray)
-                            .padding(.top, 4)
-                    } else {
-                        HStack {
-                            Text(context.state.alarmTitle)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.white.opacity(0.9))
-
-                            Spacer()
-                        }
-                        .padding(.top, 4)
-                    }
+                    Text(" ")
+                        .font(.system(size: 1))
+                        .foregroundColor(.clear)
                 }
             } compactLeading: {
-                ZStack {
-                    Circle()
-                        .fill(
-                            context.state.isEmpty
-                                ? AnyShapeStyle(Color.emptyGray.opacity(0.3))
-                                : AnyShapeStyle(LinearGradient(
-                                    colors: [.accentLavender, .accentPink],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ))
-                        )
-                        .frame(width: 24, height: 24)
-
-                    Image(systemName: context.state.isEmpty ? "alarm" : "alarm.fill")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(context.state.isEmpty ? .emptyGray : .white)
-                }
+                // 최소한의 투명 요소
+                Text(" ")
+                    .font(.system(size: 1))
+                    .foregroundColor(.clear)
             } compactTrailing: {
-                if context.state.isEmpty {
-                    Text("--:--")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(.emptyGray)
-                } else {
-                    Text(context.state.nextAlarmTime)
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(.accentLavender)
-                }
+                // 최소한의 투명 요소
+                Text(" ")
+                    .font(.system(size: 1))
+                    .foregroundColor(.clear)
             } minimal: {
-                ZStack {
-                    Circle()
-                        .fill(
-                            context.state.isEmpty
-                                ? AnyShapeStyle(Color.emptyGray.opacity(0.3))
-                                : AnyShapeStyle(LinearGradient(
-                                    colors: [.accentLavender, .accentPink],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ))
-                        )
-
-                    Image(systemName: context.state.isEmpty ? "alarm" : "alarm.fill")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(context.state.isEmpty ? .emptyGray : .white)
-                }
+                // 최소한의 투명 요소
+                Text(" ")
+                    .font(.system(size: 1))
+                    .foregroundColor(.clear)
             }
-            .keylineTint(context.state.isEmpty ? .emptyGray : .accentLavender)
+            .keylineTint(.clear)
         }
     }
 }
@@ -202,39 +114,39 @@ struct LockScreenView: View {
     }
     
     // MARK: - Empty State Content
-    
+
     private var emptyStateContent: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 14) {
             ZStack {
                 Circle()
                     .fill(Color.emptyGray.opacity(0.2))
-                    .frame(width: 52, height: 52)
-                
+                    .frame(width: 46, height: 46)
+
                 Image(systemName: "alarm")
-                    .font(.system(size: 22, weight: .medium))
+                    .font(.system(size: 20, weight: .medium))
                     .foregroundColor(.emptyGray)
             }
-            
-            VStack(alignment: .leading, spacing: 8) {
+
+            VStack(alignment: .leading, spacing: 6) {
                 Text("설정된 알람 없음")
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.emptyGray)
-                
+
                 Text("알람을 추가해주세요")
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundColor(.emptyGray.opacity(0.7))
             }
-            
+
             Spacer()
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 14)
     }
     
     // MARK: - Alarm Content
-    
+
     private var alarmContent: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 14) {
             ZStack {
                 Circle()
                     .fill(
@@ -244,32 +156,31 @@ struct LockScreenView: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .frame(width: 52, height: 52)
+                    .frame(width: 46, height: 46)
 
                 Image(systemName: "alarm.fill")
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(.system(size: 20, weight: .semibold))
                     .foregroundColor(.white)
             }
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text("다음 알람")
-                    .font(.caption)
-                    .fontWeight(.semibold)
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(.accentLavender)
 
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(context.state.nextAlarmTime)
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
+                        .minimumScaleFactor(0.85)
 
                     Text(context.state.nextAlarmDate)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.white.opacity(0.6))
                 }
 
                 Text(context.state.alarmTitle)
-                    .font(.subheadline)
+                    .font(.system(size: 13))
                     .foregroundColor(.white.opacity(0.8))
                     .lineLimit(1)
             }
@@ -278,12 +189,12 @@ struct LockScreenView: View {
 
             VStack {
                 Image(systemName: "bell.and.waves.left.and.right.fill")
-                    .font(.system(size: 20))
+                    .font(.system(size: 18))
                     .foregroundColor(.white.opacity(0.15))
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 14)
     }
 }
 
