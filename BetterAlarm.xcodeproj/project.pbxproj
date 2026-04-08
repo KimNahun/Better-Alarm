@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0B4BF7740FE8463DB82A6FD2 /* PersonalColorDesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = A5B4E7F3D7E54605BC3B968B /* PersonalColorDesignSystem */; };
 		DE2A87E82F16075C005C1B49 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE2A87E72F16075C005C1B49 /* WidgetKit.framework */; };
 		DE2A87EA2F16075C005C1B49 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE2A87E92F16075C005C1B49 /* SwiftUI.framework */; };
 		DE2A87F72F160762005C1B49 /* BetterAlarmWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DE2A87E52F16075C005C1B49 /* BetterAlarmWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -84,6 +85,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B4BF7740FE8463DB82A6FD2 /* PersonalColorDesignSystem in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -149,6 +151,7 @@
 			);
 			name = BetterAlarm;
 			packageProductDependencies = (
+				A5B4E7F3D7E54605BC3B968B /* PersonalColorDesignSystem */,
 			);
 			productName = BetterAlarm;
 			productReference = DE2A86AF2F14A20E005C1B49 /* BetterAlarm.app */;
@@ -205,6 +208,9 @@
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DE2A86B02F14A20E005C1B49 /* Products */;
+			packageReferences = (
+				7D1B8141F339402294B7798C /* XCRemoteSwiftPackageReference "PersonalColorDesignSystem" */,
+			);
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -507,6 +513,25 @@
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		7D1B8141F339402294B7798C /* XCRemoteSwiftPackageReference "PersonalColorDesignSystem" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/KimNahun/PersonalColorDesignSystem";
+			requirement = {
+				kind = branch;
+				branch = main;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A5B4E7F3D7E54605BC3B968B /* PersonalColorDesignSystem */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7D1B8141F339402294B7798C /* XCRemoteSwiftPackageReference "PersonalColorDesignSystem" */;
+			productName = PersonalColorDesignSystem;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCConfigurationList section */
 		DE2A86AA2F14A20E005C1B49 /* Build configuration list for PBXProject "BetterAlarm" */ = {

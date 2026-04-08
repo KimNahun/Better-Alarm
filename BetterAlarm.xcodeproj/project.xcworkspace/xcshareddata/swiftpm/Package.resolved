@@ -1,0 +1,15 @@
+{
+  "originHash" : "482dadab7f00c40bcf2247b56bb20b6ed52a80a32e49e8da9c2b8e9296533f60",
+  "pins" : [
+    {
+      "identity" : "personalcolordesignsystem",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/KimNahun/PersonalColorDesignSystem",
+      "state" : {
+        "branch" : "main",
+        "revision" : "f05e4db02058df4ece43fab00dd3dfa1277d4e99"
+      }
+    }
+  ],
+  "version" : 3
+}
