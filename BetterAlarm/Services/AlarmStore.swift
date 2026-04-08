@@ -184,6 +184,14 @@ actor AlarmStore {
 
     /// 알람을 지정된 분 뒤에 다시 울리도록 스누즈 알림을 예약한다.
     func snoozeAlarm(_ alarm: Alarm, minutes: Int = 5) async {
+        // 스누즈 상태 저장
+        if let index = alarms.firstIndex(where: { $0.id == alarm.id }) {
+            var updated = alarms[index]
+            updated.snoozeDate = Date().addingTimeInterval(TimeInterval(minutes * 60))
+            alarms[index] = updated
+            saveAlarms()
+        }
+
         do {
             try await localNotificationService.scheduleSnooze(for: alarm, minutes: minutes)
             AppLogger.info("Snooze scheduled: \(alarm.displayTitle) in \(minutes) min", category: .alarm)

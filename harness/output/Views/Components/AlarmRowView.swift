@@ -47,6 +47,16 @@ struct AlarmRowView: View {
                                 .accessibilityLabel("AlarmKit 모드")
                         }
 
+                        if alarm.isSnoozed {
+                            Text("스누즈 중")
+                                .font(.caption)
+                                .foregroundStyle(Color.pAccentSecondary)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.pAccentSecondary.opacity(0.15))
+                                .clipShape(Capsule())
+                        }
+
                         if alarm.isSilentAlarm {
                             Image(systemName: "headphones")
                                 .font(.caption)

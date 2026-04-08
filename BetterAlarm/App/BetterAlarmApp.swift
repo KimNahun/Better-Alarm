@@ -86,6 +86,11 @@ struct BetterAlarmApp: App {
 
     var body: some Scene {
         WindowGroup {
+            ZStack {
+                // 루트 배경색: 화면 전환 시 흰색 깜빡임 방지
+                Color(red: 0.08, green: 0.08, blue: 0.15)
+                    .ignoresSafeArea()
+
             TabView {
                 // 탭 1: 알람 목록
                 AlarmListView(store: alarmStore)
@@ -158,6 +163,7 @@ struct BetterAlarmApp: App {
 
                 AppLogger.info("App launch tasks completed", category: .lifecycle)
             }
+            } // ZStack
         }
     }
 

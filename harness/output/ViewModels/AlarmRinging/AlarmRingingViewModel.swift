@@ -46,6 +46,9 @@ final class AlarmRingingViewModel {
         // 시간 업데이트 타이머 시작
         startTimeUpdateTimer()
 
+        // 볼륨 먼저 올리기 (80% 보장)
+        await volumeService.ensureMinimumVolume()
+
         // 사운드 재생
         do {
             try await audioService.playAlarmSound(
@@ -53,6 +56,7 @@ final class AlarmRingingViewModel {
                 isSilent: alarm.isSilentAlarm,
                 loop: true
             )
+            AppLogger.info("Alarm ringing started: \(alarm.displayTitle)", category: .alarm)
         } catch {
             AppLogger.error("Failed to play alarm sound: \(error)", category: .alarm)
         }

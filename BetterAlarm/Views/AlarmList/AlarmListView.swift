@@ -83,6 +83,9 @@ struct AlarmListView: View {
         .task {
             await viewModel.loadAlarms()
         }
+        .onAppear {
+            Task { await viewModel.loadAlarms() }
+        }
         .toast(
             isPresented: Binding(
                 get: { viewModel.showToast },
@@ -152,6 +155,7 @@ struct AlarmListView: View {
         .listStyle(.plain)
         .background(Color.clear)
         .scrollContentBackground(.hidden)
+        .animation(.easeInOut(duration: 0.25), value: viewModel.alarms.map(\.id))
     }
 
     private var emptyState: some View {

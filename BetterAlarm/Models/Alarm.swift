@@ -54,6 +54,7 @@ struct Alarm: Codable, Identifiable, Equatable, Sendable {
     var skippedDate: Date?
     var alarmMode: AlarmMode
     var isSilentAlarm: Bool
+    var snoozeDate: Date?
 
     init(
         id: UUID = UUID(),
@@ -66,7 +67,8 @@ struct Alarm: Codable, Identifiable, Equatable, Sendable {
         createdAt: Date = Date(),
         skippedDate: Date? = nil,
         alarmMode: AlarmMode = .local,
-        isSilentAlarm: Bool = false
+        isSilentAlarm: Bool = false,
+        snoozeDate: Date? = nil
     ) {
         self.id = id
         self.title = title
@@ -79,6 +81,7 @@ struct Alarm: Codable, Identifiable, Equatable, Sendable {
         self.skippedDate = skippedDate
         self.alarmMode = alarmMode
         self.isSilentAlarm = isSilentAlarm
+        self.snoozeDate = snoozeDate
     }
 
     // MARK: - Computed Properties
@@ -87,6 +90,12 @@ struct Alarm: Codable, Identifiable, Equatable, Sendable {
     var isSkippingNext: Bool {
         guard let skippedDate else { return false }
         return skippedDate > Date()
+    }
+
+    /// 스누즈 상태인지 여부
+    var isSnoozed: Bool {
+        guard let snoozeDate else { return false }
+        return snoozeDate > Date()
     }
 
     /// 주간 반복 알람인지 여부

@@ -108,6 +108,29 @@ struct AlarmDetailView: View {
                             .foregroundStyle(Color.pTextTertiary)
                     }
                     .listRowBackground(Color.pGlassFill)
+
+                    // MARK: 삭제 (편집 모드만)
+                    if viewModel.isEditing {
+                        Section {
+                            Button(role: .destructive) {
+                                Task {
+                                    await viewModel.deleteAlarm()
+                                    onSaved()
+                                    dismiss()
+                                }
+                            } label: {
+                                HStack {
+                                    Spacer()
+                                    Text("알람 삭제")
+                                        .font(.body.weight(.medium))
+                                        .foregroundStyle(Color.pWarning)
+                                    Spacer()
+                                }
+                            }
+                            .frame(minHeight: 44)
+                        }
+                        .listRowBackground(Color.pGlassFill)
+                    }
                 }
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
@@ -245,12 +268,13 @@ struct AlarmDetailView: View {
                     Text(day.shortName)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(isSelected ? .white : Color.pTextTertiary)
-                        .frame(minWidth: 44, minHeight: 44)
+                        .frame(width: 40, height: 40)
                         .background(
                             Circle()
                                 .fill(isSelected ? Color.pAccentPrimary : Color.pGlassFill)
                         )
                 }
+                .buttonStyle(.plain)
                 .accessibilityLabel("\(day.shortName) \(isSelected ? "선택됨" : "선택 안됨")")
                 .accessibilityAddTraits(isSelected ? .isSelected : [])
             }

@@ -154,6 +154,13 @@ final class AlarmDetailViewModel {
         saveError = nil
     }
 
+    // MARK: - Delete
+
+    func deleteAlarm() async {
+        guard let alarm = editingAlarm else { return }
+        await store.deleteAlarm(alarm)
+    }
+
     // MARK: - Save
 
     func save() async {
