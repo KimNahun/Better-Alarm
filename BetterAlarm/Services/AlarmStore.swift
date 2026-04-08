@@ -1,4 +1,5 @@
 import Foundation
+import UserNotifications
 
 // MARK: - AlarmStore
 
@@ -178,6 +179,38 @@ actor AlarmStore {
         await scheduleNextAlarm()
         await updateLiveActivity()
         AppLogger.info("Alarm skip cleared: \(alarm.displayTitle)", category: .alarm)
+    }
+
+    // MARK: - Snooze
+
+    /// 알람을 지정된 분 뒤에 다시 울리도록 스누즈 알림을 예약한다.
+    func snoozeAlarm(_ alarm: Alarm, minutes: Int = 5) async {
+        // 스누즈용 임시 알람 알림을 LocalNotificationService로 등록
+        let content = UNMutableNotificationContent()
+        content.title = alarm.displayTitle
+        content.body = "스누즈 알람이 울립니다."
+        content.sound = alarm.soundName == "default"
+            ? .default
+            : UNNotificationSound(named: UNNotificationSoundName(rawValue: "\(alarm.soundName).mp3"))
+        content.userInfo = ["alarmID": alarm.id.uuidString, "isSnooze": true]
+
+        let trigger = UNTimeIntervalNotificationTrigger(
+            timeInterval: TimeInterval(minutes * 60),
+            repeats: false
+        )
+
+        let request = UNNotificationRequest(
+            identifier: "\(alarm.id.uuidString)-snooze",
+            content: content,
+            trigger: trigger
+        )
+
+        do {
+            try await UNUserNotificationCenter.current().add(request)
+            AppLogger.info("Snooze scheduled: \(alarm.displayTitle) in \(minutes) min", category: .alarm)
+        } catch {
+            AppLogger.error("Failed to schedule snooze: \(error)", category: .alarm)
+        }
     }
 
     // MARK: - Alarm Completion

@@ -1,6 +1,14 @@
 import UIKit
 import UserNotifications
 
+// MARK: - Notification.Name
+
+extension Notification.Name {
+    /// 포그라운드에서 알람이 울려야 할 때 전송되는 알림.
+    /// userInfo에 "alarm" 키로 Alarm 객체가 포함된다.
+    static let alarmShouldRing = Notification.Name("alarmShouldRing")
+}
+
 // MARK: - AppDelegate
 
 /// 앱 생명주기 이벤트를 처리하는 AppDelegate.
@@ -67,11 +75,26 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 // MARK: - UNUserNotificationCenterDelegate
 
 extension AppDelegate: UNUserNotificationCenterDelegate {
-    /// 앱이 포그라운드 상태에서 알림이 도착하면 배너 + 사운드 표시
+    /// 앱이 포그라운드 상태에서 알림이 도착하면 울림 화면을 표시한다.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
+        let userInfo = notification.request.content.userInfo
+        if let alarmIDString = userInfo["alarmID"] as? String,
+           let alarmID = UUID(uuidString: alarmIDString) {
+            if let store = alarmStore {
+                let alarms = await store.alarms
+                if let alarm = alarms.first(where: { $0.id == alarmID }) {
+                    NotificationCenter.default.post(
+                        name: .alarmShouldRing,
+                        object: nil,
+                        userInfo: ["alarmID": alarmIDString]
+                    )
+                    return []
+                }
+            }
+        }
         return [.banner, .sound, .badge]
     }
 

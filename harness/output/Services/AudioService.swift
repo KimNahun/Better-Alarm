@@ -4,9 +4,16 @@ import AVFoundation
 // MARK: - AudioServiceProtocol
 
 protocol AudioServiceProtocol: Sendable {
-    func playAlarmSound(soundName: String, isSilent: Bool) async throws
+    func playAlarmSound(soundName: String, isSilent: Bool, loop: Bool) async throws
     func stopAlarmSound() async
     func isEarphoneConnected() async -> Bool
+}
+
+extension AudioServiceProtocol {
+    /// 기본값: loop = true
+    func playAlarmSound(soundName: String, isSilent: Bool) async throws {
+        try await playAlarmSound(soundName: soundName, isSilent: isSilent, loop: true)
+    }
 }
 
 // MARK: - AudioService
@@ -28,7 +35,8 @@ actor AudioService: AudioServiceProtocol {
     /// - Parameters:
     ///   - soundName: 재생할 사운드 파일명 (번들 내 파일)
     ///   - isSilent: true이면 이어폰 전용 출력
-    func playAlarmSound(soundName: String, isSilent: Bool) async throws {
+    ///   - loop: true이면 무한 반복 재생
+    func playAlarmSound(soundName: String, isSilent: Bool, loop: Bool = true) async throws {
         // 조용한 알람: 이어폰 연결 확인
         if isSilent {
             guard isEarphoneConnected() else {
@@ -64,7 +72,7 @@ actor AudioService: AudioServiceProtocol {
         }
 
         let player = try AVAudioPlayer(contentsOf: url)
-        player.numberOfLoops = -1 // 무한 반복
+        player.numberOfLoops = loop ? -1 : 0
         player.volume = 1.0
         player.prepareToPlay()
         player.play()

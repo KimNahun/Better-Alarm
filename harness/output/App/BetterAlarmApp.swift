@@ -19,6 +19,10 @@ struct BetterAlarmApp: App {
     private let alarmKitService: (any AlarmKitServiceProtocol)?
     private let alarmStore: AlarmStore
 
+    // MARK: - Ringing State
+
+    @State private var ringingAlarm: Alarm? = nil
+
     init() {
         let notificationService = LocalNotificationService()
         let volumeSvc = VolumeService()
@@ -82,6 +86,30 @@ struct BetterAlarmApp: App {
                 .accessibilityLabel("설정 탭")
             }
             .tint(Color.pAccentPrimary)
+            .fullScreenCover(item: $ringingAlarm) { alarm in
+                AlarmRingingView(
+                    alarm: alarm,
+                    audioService: audioService,
+                    volumeService: volumeService,
+                    alarmStore: alarmStore
+                )
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .alarmShouldRing)) { notification in
+                if let alarmIDString = notification.userInfo?["alarmID"] as? String,
+                   let alarmID = UUID(uuidString: alarmIDString) {
+                    Task {
+                        let alarms = await alarmStore.alarms
+                        if let alarm = alarms.first(where: { $0.id == alarmID }) {
+                            ringingAlarm = alarm
+                        }
+                    }
+                }
+            }
+            .onReceive(Timer.publish(every: 30, on: .main, in: .common).autoconnect()) { _ in
+                Task {
+                    await checkForImminentAlarm()
+                }
+            }
             .task {
                 // AppDelegate에 의존성 주입
                 appDelegate.configure(alarmStore: alarmStore, localNotificationService: localNotificationService)
@@ -100,6 +128,30 @@ struct BetterAlarmApp: App {
 
                 AppLogger.info("App launch tasks completed", category: .lifecycle)
             }
+        }
+    }
+
+    // MARK: - Alarm Check
+
+    /// 활성화된 알람 중 30초 이내에 울릴 알람이 있는지 확인하여 울림 화면을 표시한다.
+    @MainActor
+    private func checkForImminentAlarm() async {
+        guard ringingAlarm == nil else { return }
+
+        let alarms = await alarmStore.alarms
+        let now = Date()
+        let threshold: TimeInterval = 30
+
+        let imminent = alarms
+            .filter { $0.isEnabled && $0.alarmMode == .local && !$0.isSkippingNext }
+            .first { alarm in
+                guard let triggerDate = alarm.nextTriggerDate() else { return false }
+                let interval = triggerDate.timeIntervalSince(now)
+                return interval >= 0 && interval <= threshold
+            }
+
+        if let alarm = imminent {
+            ringingAlarm = alarm
         }
     }
 }
