@@ -49,16 +49,15 @@ actor LiveActivityManager {
     /// 사용자가 Live Activity를 활성화/비활성화하는 설정값.
     /// UserDefaults에 저장되며 기본값은 true.
     var isLiveActivityEnabled: Bool {
-        get {
-            if UserDefaults.standard.object(forKey: liveActivityEnabledKey) == nil {
-                return true
-            }
-            return UserDefaults.standard.bool(forKey: liveActivityEnabledKey)
+        if UserDefaults.standard.object(forKey: liveActivityEnabledKey) == nil {
+            return true
         }
-        set {
-            UserDefaults.standard.set(newValue, forKey: liveActivityEnabledKey)
-            AppLogger.info("Live Activity enabled set to: \(newValue)", category: .liveActivity)
-        }
+        return UserDefaults.standard.bool(forKey: liveActivityEnabledKey)
+    }
+
+    func setLiveActivityEnabled(_ value: Bool) {
+        UserDefaults.standard.set(value, forKey: liveActivityEnabledKey)
+        AppLogger.info("Live Activity enabled set to: \(value)", category: .liveActivity)
     }
 
     /// 시스템에서 Live Activity가 허용되어 있는지 여부

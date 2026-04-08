@@ -61,7 +61,7 @@ actor AlarmKitService {
         let presentation = AlarmPresentation(alert: alert)
         let attributes = AlarmAttributes<BetterAlarmMetadata>(
             presentation: presentation,
-            tintColor: .systemPurple
+            tintColor: .purple
         )
 
         typealias Config = AlarmManager.AlarmConfiguration<BetterAlarmMetadata>
@@ -148,7 +148,7 @@ actor AlarmKitService {
         let presentation = AlarmPresentation(alert: alert)
         let attributes = AlarmAttributes<BetterAlarmMetadata>(
             presentation: presentation,
-            tintColor: .systemPurple
+            tintColor: .purple
         )
 
         typealias Config = AlarmManager.AlarmConfiguration<BetterAlarmMetadata>

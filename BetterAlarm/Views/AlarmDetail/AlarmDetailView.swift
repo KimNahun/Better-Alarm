@@ -18,7 +18,7 @@ struct AlarmDetailView: View {
 
     var body: some View {
         ZStack {
-            GradientBackground()
+            PGradientBackground()
                 .ignoresSafeArea()
 
             NavigationStack {
@@ -141,25 +141,15 @@ struct AlarmDetailView: View {
                 }
             }
 
-            // MARK: Toast (PersonalColorDesignSystem)
-            if viewModel.showAlarmKitUnavailableToast {
-                VStack {
-                    Spacer()
-                    ToastView(message: viewModel.toastMessage)
-                        .padding(.bottom, 32)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                        .onAppear {
-                            Task {
-                                try? await Task.sleep(nanoseconds: 2_500_000_000)
-                                withAnimation {
-                                    viewModel.dismissToast()
-                                }
-                            }
-                        }
-                }
-                .animation(.easeInOut(duration: 0.3), value: viewModel.showAlarmKitUnavailableToast)
-            }
         }
+        .toast(
+            isPresented: Binding(
+                get: { viewModel.showAlarmKitUnavailableToast },
+                set: { if !$0 { viewModel.dismissToast() } }
+            ),
+            message: viewModel.toastMessage,
+            type: .warning
+        )
         // 저장 에러 표시
         .alert("저장 실패", isPresented: Binding(
             get: { viewModel.saveError != nil },

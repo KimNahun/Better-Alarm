@@ -280,7 +280,7 @@ actor AlarmStore {
             await localNotificationService.cancelAlarm(for: alarm)
         case .alarmKit:
             if #available(iOS 26.0, *), let service = alarmKitService as? AlarmKitService {
-                service.cancelAlarm(for: alarm)
+                await service.cancelAlarm(for: alarm)
             }
         }
     }

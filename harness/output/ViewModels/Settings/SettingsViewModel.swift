@@ -56,7 +56,7 @@ final class SettingsViewModel {
     /// Live Activity 설정을 LiveActivityManager에 동기화한다.
     private func syncLiveActivitySetting(_ enabled: Bool) async {
         if #available(iOS 17.0, *), let manager = liveActivityManager {
-            await manager.isLiveActivityEnabled = enabled
+            await manager.setLiveActivityEnabled(enabled)
             if enabled {
                 let nextAlarm = await alarmStore.nextAlarm
                 await manager.updateActivity(nextAlarm: nextAlarm)

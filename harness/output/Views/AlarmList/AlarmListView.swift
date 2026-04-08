@@ -19,7 +19,7 @@ struct AlarmListView: View {
     var body: some View {
         ZStack {
             // 배경 그래디언트 (PersonalColorDesignSystem)
-            GradientBackground()
+            PGradientBackground()
                 .ignoresSafeArea()
 
             NavigationStack {
