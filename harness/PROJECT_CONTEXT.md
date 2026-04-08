@@ -155,7 +155,30 @@ enum AlarmMode: String, Codable, Sendable {
   - 탭 3: 설정 (`SettingsView`)
 - `@UIApplicationDelegateAdaptor(AppDelegate.self)` 사용
 
-#### 10. 로거 유틸리티 (기존 기능 유지 필수)
+#### 10. 알람 울림 화면 (신규)
+
+- **알람이 울릴 시각이 되면** 전용 **알람 울림 화면(AlarmRingingView)**이 전체 화면으로 표시된다.
+- 이 화면에서 **알람 사운드가 반복적으로 재생**된다 (푸시 알림이 아닌, `AVAudioPlayer`로 실제 소리 반복 재생).
+- **볼륨 자동 조절**: 기존 `VolumeService.ensureMinimumVolume()` (80%)을 알람 울림 시작 시 호출한다.
+- **화면 구성**:
+  - 현재 시각 (큰 글자)
+  - 알람 제목
+  - **"정지" 버튼**: 알람 소리 정지 + 원래 볼륨 복원 + 알람 울림 화면 닫기 + 알람 완료 처리
+  - **"스누즈" 버튼**: 알람 소리 정지 + 5분 후 알람 재스케줄 + 화면 닫기
+- **소리 재생**:
+  - `AudioService.playAlarmSound(soundName:isSilent:)` 호출, 소리가 **무한 반복(loop)** 재생
+  - `isSilentAlarm = true`이면 이어폰으로만 재생 (기존 로직 활용)
+- **진입 경로**:
+  - `local` 모드: 앱 포그라운드에서 알람 시각이 되면 자동으로 AlarmRingingView를 fullScreenCover로 표시
+  - `alarmKit` 모드: AlarmKit이 시스템 수준에서 처리하므로 이 화면은 사용하지 않음
+- **관련 파일**:
+  - `Views/AlarmRinging/AlarmRingingView.swift` — 알람 울림 UI
+  - `ViewModels/AlarmRinging/AlarmRingingViewModel.swift` — 알람 울림 상태 관리 (소리 재생/정지, 스누즈, 볼륨 제어)
+  - `AudioService.swift` — `numberOfLoops = -1` (무한 반복) 추가
+  - `BetterAlarmApp.swift` — 알람 울림 상태 감지 + fullScreenCover 표시
+- **PersonalColorDesignSystem** 사용 필수: `PGradientBackground`, `Color.p*`, `HapticManager`
+
+#### 11. 로거 유틸리티 (기존 기능 유지 필수)
 
 - `Utils/Logger.swift` (기존 파일 유지):
   - `AppLogger.info(_, category:)` / `AppLogger.debug(_, category:)` / `AppLogger.warning(_, category:)` / `AppLogger.error(_, category:)` 사용

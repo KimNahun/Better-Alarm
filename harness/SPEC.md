@@ -30,6 +30,8 @@ output/
 │   │   └── SettingsView.swift            # 설정 화면 (Live Activity 토글 등)
 │   ├── Weekly/
 │   │   └── WeeklyAlarmView.swift         # 주간 반복 알람 전용 화면
+│   ├── AlarmRinging/
+│   │   └── AlarmRingingView.swift        # 알람 울림 전체 화면 (정지/스누즈)
 │   └── Components/
 │       └── AlarmRowView.swift            # 알람 목록 행 컴포넌트  ✅ 생성됨
 ├── ViewModels/
@@ -39,8 +41,10 @@ output/
 │   │   └── AlarmDetailViewModel.swift    # 알람 생성/편집 상태 관리  ✅ 생성됨
 │   ├── Settings/
 │   │   └── SettingsViewModel.swift       # 설정 상태 관리
-│   └── Weekly/
-│       └── WeeklyAlarmViewModel.swift    # 주간 알람 상태 관리
+│   ├── Weekly/
+│   │   └── WeeklyAlarmViewModel.swift    # 주간 알람 상태 관리
+│   └── AlarmRinging/
+│       └── AlarmRingingViewModel.swift   # 알람 울림 상태 관리 (소리/볼륨/스누즈)
 ├── Models/
 │   ├── Alarm.swift                       # 알람 데이터 모델  ✅ 생성됨
 │   ├── AlarmMode.swift                   # AlarmMode enum  ✅ 생성됨
@@ -173,6 +177,38 @@ View → ViewModel → Service → (AlarmKit / UNUserNotificationCenter / AVAudi
 - **설명**: TabView로 알람 목록, 주간 알람, 설정 3탭 구성.
 - **관련 파일**: `App/BetterAlarmApp.swift`
 - **HIG 패턴**: `TabView`, SF Symbols 아이콘
+
+### 기능 12: 알람 울림 화면 (신규)
+
+- **설명**: 알람 시각이 되면 전체 화면으로 알람 울림 화면이 표시되고, AVAudioPlayer로 실제 알람 소리가 반복적으로 울린다. 정지/스누즈 버튼 제공.
+- **사용자 스토리**: 사용자가 알람 시각이 되면 화면에 알람 울림 UI가 나타나고 "띠디디디" 하는 소리가 계속 울린다. 정지 버튼을 누르면 소리가 멈추고 화면이 닫힌다. 스누즈를 누르면 5분 후 다시 울린다.
+- **관련 파일**: `Views/AlarmRinging/AlarmRingingView.swift`, `ViewModels/AlarmRinging/AlarmRingingViewModel.swift`, `Services/AudioService.swift`, `App/BetterAlarmApp.swift`
+- **사용 API**: AVAudioPlayer (numberOfLoops = -1 무한 반복), AVAudioSession, VolumeService
+- **HIG 패턴**: `fullScreenCover`, SF Symbols, 큰 텍스트, 진동
+
+#### AlarmRingingView (fullScreenCover)
+- 현재 시각 (큰 폰트, 실시간 업데이트)
+- 알람 제목
+- "정지" 버튼 — 소리 정지 + 볼륨 복원 + dismiss + handleAlarmCompleted
+- "스누즈" 버튼 — 소리 정지 + 5분 후 재스케줄 + dismiss
+- `PGradientBackground`, `Color.pAccentPrimary`, `HapticManager.notification(.warning)` 사용
+
+#### AlarmRingingViewModel (@MainActor @Observable)
+- `private(set) var currentTimeString: String` — 실시간 시각
+- `private(set) var isRinging: Bool`
+- `let alarm: Alarm`
+- `func startRinging()` — VolumeService.ensureMinimumVolume() + AudioService.playAlarmSound(loop: true) + HapticManager
+- `func stopAlarm()` — AudioService.stopAlarmSound() + VolumeService.restoreVolume()
+- `func snoozeAlarm()` — stopAlarm() + AlarmStore에 5분 후 재스케줄 요청
+
+#### AudioService 수정
+- `playAlarmSound(soundName:isSilent:loop:)` — `loop: Bool = false` 파라미터 추가
+- `loop = true`이면 `player.numberOfLoops = -1` (무한 반복)
+
+#### BetterAlarmApp 수정
+- `@State private var ringingAlarm: Alarm? = nil` — 현재 울리는 알람
+- AlarmStore에서 알람 시각 도달 감지 → ringingAlarm 설정 → fullScreenCover 표시
+- Timer 기반 체크 또는 LocalNotification 수신 시 트리거
 
 ---
 
