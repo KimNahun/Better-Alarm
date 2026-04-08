@@ -24,10 +24,17 @@ struct BetterAlarmApp: App {
         let audioSvc = AudioService(volumeService: volumeSvc)
 
         let liveActivityMgr: LiveActivityManager?
-        if #available(iOS 16.2, *) {
+        if #available(iOS 17.0, *) {
             liveActivityMgr = LiveActivityManager()
         } else {
             liveActivityMgr = nil
+        }
+
+        let alarmKitSvc: AnyObject?
+        if #available(iOS 26.0, *) {
+            alarmKitSvc = AlarmKitService()
+        } else {
+            alarmKitSvc = nil
         }
 
         self.localNotificationService = notificationService
@@ -37,7 +44,8 @@ struct BetterAlarmApp: App {
         self.alarmStore = AlarmStore(
             localNotificationService: notificationService,
             audioService: audioSvc,
-            liveActivityManager: liveActivityMgr
+            liveActivityManager: liveActivityMgr,
+            alarmKitService: alarmKitSvc
         )
 
         AppLogger.info("BetterAlarmApp initialized", category: .lifecycle)
@@ -73,14 +81,13 @@ struct BetterAlarmApp: App {
             .tint(Color.pAccentPrimary)
             .task {
                 // AppDelegate에 의존성 주입
-                appDelegate.alarmStore = alarmStore
-                appDelegate.localNotificationService = localNotificationService
+                appDelegate.configure(alarmStore: alarmStore, localNotificationService: localNotificationService)
 
                 // 알람 로드
                 await alarmStore.loadAlarms()
 
                 // Live Activity 초기화
-                if #available(iOS 16.2, *) {
+                if #available(iOS 17.0, *) {
                     let nextAlarm = await alarmStore.nextAlarm
                     await liveActivityManager?.updateActivity(nextAlarm: nextAlarm)
                 }

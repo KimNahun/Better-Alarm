@@ -8,8 +8,14 @@ import UserNotifications
 /// - 포그라운드 복귀 시: 백그라운드 리마인더 알림 취소
 final class AppDelegate: NSObject, UIApplicationDelegate {
     // AlarmStore와 LocalNotificationService를 BetterAlarmApp에서 주입받는다.
-    var alarmStore: AlarmStore?
-    var localNotificationService: LocalNotificationService?
+    private(set) var alarmStore: AlarmStore?
+    private(set) var localNotificationService: LocalNotificationService?
+
+    /// BetterAlarmApp에서 의존성을 주입한다.
+    func configure(alarmStore: AlarmStore, localNotificationService: LocalNotificationService) {
+        self.alarmStore = alarmStore
+        self.localNotificationService = localNotificationService
+    }
 
     // MARK: - Launch
 

@@ -38,7 +38,7 @@ struct AlarmActivityAttributes: ActivityAttributes {
 /// ActivityKit Live Activity를 관리하는 actor.
 /// 잠금화면/Dynamic Island에 다음 알람 정보를 실시간 표시한다.
 /// Swift 6: actor로 구현하여 스레드 안전성 보장.
-@available(iOS 16.2, *)
+@available(iOS 17.0, *)
 actor LiveActivityManager {
     private var currentActivity: Activity<AlarmActivityAttributes>?
 

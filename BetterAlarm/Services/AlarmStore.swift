@@ -11,17 +11,20 @@ actor AlarmStore {
     private let localNotificationService: LocalNotificationService
     private let audioService: AudioService
     private let liveActivityManager: LiveActivityManager?
+    private let alarmKitService: AnyObject? // 타입 소거: 실제로는 AlarmKitService (iOS 26+)
 
     private(set) var alarms: [Alarm] = []
 
     init(
         localNotificationService: LocalNotificationService = LocalNotificationService(),
         audioService: AudioService = AudioService(),
-        liveActivityManager: LiveActivityManager? = nil
+        liveActivityManager: LiveActivityManager? = nil,
+        alarmKitService: AnyObject? = nil
     ) {
         self.localNotificationService = localNotificationService
         self.audioService = audioService
         self.liveActivityManager = liveActivityManager
+        self.alarmKitService = alarmKitService
     }
 
     // MARK: - Load / Save
@@ -197,11 +200,6 @@ actor AlarmStore {
         AppLogger.info("Alarm completed: \(alarm.displayTitle)", category: .alarm)
     }
 
-    func checkForCompletedAlarms() async {
-        // local 모드에서는 알림 딜리버리를 UNUserNotificationCenter로 확인
-        // (실제 구현에서는 delivered notifications를 조회하여 처리)
-    }
-
     // MARK: - Next Alarm
 
     var nextAlarm: Alarm? {
@@ -246,7 +244,7 @@ actor AlarmStore {
 
     /// 알람 상태 변경 후 Live Activity를 업데이트한다.
     private func updateLiveActivity() async {
-        if #available(iOS 16.2, *) {
+        if #available(iOS 17.0, *) {
             await liveActivityManager?.updateActivity(nextAlarm: nextAlarm)
         }
     }
@@ -262,7 +260,7 @@ actor AlarmStore {
         }
 
         // alarmKit 모드 알람 스케줄 (iOS 26+)
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, *), let service = alarmKitService as? AlarmKitService {
             let alarmKitAlarms = alarms.filter { $0.isEnabled && $0.alarmMode == .alarmKit && !$0.isSkippingNext }
             if let next = alarmKitAlarms
                 .compactMap({ alarm -> (Alarm, Date)? in
@@ -271,7 +269,6 @@ actor AlarmStore {
                 })
                 .min(by: { $0.1 < $1.1 })?
                 .0 {
-                let service = AlarmKitService()
                 try? await service.scheduleAlarm(for: next)
             }
         }
@@ -282,8 +279,7 @@ actor AlarmStore {
         case .local:
             await localNotificationService.cancelAlarm(for: alarm)
         case .alarmKit:
-            if #available(iOS 26.0, *) {
-                let service = AlarmKitService()
+            if #available(iOS 26.0, *), let service = alarmKitService as? AlarmKitService {
                 service.cancelAlarm(for: alarm)
             }
         }

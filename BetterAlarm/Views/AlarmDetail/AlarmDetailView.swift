@@ -252,7 +252,7 @@ struct AlarmDetailView: View {
                     Text(day.shortName)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(isSelected ? .white : Color.pTextTertiary)
-                        .frame(minWidth: 36, minHeight: 36)
+                        .frame(minWidth: 44, minHeight: 44)
                         .background(
                             Circle()
                                 .fill(isSelected ? Color.pAccentPrimary : Color.pGlassFill)

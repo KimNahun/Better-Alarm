@@ -112,7 +112,7 @@ struct WeeklyAlarmView: View {
         VStack(spacing: 16) {
             Spacer()
             Image(systemName: "calendar")
-                .font(.system(size: 60))
+                .font(.largeTitle)
                 .foregroundStyle(Color.pTextTertiary)
 
             Text("주간 반복 알람이 없습니다")

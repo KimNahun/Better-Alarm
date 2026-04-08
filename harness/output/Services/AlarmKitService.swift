@@ -1,4 +1,7 @@
 import Foundation
+#if os(iOS)
+import AlarmKit
+#endif
 
 // MARK: - AlarmKitService (iOS 26+)
 
@@ -164,9 +167,8 @@ actor AlarmKitService {
     /// alarmUpdates AsyncSequence를 구독하여 알람 상태 변화를 감시한다.
     func startMonitoring() {
         monitoringTask?.cancel()
-        monitoringTask = Task { [weak self] in
-            guard let self else { return }
-            for await alarms in await self.manager.alarmUpdates {
+        monitoringTask = Task {
+            for await alarms in self.manager.alarmUpdates {
                 if Task.isCancelled { break }
                 // 알람이 울리는 상태 감지 (필요 시 추가 처리)
                 for alarm in alarms where alarm.state == .alerting {

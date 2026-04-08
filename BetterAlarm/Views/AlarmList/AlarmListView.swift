@@ -24,11 +24,31 @@ struct AlarmListView: View {
 
             NavigationStack {
                 VStack(spacing: 0) {
+                    // 에러 메시지 표시
+                    if let errorMessage = viewModel.errorMessage {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(Color.pWarning)
+                            Text(errorMessage)
+                                .font(.caption)
+                                .foregroundStyle(Color.pWarning)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                    }
+
                     // 다음 알람 표시
                     nextAlarmBanner
 
                     // 알람 목록
-                    if viewModel.alarms.isEmpty {
+                    if viewModel.isLoading {
+                        Spacer()
+                        ProgressView()
+                            .tint(Color.pAccentPrimary)
+                            .scaleEffect(1.2)
+                        Spacer()
+                    } else if viewModel.alarms.isEmpty {
                         emptyState
                     } else {
                         alarmList
@@ -157,7 +177,7 @@ struct AlarmListView: View {
         VStack(spacing: 16) {
             Spacer()
             Image(systemName: "alarm")
-                .font(.system(size: 60))
+                .font(.largeTitle)
                 .foregroundStyle(Color.pTextTertiary)
 
             Text("설정된 알람이 없습니다")

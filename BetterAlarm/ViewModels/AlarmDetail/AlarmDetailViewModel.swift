@@ -144,31 +144,28 @@ final class AlarmDetailViewModel {
 
         let schedule = buildSchedule()
 
-        do {
-            if let alarm = editingAlarm {
-                await store.updateAlarm(
-                    alarm,
-                    hour: hour,
-                    minute: minute,
-                    title: title,
-                    schedule: schedule,
-                    soundName: soundName,
-                    alarmMode: alarmMode,
-                    isSilentAlarm: isSilentAlarm
-                )
-            } else {
-                await store.createAlarm(
-                    hour: hour,
-                    minute: minute,
-                    title: title,
-                    schedule: schedule,
-                    soundName: soundName,
-                    alarmMode: alarmMode,
-                    isSilentAlarm: isSilentAlarm
-                )
-            }
+        if let alarm = editingAlarm {
+            await store.updateAlarm(
+                alarm,
+                hour: hour,
+                minute: minute,
+                title: title,
+                schedule: schedule,
+                soundName: soundName,
+                alarmMode: alarmMode,
+                isSilentAlarm: isSilentAlarm
+            )
+        } else {
+            await store.createAlarm(
+                hour: hour,
+                minute: minute,
+                title: title,
+                schedule: schedule,
+                soundName: soundName,
+                alarmMode: alarmMode,
+                isSilentAlarm: isSilentAlarm
+            )
         }
-        // store 메서드가 throws 아님 — 에러 전파 없음
     }
 
     // MARK: - Private Helpers

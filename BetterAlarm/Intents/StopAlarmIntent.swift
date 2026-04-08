@@ -1,4 +1,7 @@
 import AppIntents
+#if os(iOS)
+import AlarmKit
+#endif
 
 // MARK: - StopAlarmIntent (iOS 26+)
 

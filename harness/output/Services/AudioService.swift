@@ -6,7 +6,7 @@ import AVFoundation
 protocol AudioServiceProtocol: Sendable {
     func playAlarmSound(soundName: String, isSilent: Bool) async throws
     func stopAlarmSound() async
-    func isEarphoneConnected() -> Bool
+    func isEarphoneConnected() async -> Bool
 }
 
 // MARK: - AudioService
@@ -86,7 +86,7 @@ actor AudioService: AudioServiceProtocol {
     // MARK: - Earphone Check
 
     /// 현재 이어폰(유선/블루투스/AirPlay 포함)이 연결되어 있는지 확인한다.
-    nonisolated func isEarphoneConnected() -> Bool {
+    func isEarphoneConnected() -> Bool {
         let session = AVAudioSession.sharedInstance()
         let outputs = session.currentRoute.outputs
         for output in outputs {

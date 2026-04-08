@@ -9,13 +9,7 @@ import Foundation
 final class SettingsViewModel {
     // MARK: - State
 
-    var isLiveActivityEnabled: Bool = true {
-        didSet {
-            Task {
-                await syncLiveActivitySetting(isLiveActivityEnabled)
-            }
-        }
-    }
+    private(set) var isLiveActivityEnabled: Bool = true
 
     private(set) var alarmKitAuthStatus: String = "확인 중..."
     private(set) var appVersion: String = ""
@@ -41,7 +35,7 @@ final class SettingsViewModel {
         defer { isLoading = false }
 
         // Live Activity 상태 로드
-        if #available(iOS 16.2, *), let manager = liveActivityManager {
+        if #available(iOS 17.0, *), let manager = liveActivityManager {
             isLiveActivityEnabled = await manager.isLiveActivityEnabled
         }
 
@@ -49,11 +43,19 @@ final class SettingsViewModel {
         await loadAlarmKitAuthStatus()
     }
 
+    // MARK: - Live Activity Setting
+
+    /// Live Activity 활성화/비활성화를 설정하고 LiveActivityManager에 동기화한다.
+    func setLiveActivityEnabled(_ enabled: Bool) async {
+        isLiveActivityEnabled = enabled
+        await syncLiveActivitySetting(enabled)
+    }
+
     // MARK: - Private
 
     /// Live Activity 설정을 LiveActivityManager에 동기화한다.
     private func syncLiveActivitySetting(_ enabled: Bool) async {
-        if #available(iOS 16.2, *), let manager = liveActivityManager {
+        if #available(iOS 17.0, *), let manager = liveActivityManager {
             await manager.isLiveActivityEnabled = enabled
             if enabled {
                 let nextAlarm = await alarmStore.nextAlarm

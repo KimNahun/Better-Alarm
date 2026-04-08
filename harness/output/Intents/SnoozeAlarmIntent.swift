@@ -1,4 +1,7 @@
 import AppIntents
+#if os(iOS)
+import AlarmKit
+#endif
 
 // MARK: - SnoozeAlarmIntent (iOS 26+)
 

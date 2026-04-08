@@ -1,4 +1,7 @@
 import Foundation
+#if os(iOS)
+import AlarmKit
+#endif
 
 // MARK: - BetterAlarmMetadata (iOS 26+)
 
