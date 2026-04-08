@@ -4,20 +4,24 @@ import Foundation
 
 /// 알람 CRUD 및 UserDefaults 저장을 담당하는 Service.
 /// AlarmMode에 따라 AlarmKitService(iOS 26+) 또는 LocalNotificationService로 분기.
+/// LiveActivityManager와 연동하여 알람 상태 변경 시 Live Activity를 업데이트한다.
 /// Swift 6: actor로 구현.
 actor AlarmStore {
     private let userDefaultsKey = "savedAlarms_v2"
     private let localNotificationService: LocalNotificationService
     private let audioService: AudioService
+    private let liveActivityManager: LiveActivityManager?
 
     private(set) var alarms: [Alarm] = []
 
     init(
         localNotificationService: LocalNotificationService = LocalNotificationService(),
-        audioService: AudioService = AudioService()
+        audioService: AudioService = AudioService(),
+        liveActivityManager: LiveActivityManager? = nil
     ) {
         self.localNotificationService = localNotificationService
         self.audioService = audioService
+        self.liveActivityManager = liveActivityManager
     }
 
     // MARK: - Load / Save
@@ -25,13 +29,16 @@ actor AlarmStore {
     func loadAlarms() {
         guard let data = UserDefaults.standard.data(forKey: userDefaultsKey) else {
             alarms = []
+            AppLogger.info("No saved alarms found", category: .store)
             return
         }
         do {
             alarms = try JSONDecoder().decode([Alarm].self, from: data)
             sortAlarms()
+            AppLogger.info("Loaded \(alarms.count) alarms", category: .store)
         } catch {
             alarms = []
+            AppLogger.error("Failed to decode alarms: \(error)", category: .store)
         }
     }
 
@@ -39,8 +46,9 @@ actor AlarmStore {
         do {
             let data = try JSONEncoder().encode(alarms)
             UserDefaults.standard.set(data, forKey: userDefaultsKey)
+            AppLogger.debug("Saved \(alarms.count) alarms", category: .store)
         } catch {
-            // 저장 실패 시 무시 (에러 타입이 없어 로그만 남김)
+            AppLogger.error("Failed to encode alarms: \(error)", category: .store)
         }
     }
 
@@ -75,6 +83,8 @@ actor AlarmStore {
         sortAlarms()
         saveAlarms()
         await scheduleNextAlarm()
+        await updateLiveActivity()
+        AppLogger.alarmCreated(alarm.displayTitle)
     }
 
     func updateAlarm(
@@ -102,6 +112,8 @@ actor AlarmStore {
         sortAlarms()
         saveAlarms()
         await scheduleNextAlarm()
+        await updateLiveActivity()
+        AppLogger.alarmUpdated(updated.displayTitle)
     }
 
     func deleteAlarm(_ alarm: Alarm) async {
@@ -109,6 +121,8 @@ actor AlarmStore {
         saveAlarms()
         await cancelSchedule(for: alarm)
         await scheduleNextAlarm()
+        await updateLiveActivity()
+        AppLogger.alarmDeleted(alarm.displayTitle)
     }
 
     func toggleAlarm(_ alarm: Alarm, enabled: Bool) async {
@@ -128,6 +142,8 @@ actor AlarmStore {
         } else {
             await cancelSchedule(for: alarm)
         }
+        await updateLiveActivity()
+        AppLogger.alarmToggled(alarm.displayTitle, enabled: enabled)
     }
 
     func skipOnceAlarm(_ alarm: Alarm) async {
@@ -142,6 +158,8 @@ actor AlarmStore {
         sortAlarms()
         saveAlarms()
         await scheduleNextAlarm()
+        await updateLiveActivity()
+        AppLogger.info("Alarm skipped once: \(alarm.displayTitle)", category: .alarm)
     }
 
     func clearSkipOnceAlarm(_ alarm: Alarm) async {
@@ -155,6 +173,8 @@ actor AlarmStore {
         sortAlarms()
         saveAlarms()
         await scheduleNextAlarm()
+        await updateLiveActivity()
+        AppLogger.info("Alarm skip cleared: \(alarm.displayTitle)", category: .alarm)
     }
 
     // MARK: - Alarm Completion
@@ -173,6 +193,8 @@ actor AlarmStore {
             }
             await scheduleNextAlarm()
         }
+        await updateLiveActivity()
+        AppLogger.info("Alarm completed: \(alarm.displayTitle)", category: .alarm)
     }
 
     func checkForCompletedAlarms() async {
@@ -218,6 +240,15 @@ actor AlarmStore {
 
     var hasEnabledLocalAlarms: Bool {
         alarms.contains { $0.isEnabled && $0.alarmMode == .local }
+    }
+
+    // MARK: - Live Activity Integration
+
+    /// 알람 상태 변경 후 Live Activity를 업데이트한다.
+    private func updateLiveActivity() async {
+        if #available(iOS 16.2, *) {
+            await liveActivityManager?.updateActivity(nextAlarm: nextAlarm)
+        }
     }
 
     // MARK: - Scheduling (AlarmMode 분기)
