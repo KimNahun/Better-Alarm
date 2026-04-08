@@ -17,11 +17,10 @@ struct AlarmDetailView: View {
     }
 
     var body: some View {
-        ZStack {
-            PGradientBackground()
-                .ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                PGradientBackground()
 
-            NavigationStack {
                 Form {
                     // MARK: 시간 선택
                     Section {
@@ -112,8 +111,10 @@ struct AlarmDetailView: View {
                 }
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
-                .navigationTitle(viewModel.isEditing ? "알람 편집" : "새 알람")
-                .navigationBarTitleDisplayMode(.inline)
+            }
+            .navigationTitle(viewModel.isEditing ? "알람 편집" : "새 알람")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("취소") {
@@ -139,8 +140,6 @@ struct AlarmDetailView: View {
                         .frame(minWidth: 44, minHeight: 44)
                     }
                 }
-            }
-
         }
         .toast(
             isPresented: Binding(

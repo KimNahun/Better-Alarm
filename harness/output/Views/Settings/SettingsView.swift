@@ -17,11 +17,10 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        ZStack {
-            PGradientBackground()
-                .ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                PGradientBackground()
 
-            NavigationStack {
                 Form {
                     // MARK: Live Activity 섹션
                     Section {
@@ -122,9 +121,10 @@ struct SettingsView: View {
                 }
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
-                .navigationTitle("설정")
-                .navigationBarTitleDisplayMode(.large)
             }
+            .navigationTitle("설정")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(.hidden, for: .navigationBar)
         }
         .task {
             await viewModel.loadSettings()

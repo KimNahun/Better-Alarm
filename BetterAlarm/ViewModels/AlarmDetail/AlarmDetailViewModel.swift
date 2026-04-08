@@ -116,13 +116,12 @@ final class AlarmDetailViewModel {
             earphoneWarning = nil
             return
         }
+        isSilentAlarm = true
         let connected = await audioService.isEarphoneConnected()
         if connected {
-            isSilentAlarm = true
             earphoneWarning = nil
         } else {
-            isSilentAlarm = false
-            earphoneWarning = "이어폰이 연결되어 있지 않습니다. 조용한 알람은 이어폰 연결 후 사용할 수 있습니다."
+            earphoneWarning = "이어폰이 연결되어 있지 않습니다. 알람 시각에 이어폰을 연결해주세요."
         }
     }
 

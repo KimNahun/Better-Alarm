@@ -17,12 +17,10 @@ struct AlarmListView: View {
     }
 
     var body: some View {
-        ZStack {
-            // 배경 그래디언트 (PersonalColorDesignSystem)
-            PGradientBackground()
-                .ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                PGradientBackground()
 
-            NavigationStack {
                 VStack(spacing: 0) {
                     // 에러 메시지 표시
                     if let errorMessage = viewModel.errorMessage {
@@ -54,8 +52,10 @@ struct AlarmListView: View {
                         alarmList
                     }
                 }
-                .navigationTitle("알람")
-                .navigationBarTitleDisplayMode(.large)
+            }
+            .navigationTitle("알람")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(.hidden, for: .navigationBar)
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         Button {
@@ -71,13 +71,12 @@ struct AlarmListView: View {
                         .accessibilityLabel("새 알람 추가")
                     }
                 }
-                .sheet(isPresented: $showDetail) {
-                    AlarmDetailView(
-                        store: store,
-                        editingAlarm: selectedAlarm
-                    ) {
-                        Task { await viewModel.loadAlarms() }
-                    }
+            .sheet(isPresented: $showDetail) {
+                AlarmDetailView(
+                    store: store,
+                    editingAlarm: selectedAlarm
+                ) {
+                    Task { await viewModel.loadAlarms() }
                 }
             }
         }
