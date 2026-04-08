@@ -1,5 +1,9 @@
 import UIKit
 
+// ⚠️ DEPRECATED: 이 파일은 UIKit 레거시 코드입니다.
+// SwiftUI 뷰에서는 PersonalColorDesignSystem의 GlassCard, HapticManager 등을 사용하세요.
+// 신규 코드에서 이 파일의 클래스/메서드를 참조하지 마세요.
+
 extension UIView {
     // MARK: - Glass Effect
 

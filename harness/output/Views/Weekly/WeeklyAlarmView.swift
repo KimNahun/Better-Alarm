@@ -69,38 +69,12 @@ struct WeeklyAlarmView: View {
                     showDetail = true
                     HapticManager.impact(.light)
                 }
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                    Button(role: .destructive) {
-                        Task {
-                            await viewModel.deleteAlarm(alarm)
-                            HapticManager.notification(.success)
-                        }
-                    } label: {
-                        Label("삭제", systemImage: "trash.fill")
-                    }
-                }
-                .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                    if alarm.isEnabled {
-                        if alarm.isSkippingNext {
-                            Button {
-                                Task { await viewModel.clearSkip(alarm) }
-                            } label: {
-                                Label("건너뛰기 취소", systemImage: "arrow.uturn.backward")
-                            }
-                            .tint(Color.pWarning)
-                        } else {
-                            Button {
-                                Task {
-                                    await viewModel.skipOnceAlarm(alarm)
-                                    HapticManager.impact(.medium)
-                                }
-                            } label: {
-                                Label("1회 건너뛰기", systemImage: "forward.fill")
-                            }
-                            .tint(Color.pAccentSecondary)
-                        }
-                    }
-                }
+                .alarmSwipeActions(
+                    alarm: alarm,
+                    onDelete: { Task { await viewModel.deleteAlarm(alarm) } },
+                    onSkip: { Task { await viewModel.skipOnceAlarm(alarm) } },
+                    onClearSkip: { Task { await viewModel.clearSkip(alarm) } }
+                )
             }
         }
         .listStyle(.plain)

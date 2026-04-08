@@ -6,6 +6,7 @@ import UserNotifications
 /// 앱 생명주기 이벤트를 처리하는 AppDelegate.
 /// - 백그라운드 진입 시: local 모드 활성화 알람이 있으면 즉시 로컬 알림 1건 등록
 /// - 포그라운드 복귀 시: 백그라운드 리마인더 알림 취소
+@MainActor
 final class AppDelegate: NSObject, UIApplicationDelegate {
     // AlarmStore와 LocalNotificationService를 BetterAlarmApp에서 주입받는다.
     private(set) var alarmStore: AlarmStore?
@@ -83,12 +84,10 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         let userInfo = response.notification.request.content.userInfo
         if let alarmIDString = userInfo["alarmID"] as? String,
            let alarmID = UUID(uuidString: alarmIDString) {
-            Task {
-                guard let store = alarmStore else { return }
-                let alarms = await store.alarms
-                if let alarm = alarms.first(where: { $0.id == alarmID }) {
-                    await store.handleAlarmCompleted(alarm)
-                }
+            guard let store = alarmStore else { return }
+            let alarms = await store.alarms
+            if let alarm = alarms.first(where: { $0.id == alarmID }) {
+                await store.handleAlarmCompleted(alarm)
             }
         }
     }

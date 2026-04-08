@@ -1,7 +1,11 @@
 import UIKit
 
+// ⚠️ DEPRECATED: 이 파일은 UIKit 레거시 코드입니다.
+// SwiftUI 뷰에서는 PersonalColorDesignSystem 토큰(Color.p*)을 사용하세요.
+// 신규 코드에서 이 파일의 색상/폰트를 참조하지 마세요.
+
 extension UIColor {
-    // MARK: - Fixed Dark Mode Theme
+    // MARK: - Fixed Dark Mode Theme (Legacy)
 
     /// Primary accent color - Soft lavender/purple
     static let accentPrimary = UIColor(red: 0.7, green: 0.5, blue: 1.0, alpha: 1.0)  // Bright lavender

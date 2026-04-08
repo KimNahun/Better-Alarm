@@ -75,3 +75,62 @@ struct AlarmRowView: View {
         .padding(.vertical, 4)
     }
 }
+
+// MARK: - AlarmSwipeActions ViewModifier
+
+/// AlarmListView와 WeeklyAlarmView에서 공유하는 swipe actions.
+/// 코드 중복 제거를 위해 ViewModifier로 분리.
+struct AlarmSwipeActionsModifier: ViewModifier {
+    let alarm: Alarm
+    let onDelete: () -> Void
+    let onSkip: () -> Void
+    let onClearSkip: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                Button(role: .destructive) {
+                    onDelete()
+                    HapticManager.notification(.success)
+                } label: {
+                    Label("삭제", systemImage: "trash.fill")
+                }
+            }
+            .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                if alarm.isWeeklyAlarm && alarm.isEnabled {
+                    if alarm.isSkippingNext {
+                        Button {
+                            onClearSkip()
+                        } label: {
+                            Label("건너뛰기 취소", systemImage: "arrow.uturn.backward")
+                        }
+                        .tint(Color.pWarning)
+                    } else {
+                        Button {
+                            onSkip()
+                            HapticManager.impact(.medium)
+                        } label: {
+                            Label("1회 건너뛰기", systemImage: "forward.fill")
+                        }
+                        .tint(Color.pAccentSecondary)
+                    }
+                }
+            }
+    }
+}
+
+extension View {
+    func alarmSwipeActions(
+        alarm: Alarm,
+        onDelete: @escaping () -> Void,
+        onSkip: @escaping () -> Void,
+        onClearSkip: @escaping () -> Void
+    ) -> some View {
+        modifier(AlarmSwipeActionsModifier(
+            alarm: alarm,
+            onDelete: onDelete,
+            onSkip: onSkip,
+            onClearSkip: onClearSkip
+        ))
+    }
+}

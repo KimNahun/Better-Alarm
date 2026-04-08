@@ -5,7 +5,7 @@ import Foundation
 enum AppLogger {
 
     // MARK: - 로그 ON/OFF 토글 (이 값만 바꾸면 전체 로그 ON/OFF)
-    static var isEnabled: Bool = true
+    nonisolated(unsafe) static var isEnabled: Bool = true
 
     // MARK: - 로그 카테고리
     enum Category: String {
@@ -122,9 +122,13 @@ enum AppLogger {
 
     // MARK: - Helper
 
-    private static func timestamp() -> String {
+    private static let timestampFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss.SSS"
-        return formatter.string(from: Date())
+        return formatter
+    }()
+
+    private static func timestamp() -> String {
+        timestampFormatter.string(from: Date())
     }
 }

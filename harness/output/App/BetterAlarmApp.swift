@@ -16,6 +16,7 @@ struct BetterAlarmApp: App {
     private let audioService: AudioService
     private let volumeService: VolumeService
     private let liveActivityManager: LiveActivityManager?
+    private let alarmKitService: (any AlarmKitServiceProtocol)?
     private let alarmStore: AlarmStore
 
     init() {
@@ -30,7 +31,7 @@ struct BetterAlarmApp: App {
             liveActivityMgr = nil
         }
 
-        let alarmKitSvc: AnyObject?
+        let alarmKitSvc: (any AlarmKitServiceProtocol)?
         if #available(iOS 26.0, *) {
             alarmKitSvc = AlarmKitService()
         } else {
@@ -41,6 +42,7 @@ struct BetterAlarmApp: App {
         self.audioService = audioSvc
         self.volumeService = volumeSvc
         self.liveActivityManager = liveActivityMgr
+        self.alarmKitService = alarmKitSvc
         self.alarmStore = AlarmStore(
             localNotificationService: notificationService,
             audioService: audioSvc,
@@ -71,7 +73,8 @@ struct BetterAlarmApp: App {
                 // 탭 3: 설정
                 SettingsView(
                     liveActivityManager: liveActivityManager,
-                    alarmStore: alarmStore
+                    alarmStore: alarmStore,
+                    alarmKitService: alarmKitService
                 )
                 .tabItem {
                     Label("설정", systemImage: "gearshape")

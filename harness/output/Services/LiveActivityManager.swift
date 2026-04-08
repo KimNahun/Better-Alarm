@@ -61,7 +61,7 @@ actor LiveActivityManager {
     }
 
     /// 시스템에서 Live Activity가 허용되어 있는지 여부
-    nonisolated var areActivitiesAvailable: Bool {
+    var areActivitiesAvailable: Bool {
         ActivityAuthorizationInfo().areActivitiesEnabled
     }
 
@@ -168,21 +168,8 @@ actor LiveActivityManager {
         let calendar = Calendar.current
         let hour = calendar.component(.hour, from: nextDate)
         let minute = calendar.component(.minute, from: nextDate)
-        let period = hour < 12 ? "오전" : "오후"
-        let displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour)
-        let timeString = String(format: "%@ %d:%02d", period, displayHour, minute)
-
-        let dateString: String
-        if calendar.isDateInToday(nextDate) {
-            dateString = "오늘"
-        } else if calendar.isDateInTomorrow(nextDate) {
-            dateString = "내일"
-        } else {
-            let dateFormatter = DateFormatter()
-            dateFormatter.locale = Locale(identifier: "ko_KR")
-            dateFormatter.dateFormat = "M월 d일"
-            dateString = dateFormatter.string(from: nextDate)
-        }
+        let timeString = KoreanDateFormatters.timeDisplayString(hour: hour, minute: minute)
+        let dateString = KoreanDateFormatters.relativeDateString(for: nextDate)
 
         AppLogger.debug("Created content state: \(timeString) \(dateString)", category: .liveActivity)
 

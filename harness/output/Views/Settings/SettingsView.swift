@@ -9,10 +9,15 @@ struct SettingsView: View {
     @State private var viewModel: SettingsViewModel
     @State private var liveActivityToggle: Bool = true
 
-    init(liveActivityManager: LiveActivityManager?, alarmStore: AlarmStore) {
+    init(
+        liveActivityManager: LiveActivityManager?,
+        alarmStore: AlarmStore,
+        alarmKitService: (any AlarmKitServiceProtocol)? = nil
+    ) {
         _viewModel = State(initialValue: SettingsViewModel(
             liveActivityManager: liveActivityManager,
-            alarmStore: alarmStore
+            alarmStore: alarmStore,
+            alarmKitService: alarmKitService
         ))
     }
 

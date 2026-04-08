@@ -20,10 +20,16 @@ final class SettingsViewModel {
 
     private let liveActivityManager: LiveActivityManager?
     private let alarmStore: AlarmStore
+    private let alarmKitService: (any AlarmKitServiceProtocol)?
 
-    init(liveActivityManager: LiveActivityManager? = nil, alarmStore: AlarmStore) {
+    init(
+        liveActivityManager: LiveActivityManager? = nil,
+        alarmStore: AlarmStore,
+        alarmKitService: (any AlarmKitServiceProtocol)? = nil
+    ) {
         self.liveActivityManager = liveActivityManager
         self.alarmStore = alarmStore
+        self.alarmKitService = alarmKitService
         loadAppInfo()
     }
 
@@ -69,8 +75,7 @@ final class SettingsViewModel {
 
     /// AlarmKit 권한 상태를 확인한다.
     private func loadAlarmKitAuthStatus() async {
-        if #available(iOS 26.0, *) {
-            let service = AlarmKitService()
+        if let service = alarmKitService {
             let authorized = await service.requestPermission()
             alarmKitAuthStatus = authorized ? "허용됨" : "허용 안 됨"
         } else {

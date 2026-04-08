@@ -11,7 +11,7 @@ actor AlarmStore {
     private let localNotificationService: LocalNotificationService
     private let audioService: AudioService
     private let liveActivityManager: LiveActivityManager?
-    private let alarmKitService: AnyObject? // 타입 소거: 실제로는 AlarmKitService (iOS 26+)
+    private let alarmKitService: (any AlarmKitServiceProtocol)?
 
     private(set) var alarms: [Alarm] = []
 
@@ -19,7 +19,7 @@ actor AlarmStore {
         localNotificationService: LocalNotificationService = LocalNotificationService(),
         audioService: AudioService = AudioService(),
         liveActivityManager: LiveActivityManager? = nil,
-        alarmKitService: AnyObject? = nil
+        alarmKitService: (any AlarmKitServiceProtocol)? = nil
     ) {
         self.localNotificationService = localNotificationService
         self.audioService = audioService
@@ -222,18 +222,15 @@ actor AlarmStore {
         let period = hour < 12 ? "오전" : "오후"
         let displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour)
 
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ko_KR")
-
+        let datePrefix: String
         if calendar.isDateInToday(date) {
-            return String(format: "오늘 %@ %d시 %02d분", period, displayHour, minute)
+            datePrefix = "오늘"
         } else if calendar.isDateInTomorrow(date) {
-            return String(format: "내일 %@ %d시 %02d분", period, displayHour, minute)
+            datePrefix = "내일"
         } else {
-            formatter.dateFormat = "M월 d일 (E)"
-            let dateString = formatter.string(from: date)
-            return String(format: "%@ %@ %d시 %02d분", dateString, period, displayHour, minute)
+            datePrefix = KoreanDateFormatters.monthDayWeekday.string(from: date)
         }
+        return String(format: "%@ %@ %d시 %02d분", datePrefix, period, displayHour, minute)
     }
 
     var hasEnabledLocalAlarms: Bool {
@@ -256,11 +253,15 @@ actor AlarmStore {
         // local 모드 알람 스케줄
         let enabledLocalAlarms = alarms.filter { $0.isEnabled && $0.alarmMode == .local }
         for alarm in enabledLocalAlarms {
-            try? await localNotificationService.scheduleAlarm(for: alarm)
+            do {
+                try await localNotificationService.scheduleAlarm(for: alarm)
+            } catch {
+                AppLogger.error("Failed to schedule local alarm '\(alarm.displayTitle)': \(error)", category: .alarm)
+            }
         }
 
-        // alarmKit 모드 알람 스케줄 (iOS 26+)
-        if #available(iOS 26.0, *), let service = alarmKitService as? AlarmKitService {
+        // alarmKit 모드 알람 스케줄
+        if let service = alarmKitService {
             let alarmKitAlarms = alarms.filter { $0.isEnabled && $0.alarmMode == .alarmKit && !$0.isSkippingNext }
             if let next = alarmKitAlarms
                 .compactMap({ alarm -> (Alarm, Date)? in
@@ -279,7 +280,7 @@ actor AlarmStore {
         case .local:
             await localNotificationService.cancelAlarm(for: alarm)
         case .alarmKit:
-            if #available(iOS 26.0, *), let service = alarmKitService as? AlarmKitService {
+            if let service = alarmKitService {
                 await service.cancelAlarm(for: alarm)
             }
         }

@@ -3,13 +3,24 @@ import Foundation
 import AlarmKit
 #endif
 
+// MARK: - AlarmKitServiceProtocol
+
+/// AlarmKit 서비스 추상화. DI 및 테스트를 위한 프로토콜.
+protocol AlarmKitServiceProtocol: Sendable {
+    func requestPermission() async -> Bool
+    func scheduleAlarm(for alarm: Alarm) async throws
+    func cancelAlarm(for alarm: Alarm) async
+    func stopAllAlarms() async
+    func snoozeAlarm(id alarmIDString: String) async
+}
+
 // MARK: - AlarmKitService (iOS 26+)
 
 /// AlarmKit 기반 알람 스케줄링 서비스.
 /// iOS 26.0 이상에서만 사용 가능. 모든 코드에 @available(iOS 26.0, *) 가드 적용.
 /// Swift 6: actor로 구현.
 @available(iOS 26.0, *)
-actor AlarmKitService {
+actor AlarmKitService: AlarmKitServiceProtocol {
     private let manager = AlarmManager.shared
     private var currentAlarmKitID: UUID?
     private var monitoringTask: Task<Void, Never>?
@@ -111,7 +122,7 @@ actor AlarmKitService {
     // MARK: - Cancel / Stop
 
     /// 현재 스케줄된 알람을 취소한다.
-    func cancelAlarm(for alarm: Alarm) {
+    func cancelAlarm(for alarm: Alarm) async {
         guard let id = currentAlarmKitID else { return }
         try? manager.stop(id: id)
         currentAlarmKitID = nil
@@ -170,10 +181,8 @@ actor AlarmKitService {
         monitoringTask = Task {
             for await alarms in self.manager.alarmUpdates {
                 if Task.isCancelled { break }
-                // 알람이 울리는 상태 감지 (필요 시 추가 처리)
                 for alarm in alarms where alarm.state == .alerting {
-                    // 알람 울림 이벤트 — 필요 시 콜백/노티 연결
-                    _ = alarm.id
+                    AppLogger.info("AlarmKit alarm alerting: \(alarm.id)", category: .alarmKit)
                 }
             }
         }

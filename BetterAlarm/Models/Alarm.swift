@@ -1,5 +1,43 @@
 import Foundation
 
+// MARK: - Korean Date Formatting
+
+/// 한국어 날짜 포맷터 캐시. DateFormatter 재생성 방지.
+enum KoreanDateFormatters {
+    static let monthDay: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "ko_KR")
+        f.dateFormat = "M월 d일"
+        return f
+    }()
+
+    static let monthDayWeekday: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "ko_KR")
+        f.dateFormat = "M월 d일 (E)"
+        return f
+    }()
+
+    /// "오전/오후 X시 XX분" 형식의 시간 문자열 생성
+    static func timeDisplayString(hour: Int, minute: Int) -> String {
+        let period = hour < 12 ? "오전" : "오후"
+        let displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour)
+        return String(format: "%@ %d:%02d", period, displayHour, minute)
+    }
+
+    /// 날짜를 "오늘" / "내일" / "M월 d일" 형식으로 변환
+    static func relativeDateString(for date: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) {
+            return "오늘"
+        } else if calendar.isDateInTomorrow(date) {
+            return "내일"
+        } else {
+            return monthDay.string(from: date)
+        }
+    }
+}
+
 // MARK: - Alarm Model
 
 /// 알람 데이터 모델.
@@ -59,9 +97,7 @@ struct Alarm: Codable, Identifiable, Equatable, Sendable {
 
     /// "오전 8:00" 형식의 시간 문자열
     var timeString: String {
-        let period = hour < 12 ? "오전" : "오후"
-        let displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour)
-        return String(format: "%@ %d:%02d", period, displayHour, minute)
+        KoreanDateFormatters.timeDisplayString(hour: hour, minute: minute)
     }
 
     /// 제목이 없으면 "알람"으로 대체
@@ -86,10 +122,7 @@ struct Alarm: Codable, Identifiable, Equatable, Sendable {
                 return sorted.map { $0.shortName }.joined(separator: ", ")
             }
         case .specificDate(let date):
-            let formatter = DateFormatter()
-            formatter.locale = Locale(identifier: "ko_KR")
-            formatter.dateFormat = "M월 d일"
-            return formatter.string(from: date)
+            return KoreanDateFormatters.monthDay.string(from: date)
         }
     }
 
