@@ -46,8 +46,9 @@ final class AlarmRingingViewModel {
         // 시간 업데이트 타이머 시작
         startTimeUpdateTimer()
 
-        // 볼륨 먼저 올리기 (80% 보장)
+        // 볼륨 먼저 올리기 (80% 보장) + 볼륨 가드 시작
         await volumeService.ensureMinimumVolume()
+        await volumeService.startVolumeGuard()
 
         // 사운드 재생
         do {
@@ -65,6 +66,7 @@ final class AlarmRingingViewModel {
     /// 알람을 정지하고 완료 처리한다.
     func stopAlarm() async {
         isRinging = false
+        await volumeService.stopVolumeGuard()
         await audioService.stopAlarmSound()
         await alarmStore.handleAlarmCompleted(alarm)
         UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -74,6 +76,7 @@ final class AlarmRingingViewModel {
     /// 스누즈: 사운드를 중지하고 5분 후 재알림을 예약한다.
     func snoozeAlarm() async {
         isRinging = false
+        await volumeService.stopVolumeGuard()
         await audioService.stopAlarmSound()
         await alarmStore.snoozeAlarm(alarm, minutes: 5)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()

@@ -7,17 +7,20 @@ import AVFoundation
 protocol VolumeServiceProtocol: Sendable {
     func ensureMinimumVolume() async
     func restoreVolume() async
+    func startVolumeGuard() async
+    func stopVolumeGuard() async
 }
 
 // MARK: - VolumeService
 
 /// 알람 재생 시 볼륨을 자동으로 80% 이상으로 올리고, 종료 후 원래 볼륨으로 복원하는 서비스.
-/// MPVolumeView 슬라이더 방식 사용 — @MainActor에서 UI 조작 필요.
-/// actor → @MainActor로 변경: MPVolumeView는 UI 요소이므로 hop 없이 직접 실행.
+/// 알람이 울리는 동안 사용자가 볼륨을 낮추면 다시 80%로 강제 복원.
 @MainActor
 final class VolumeService: VolumeServiceProtocol, @unchecked Sendable {
     private var originalVolume: Float?
     private var volumeView: MPVolumeView?
+    private var volumeGuardTask: Task<Void, Never>?
+    private var isGuarding: Bool = false
 
     nonisolated init() {}
 
@@ -32,13 +35,39 @@ final class VolumeService: VolumeServiceProtocol, @unchecked Sendable {
             originalVolume = current
             setVolumeWithDelay(0.8)
         } else {
-            originalVolume = nil // 이미 충분히 크므로 복원 불필요
+            originalVolume = nil
             AppLogger.info("Volume already >= 0.8, no adjustment needed", category: .alarm)
         }
     }
 
-    /// 저장해둔 원래 볼륨으로 복원한다. 저장값이 없으면 아무것도 하지 않는다.
+    /// 알람이 울리는 동안 볼륨을 80% 이상으로 유지하는 가드를 시작한다.
+    /// 사용자가 볼륨을 낮추면 다시 80%로 강제 복원.
+    func startVolumeGuard() async {
+        isGuarding = true
+        volumeGuardTask?.cancel()
+        volumeGuardTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                guard let self, self.isGuarding else { break }
+                let current = AVAudioSession.sharedInstance().outputVolume
+                if current < 0.8 {
+                    AppLogger.info("Volume dropped to \(current), restoring to 0.8", category: .alarm)
+                    self.setVolumeWithDelay(0.8)
+                }
+            }
+        }
+    }
+
+    /// 볼륨 가드를 중지한다.
+    func stopVolumeGuard() async {
+        isGuarding = false
+        volumeGuardTask?.cancel()
+        volumeGuardTask = nil
+    }
+
+    /// 저장해둔 원래 볼륨으로 복원한다.
     func restoreVolume() async {
+        await stopVolumeGuard()
         guard let original = originalVolume else { return }
         setVolumeWithDelay(original)
         originalVolume = nil
@@ -47,17 +76,13 @@ final class VolumeService: VolumeServiceProtocol, @unchecked Sendable {
 
     // MARK: - Private
 
-    /// MPVolumeView 슬라이더를 통해 시스템 볼륨을 설정한다.
-    /// 레이아웃 처리를 위해 약간의 딜레이 후 슬라이더 접근.
     private func setVolumeWithDelay(_ volume: Float) {
-        // 기존 volumeView 정리
         volumeView?.removeFromSuperview()
 
         let newVolumeView = MPVolumeView()
         newVolumeView.frame = CGRect(x: -1000, y: -1000, width: 100, height: 100)
-        newVolumeView.alpha = 0.01 // 완전 투명하되 레이아웃 유지
+        newVolumeView.alpha = 0.01
 
-        // keyWindow 또는 첫 번째 window 사용 (fallback)
         let window = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .flatMap { $0.windows }
@@ -75,17 +100,14 @@ final class VolumeService: VolumeServiceProtocol, @unchecked Sendable {
         window.addSubview(newVolumeView)
         self.volumeView = newVolumeView
 
-        // 레이아웃 처리 후 슬라이더 접근 — 0.15초 딜레이
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
             if let slider = newVolumeView.subviews.compactMap({ $0 as? UISlider }).first {
                 slider.value = volume
                 AppLogger.info("Volume slider set to \(volume)", category: .alarm)
             } else {
-                // Fallback: 재귀적 서브뷰 탐색
                 self?.findAndSetSlider(in: newVolumeView, value: volume)
             }
 
-            // 정리 (약간의 추가 딜레이)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
                 newVolumeView.removeFromSuperview()
                 if self?.volumeView === newVolumeView {
@@ -95,7 +117,6 @@ final class VolumeService: VolumeServiceProtocol, @unchecked Sendable {
         }
     }
 
-    /// 서브뷰를 재귀적으로 탐색하여 UISlider를 찾고 값을 설정한다.
     private func findAndSetSlider(in view: UIView, value: Float) {
         for subview in view.subviews {
             if let slider = subview as? UISlider {

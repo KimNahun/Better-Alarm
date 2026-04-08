@@ -83,7 +83,7 @@ struct SettingsView: View {
 
                     // MARK: 피드백/문의 섹션
                     Section {
-                        Link(destination: URL(string: "mailto:nahun.kim@example.com?subject=BetterAlarm%20피드백")!) {
+                        Link(destination: URL(string: "mailto:rlaskgns0212@naver.com?subject=BetterAlarm%20피드백")!) {
                             HStack {
                                 Text("피드백 보내기")
                                     .font(.body)

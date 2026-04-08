@@ -39,7 +39,7 @@ struct AlarmListView: View {
                     // 다음 알람 표시
                     nextAlarmBanner
 
-                    // 알람 목록
+                    // 알람 목록 (스크롤 가능 영역)
                     if viewModel.isLoading {
                         Spacer()
                         ProgressView()
@@ -49,7 +49,24 @@ struct AlarmListView: View {
                     } else if viewModel.alarms.isEmpty {
                         emptyState
                     } else {
-                        alarmList
+                        ScrollView {
+                            LazyVStack(spacing: 0) {
+                                ForEach(viewModel.alarms) { alarm in
+                                    AlarmRowView(alarm: alarm) { enabled in
+                                        Task {
+                                            await viewModel.toggleAlarm(alarm, enabled: enabled)
+                                            HapticManager.selection()
+                                        }
+                                    }
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        selectedAlarm = alarm
+                                        showDetail = true
+                                        HapticManager.impact(.light)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -77,7 +94,10 @@ struct AlarmListView: View {
                     store: store,
                     editingAlarm: selectedAlarm
                 ) {
-                    Task { await viewModel.loadAlarms() }
+                    Task {
+                        await viewModel.loadAlarms()
+                        viewModel.showSaveToast(isEditing: selectedAlarm != nil)
+                    }
                 }
             }
         }
@@ -127,37 +147,7 @@ struct AlarmListView: View {
         }
     }
 
-    private var alarmList: some View {
-        List {
-            ForEach(viewModel.alarms) { alarm in
-                AlarmRowView(alarm: alarm) { enabled in
-                    Task {
-                        await viewModel.toggleAlarm(alarm, enabled: enabled)
-                        HapticManager.selection()
-                    }
-                }
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets())
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    selectedAlarm = alarm
-                    showDetail = true
-                    HapticManager.impact(.light)
-                }
-                .alarmSwipeActions(
-                    alarm: alarm,
-                    onDelete: { Task { await viewModel.deleteAlarm(alarm) } },
-                    onSkip: { Task { await viewModel.skipOnceAlarm(alarm) } },
-                    onClearSkip: { Task { await viewModel.clearSkip(alarm) } }
-                )
-            }
-        }
-        .listStyle(.plain)
-        .background(Color.clear)
-        .scrollContentBackground(.hidden)
-        .animation(.easeInOut(duration: 0.25), value: viewModel.alarms.map(\.id))
-    }
+    // alarmList는 인라인으로 ScrollView + LazyVStack으로 이동됨
 
     private var emptyState: some View {
         VStack(spacing: 16) {

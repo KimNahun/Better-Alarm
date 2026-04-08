@@ -63,34 +63,32 @@ struct WeeklyAlarmView: View {
     // MARK: - Day Tabs
 
     private var dayTabs: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                // 전체 탭
-                Button { viewModel.selectedDay = nil } label: {
-                    Text("전체")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(viewModel.selectedDay == nil ? .white : Color.pTextTertiary)
-                        .frame(minWidth: 44, minHeight: 36)
-                        .background(viewModel.selectedDay == nil ? Color.pAccentPrimary : Color.pGlassFill)
+        HStack(spacing: 4) {
+            // 전체 탭
+            Button { viewModel.selectedDay = nil } label: {
+                Text("전체")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(viewModel.selectedDay == nil ? .white : Color.pTextTertiary)
+                    .frame(maxWidth: .infinity, minHeight: 36)
+                    .background(viewModel.selectedDay == nil ? Color.pAccentPrimary : Color.pGlassFill)
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+
+            ForEach(Weekday.allCases, id: \.self) { day in
+                Button { viewModel.selectedDay = day } label: {
+                    Text(day.shortName)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(viewModel.selectedDay == day ? .white : Color.pTextTertiary)
+                        .frame(maxWidth: .infinity, minHeight: 36)
+                        .background(viewModel.selectedDay == day ? Color.pAccentPrimary : Color.pGlassFill)
                         .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
-
-                ForEach(Weekday.allCases, id: \.self) { day in
-                    Button { viewModel.selectedDay = day } label: {
-                        Text(day.shortName)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(viewModel.selectedDay == day ? .white : Color.pTextTertiary)
-                            .frame(minWidth: 44, minHeight: 36)
-                            .background(viewModel.selectedDay == day ? Color.pAccentPrimary : Color.pGlassFill)
-                            .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
     }
 
     // MARK: - Subviews
