@@ -55,20 +55,39 @@ actor AudioService: AudioServiceProtocol {
         // 사운드 파일 로드
         let url: URL
         if soundName == "default" {
-            // 기본 사운드: 번들의 default.mp3 또는 시스템 사운드 대체
+            // 기본 사운드: 번들 파일 → 시스템 알람 사운드 폴백
             if let bundleURL = Bundle.main.url(forResource: "default_alarm", withExtension: "mp3") {
                 url = bundleURL
             } else if let bundleURL = Bundle.main.url(forResource: "default_alarm", withExtension: "wav") {
                 url = bundleURL
             } else {
-                throw AlarmError.soundNotFound(soundName)
+                // 시스템 알람 사운드 폴백
+                let systemAlarmPath = "/System/Library/Audio/UISounds/alarm.caf"
+                let systemAlertPath = "/System/Library/Audio/UISounds/SIMToolkitGeneralBeep.caf"
+                let systemNewMailPath = "/System/Library/Audio/UISounds/new-mail.caf"
+                if FileManager.default.fileExists(atPath: systemAlarmPath) {
+                    url = URL(fileURLWithPath: systemAlarmPath)
+                } else if FileManager.default.fileExists(atPath: systemAlertPath) {
+                    url = URL(fileURLWithPath: systemAlertPath)
+                } else if FileManager.default.fileExists(atPath: systemNewMailPath) {
+                    url = URL(fileURLWithPath: systemNewMailPath)
+                } else {
+                    throw AlarmError.soundNotFound(soundName)
+                }
             }
         } else {
-            guard let bundleURL = Bundle.main.url(forResource: soundName, withExtension: "mp3")
-                ?? Bundle.main.url(forResource: soundName, withExtension: "wav") else {
-                throw AlarmError.soundNotFound(soundName)
+            if let bundleURL = Bundle.main.url(forResource: soundName, withExtension: "mp3")
+                ?? Bundle.main.url(forResource: soundName, withExtension: "wav") {
+                url = bundleURL
+            } else {
+                // 커스텀 사운드 못 찾으면 기본으로 폴백
+                let systemPath = "/System/Library/Audio/UISounds/alarm.caf"
+                if FileManager.default.fileExists(atPath: systemPath) {
+                    url = URL(fileURLWithPath: systemPath)
+                } else {
+                    throw AlarmError.soundNotFound(soundName)
+                }
             }
-            url = bundleURL
         }
 
         let player = try AVAudioPlayer(contentsOf: url)

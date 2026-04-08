@@ -54,7 +54,34 @@ struct BetterAlarmApp: App {
             alarmKitService: alarmKitSvc
         )
 
+        // 전체 앱 배경색을 설정하여 탭/화면 전환 시 흰색 깜빡임 방지
+        configureAppearance()
+
         AppLogger.info("BetterAlarmApp initialized", category: .lifecycle)
+    }
+
+    /// UIKit 전역 외관 설정: 탭바, 네비게이션바, 테이블뷰 배경색을 어둡게 설정하여 흰색 플래시 방지
+    private static func configureAppearance() {
+        // 탭바 배경
+        let tabBarAppearance = UITabBarAppearance()
+        tabBarAppearance.configureWithOpaqueBackground()
+        tabBarAppearance.backgroundColor = UIColor(red: 0.08, green: 0.08, blue: 0.15, alpha: 1.0)
+        UITabBar.appearance().standardAppearance = tabBarAppearance
+        UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+
+        // 네비게이션바 배경
+        let navAppearance = UINavigationBarAppearance()
+        navAppearance.configureWithTransparentBackground()
+        UINavigationBar.appearance().standardAppearance = navAppearance
+        UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
+        UINavigationBar.appearance().compactAppearance = navAppearance
+
+        // 테이블뷰/리스트 배경
+        UITableView.appearance().backgroundColor = .clear
+    }
+
+    private func configureAppearance() {
+        Self.configureAppearance()
     }
 
     var body: some Scene {

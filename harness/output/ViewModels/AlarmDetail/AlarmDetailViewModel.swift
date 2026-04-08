@@ -9,8 +9,9 @@ import Foundation
 final class AlarmDetailViewModel {
     // MARK: - Editable State
 
-    var hour: Int = 8
-    var minute: Int = 0
+    var isPM: Bool        // true = 오후, false = 오전
+    var displayHour: Int  // 1~12
+    var minute: Int
     var title: String = ""
     var selectedWeekdays: Set<Weekday> = []
     var scheduleType: ScheduleType = .once
@@ -19,10 +20,20 @@ final class AlarmDetailViewModel {
     var isSilentAlarm: Bool = false
     var soundName: String = "default"
 
+    /// 24시간 형식의 hour (0-23). AlarmStore에 저장할 때 사용.
+    var hour: Int {
+        if displayHour == 12 {
+            return isPM ? 12 : 0
+        }
+        return isPM ? displayHour + 12 : displayHour
+    }
+
     // MARK: - Toast / Alert State
 
     private(set) var showAlarmKitUnavailableToast: Bool = false
     private(set) var toastMessage: String = ""
+    private(set) var showActionToast: Bool = false
+    private(set) var actionToastMessage: String = ""
     private(set) var earphoneWarning: String? = nil
     private(set) var isSaving: Bool = false
     private(set) var saveError: String? = nil
@@ -47,6 +58,16 @@ final class AlarmDetailViewModel {
         self.store = store
         self.audioService = audioService
         self.editingAlarm = editingAlarm
+
+        // 기본값: 현재 시간
+        let now = Date()
+        let calendar = Calendar.current
+        let currentHour = calendar.component(.hour, from: now)
+        let currentMinute = calendar.component(.minute, from: now)
+        self.isPM = currentHour >= 12
+        self.displayHour = currentHour == 0 ? 12 : (currentHour > 12 ? currentHour - 12 : currentHour)
+        self.minute = currentMinute
+
         if let alarm = editingAlarm {
             populateFromAlarm(alarm)
         }
@@ -55,7 +76,9 @@ final class AlarmDetailViewModel {
     // MARK: - Populate
 
     private func populateFromAlarm(_ alarm: Alarm) {
-        hour = alarm.hour
+        let h = alarm.hour
+        isPM = h >= 12
+        displayHour = h == 0 ? 12 : (h > 12 ? h - 12 : h)
         minute = alarm.minute
         title = alarm.title
         soundName = alarm.soundName
@@ -75,16 +98,12 @@ final class AlarmDetailViewModel {
 
     // MARK: - AlarmMode 토글 (iOS 버전 체크)
 
-    /// "앱이 꺼진 상태에서도 알람 받기" 토글 처리.
-    /// iOS 26 미만이면 토글을 ON으로 바꾸지 않고 토스트 메시지를 표시한다.
     func toggleAlarmMode(wantsAlarmKit: Bool) {
         if wantsAlarmKit {
             if #available(iOS 26, *) {
                 alarmMode = .alarmKit
-                // alarmKit 모드에서는 조용한 알람 비활성화
                 isSilentAlarm = false
             } else {
-                // iOS 26 미만: 토글 ON 거부 + 토스트 표시
                 alarmMode = .local
                 toastMessage = AlarmError.alarmKitUnavailable.errorDescription
                     ?? "이 기능은 iOS 26 이상에서만 사용할 수 있습니다."
@@ -95,15 +114,18 @@ final class AlarmDetailViewModel {
         }
     }
 
-    /// 토스트 표시 후 dismissal 처리
     func dismissToast() {
         showAlarmKitUnavailableToast = false
         toastMessage = ""
     }
 
+    func dismissActionToast() {
+        showActionToast = false
+        actionToastMessage = ""
+    }
+
     // MARK: - Silent Alarm 유효성 검사
 
-    /// 조용한 알람 토글 ON 시도 시 이어폰 연결 여부 확인
     func validateSilentAlarm(enabled: Bool) async {
         guard enabled else {
             isSilentAlarm = false
@@ -111,7 +133,6 @@ final class AlarmDetailViewModel {
             return
         }
         guard alarmMode != .alarmKit else {
-            // alarmKit 모드에서는 조용한 알람 비활성화
             isSilentAlarm = false
             earphoneWarning = nil
             return
@@ -135,7 +156,6 @@ final class AlarmDetailViewModel {
 
     // MARK: - Save
 
-    /// 편집 내용을 저장한다. 신규 생성 또는 기존 알람 업데이트.
     func save() async {
         isSaving = true
         defer { isSaving = false }
@@ -154,6 +174,7 @@ final class AlarmDetailViewModel {
                 alarmMode: alarmMode,
                 isSilentAlarm: isSilentAlarm
             )
+            actionToastMessage = "알람이 수정되었습니다"
         } else {
             await store.createAlarm(
                 hour: hour,
@@ -164,7 +185,9 @@ final class AlarmDetailViewModel {
                 alarmMode: alarmMode,
                 isSilentAlarm: isSilentAlarm
             )
+            actionToastMessage = "알람이 저장되었습니다"
         }
+        showActionToast = true
     }
 
     // MARK: - Private Helpers

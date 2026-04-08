@@ -83,6 +83,14 @@ struct AlarmListView: View {
         .task {
             await viewModel.loadAlarms()
         }
+        .toast(
+            isPresented: Binding(
+                get: { viewModel.showToast },
+                set: { if !$0 { viewModel.dismissToast() } }
+            ),
+            message: viewModel.toastMessage,
+            type: .info
+        )
     }
 
     // MARK: - Subviews

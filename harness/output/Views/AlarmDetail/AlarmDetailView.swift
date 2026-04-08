@@ -165,11 +165,20 @@ struct AlarmDetailView: View {
     // MARK: - Time Picker
 
     private var timePicker: some View {
-        HStack {
-            Spacer()
-            // 시 선택
-            Picker("시", selection: $viewModel.hour) {
-                ForEach(0..<24, id: \.self) { h in
+        HStack(spacing: 0) {
+            // 오전/오후 선택
+            Picker("오전/오후", selection: $viewModel.isPM) {
+                Text("오전").tag(false)
+                Text("오후").tag(true)
+            }
+            .pickerStyle(.wheel)
+            .frame(width: 70)
+            .clipped()
+            .accessibilityLabel("오전 오후 선택")
+
+            // 시 선택 (1~12)
+            Picker("시", selection: $viewModel.displayHour) {
+                ForEach(1...12, id: \.self) { h in
                     Text("\(h)시").tag(h)
                 }
             }
@@ -178,10 +187,6 @@ struct AlarmDetailView: View {
             .clipped()
             .accessibilityLabel("시 선택")
 
-            Text(":")
-                .font(.title.weight(.medium))
-                .foregroundStyle(Color.pTextPrimary)
-
             // 분 선택
             Picker("분", selection: $viewModel.minute) {
                 ForEach(0..<60, id: \.self) { m in
@@ -189,12 +194,11 @@ struct AlarmDetailView: View {
                 }
             }
             .pickerStyle(.wheel)
-            .frame(width: 90)
+            .frame(width: 80)
             .clipped()
             .accessibilityLabel("분 선택")
-            Spacer()
         }
-        .frame(height: 120)
+        .frame(height: 150)
     }
 
     // MARK: - Schedule Section
