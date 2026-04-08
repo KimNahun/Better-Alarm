@@ -208,3 +208,227 @@
 **방향 판단**: 현재 방향 유지
 
 아키텍처 기본 구조(MVVM + actor/Observable + 단방향 의존)는 올바르게 잡혀 있다. AlarmKit import 누락과 AlarmKitService 인스턴스 관리 문제는 수정 필요하지만, 전체 재설계가 필요한 수준은 아니다. 위 개선 지시를 반영하면 합격 가능.
+
+---
+
+# QA Report — BetterAlarm Evaluator R2
+
+**검수 일시**: 2026-04-08
+**검수 대상**: `harness/output/` 하위 25개 Swift 파일 (R1 피드백 반영 후)
+**검수 기준**: `evaluation_criteria.md` 5개 항목 (Swift 6 동시성 30%, MVVM 25%, HIG 20%, API 15%, 기능성 10%)
+
+---
+
+**전체 판정**: 합격
+**가중 점수**: 7.6 / 10.0
+
+---
+
+## 이전 피드백 반영 현황
+
+| # | 피드백 항목 | 반영 여부 | 근거 |
+|---|------------|-----------|------|
+| 1 | `AlarmKitService.swift` — `import AlarmKit` 누락 | **반영됨** | `#if os(iOS) import AlarmKit #endif` 추가 (2~4행) |
+| 2 | `AlarmMetadata.swift` — `import AlarmKit` 누락 | **반영됨** | `#if os(iOS) import AlarmKit #endif` 추가 (2~4행) |
+| 3 | `StopAlarmIntent.swift` — `import AlarmKit` 누락 | **반영됨** | `#if os(iOS) import AlarmKit #endif` 추가 (2~4행) |
+| 4 | `SnoozeAlarmIntent.swift` — `import AlarmKit` 누락 | **반영됨** | `#if os(iOS) import AlarmKit #endif` 추가 (2~4행) |
+| 5 | `AlarmStore.swift` — AlarmKitService DI 주입 | **반영됨** | `alarmKitService: AnyObject?`로 init 주입받아 프로퍼티에 저장. `scheduleNextAlarm()`에서 `as? AlarmKitService`로 캐스팅하여 사용 (263행). 매번 새 인스턴스 생성 버그 해소. |
+| 6 | `AudioService.swift` — `nonisolated isEarphoneConnected()` 제거 | **반영됨** | `nonisolated` 키워드 제거, 일반 actor-isolated 메서드로 변경 (89행). 프로토콜에서도 `async`로 변경 (9행). |
+| 7 | `AlarmKitService.swift` — `[weak self]` 제거 | **반영됨** | `startMonitoring()`에서 `self.manager`를 직접 참조 (171행). `[weak self]` 캡처 없음. |
+| 8 | `SettingsViewModel.swift` — `didSet` 패턴 제거 | **반영됨** | `isLiveActivityEnabled`를 `private(set) var`로 변경하고 `setLiveActivityEnabled(_:) async` 메서드 추가 (49~52행). View에서 `.onChange(of:)` + `Task`로 호출 (SettingsView 42~46행). |
+| 9 | `SettingsView.swift` — 피드백/문의 링크 추가 | **반영됨** | `Link` 컴포넌트로 "피드백 보내기" 이메일 링크 추가 (82~100행). |
+| 10 | 빈 상태 아이콘 `.font(.system(size: 60))` 변경 | **반영됨** | AlarmListView (180행), WeeklyAlarmView (115행) 모두 `.font(.largeTitle)` 사용. |
+| 11 | `AlarmListView` 로딩 상태 UI 추가 | **반영됨** | `viewModel.isLoading` 조건에 `ProgressView()` 표시 (45~50행). |
+| 12 | `AlarmDetailView` weekdayPicker 44pt 확보 | **반영됨** | `frame(minWidth: 44, minHeight: 44)` 적용 (255행). |
+| 13 | `AlarmStore.checkForCompletedAlarms()` 빈 메서드 삭제 | **반영됨** | 해당 메서드가 완전히 제거됨. |
+| 14 | `AppDelegate` — `var` 프로퍼티 접근 제한 | **반영됨** | `private(set) var alarmStore: AlarmStore?` / `private(set) var localNotificationService: LocalNotificationService?`로 변경 (11~12행). `configure()` 메서드로 주입 (15행). |
+| 15 | 전체 타입 접근 제어자 명시 | **미반영** | `Alarm`, `AlarmMode`, `AlarmSchedule`, `Weekday`, `AlarmError`, 모든 ViewModel, 모든 Service, 모든 View에 명시적 접근 제어자(`internal`)가 여전히 없다. Swift 단일 모듈에서는 기능적 문제 없으나, SPEC 컨벤션 위반. |
+
+**반영 요약**: 15개 중 14개 반영됨, 1개 미반영.
+
+---
+
+## 항목별 점수
+
+### 1. Swift 6 동시성: 8/10
+
+**합격 기준 충족:**
+- [PASS] 모든 ViewModel: `@MainActor` + `@Observable` 선언 (AlarmListViewModel, AlarmDetailViewModel, SettingsViewModel, WeeklyAlarmViewModel)
+- [PASS] 모든 Service: `actor` 선언 (AlarmStore, AlarmKitService, LocalNotificationService, AudioService, VolumeService, LiveActivityManager)
+- [PASS] 모든 Model: `struct` + `Sendable` (Alarm, AlarmMode, AlarmSchedule, Weekday, AlarmError)
+- [PASS] `DispatchQueue.main` 사용 없음
+- [PASS] `@Published` / `ObservableObject` 사용 없음
+- [PASS] R1 지적사항: `[weak self]` actor 내 사용 → 제거됨
+- [PASS] R1 지적사항: `nonisolated` 남용 → 제거됨
+- [PASS] R1 지적사항: `didSet` + `Task` 패턴 → `setLiveActivityEnabled()` 메서드로 전환됨
+- [PASS] AlarmKitService DI 주입으로 상태 유지 문제 해소
+
+**잔존 위반 사항:**
+
+1. **`Services/VolumeService.swift` 39~46행 — actor 내부 `@MainActor` 메서드**: `fetchCurrentVolume()`과 `setVolume(_:)`이 여전히 actor 내부에서 `@MainActor`로 선언되어 있다. 이 패턴은 기능적으로 동작하지만(actor reentrancy를 통해 MainActor로 호프), actor 격리 경계가 혼란스럽다. `MPVolumeView`, `UIApplication.shared.connectedScenes`는 MainActor 격리가 필수이므로 `@MainActor` 표기 자체는 올바르나, 별도의 `@MainActor` 격리 helper struct/class로 분리하는 것이 Swift 6 관례에 더 부합한다. 심각도는 낮아 감점 최소화.
+
+2. **`Services/AlarmStore.swift` 14행 — `alarmKitService: AnyObject?` 타입 소거**: AlarmKitService를 `AnyObject?`로 저장하고 `as? AlarmKitService`로 런타임 캐스팅하는 패턴은 타입 안전성이 낮다. `@available(iOS 26.0, *)` 제약 때문에 프로퍼티 타입에 직접 지정하기 어렵다는 것은 이해하지만, 이는 Swift 6 동시성 문제라기보다 설계 선택의 문제이므로 심각도 낮음.
+
+3. **`ViewModels/SettingsViewModel.swift` 72~75행 — `loadAlarmKitAuthStatus()`에서 AlarmKitService 매번 새 인스턴스 생성**: `let service = AlarmKitService()`로 매번 새 인스턴스를 만든다. 이 메서드는 권한 확인 전용이므로 상태 유실은 없지만, 불필요한 인스턴스 생성이며 DI 원칙에 맞지 않는다.
+
+---
+
+### 2. MVVM 아키텍처 분리: 8/10
+
+**합격 기준 충족:**
+- [PASS] View에서 Service 직접 호출 없음 — 모든 View가 ViewModel을 통해서만 비즈니스 로직에 접근
+- [PASS] ViewModel에 `import SwiftUI` 없음 — 4개 ViewModel 모두 `import Foundation`만 사용
+- [PASS] ViewModel에 UI 타입(`Color`, `Font`, `Image`) 없음
+- [PASS] Service가 ViewModel/View를 참조하지 않음
+- [PASS] 의존성 단방향 흐름: View -> ViewModel -> Service
+- [PASS] Protocol 기반 Service 정의 (LocalNotificationServiceProtocol, AudioServiceProtocol, VolumeServiceProtocol)
+
+**잔존 위반 사항:**
+
+1. **View가 Service(`AlarmStore`)를 직접 소유**: `AlarmListView` (10행 `private let store: AlarmStore`), `WeeklyAlarmView` (11행 `private let store: AlarmStore`)가 AlarmStore를 직접 소유하고 있다. 이는 AlarmDetailView 생성 시 store를 주입하기 위한 것이지만, MVVM 원칙상 View가 Service를 참조하는 것은 위반이다. `@Environment` 또는 ViewModel에서 AlarmDetailViewModel을 팩토리 패턴으로 생성하는 방식이 바람직하다. R1에서도 같은 지적을 했으나 수정되지 않았다. 단, 이 패턴이 SwiftUI의 의존성 주입에서 흔히 사용되는 현실적 타협점이므로 심각도는 중간.
+
+2. **Protocol 미일관성**: `AlarmStore`, `AlarmKitService`, `LiveActivityManager`에는 프로토콜이 없다. 나머지 Service(AudioService, LocalNotificationService, VolumeService)에는 프로토콜이 있다. 테스트 가능성 측면에서 불일치.
+
+3. **`SettingsView` init에서 `alarmStore: AlarmStore` 직접 전달 (75행)**: 이것도 View가 Service를 알고 있는 패턴이다. SettingsViewModel init에 필요한 것이므로 현실적이나, 이상적이지 않다.
+
+---
+
+### 3. HIG 준수 + 디자인 시스템: 8/10
+
+**합격 기준 충족:**
+- [PASS] PersonalColorDesignSystem 토큰 전면 사용: `Color.pTextPrimary/Secondary/Tertiary`, `Color.pAccentPrimary/Secondary`, `Color.pWarning`, `Color.pGlassFill` — 하드코딩 색상 없음
+- [PASS] GlassCard 컴포넌트 사용 (AlarmRowView 12~73행, AlarmListView 배너 94~117행)
+- [PASS] GradientBackground 사용 (모든 View)
+- [PASS] HapticManager 사용 (AlarmListView: impact/selection/notification, AlarmDetailView: selection/notification, WeeklyAlarmView: selection/impact/notification)
+- [PASS] ToastView 사용 (AlarmDetailView 148행)
+- [PASS] 터치 영역 44pt: 모든 주요 버튼/토글에 `frame(minWidth: 44, minHeight: 44)` 적용
+- [PASS] 접근성 레이블: `.accessibilityLabel`, `.accessibilityHint`, `.accessibilityAddTraits` 적절히 사용
+- [PASS] 내비게이션 패턴: NavigationStack + sheet + TabView
+- [PASS] 에러 처리 UI: AlarmDetailView에 `.alert` (164~173행), AlarmListView에 에러 메시지 배너 (28~39행)
+- [PASS] 로딩 상태 UI: AlarmListView에 ProgressView (45~50행), SettingsView에 AlarmKit 권한 확인 중 ProgressView (61~63행)
+- [PASS] 피드백/문의 링크: SettingsView에 Link 컴포넌트 (82~94행)
+- [PASS] Dynamic Type: semantic font size 사용 (.caption, .body, .title2, .title3, .largeTitle 등)
+- [PASS] R1 지적: 요일 버튼 44pt 확보
+
+**잔존 위반 사항:**
+
+1. **`GradientBackground().ignoresSafeArea()` + NavigationStack ZStack 구조**: 모든 View(AlarmListView, AlarmDetailView, SettingsView, WeeklyAlarmView)에서 ZStack > GradientBackground + NavigationStack 구조를 사용한다. GradientBackground가 NavigationStack 바깥에 있어 네비게이션 바 뒤로 확장된다. 대부분의 경우 시각적으로 문제없으나 잠재적 가독성 이슈가 있다. 심각도 낮음.
+
+2. **주간 알람 요일 그룹별 표시 미구현**: SPEC 기능 10에서 "요일 그룹별 표시"를 언급했으나, WeeklyAlarmView는 단순 리스트만 표시한다. 기능적으로 문제는 없으나 UX 개선 여지.
+
+---
+
+### 4. API 활용: 7/10
+
+**합격 기준 충족:**
+- [PASS] AlarmKit: `import AlarmKit` 추가됨, `AlarmManager.shared`, `AlarmPresentation`, `AlarmAttributes`, `AlarmButton`, `AlarmSchedule.fixed/relative` 사용
+- [PASS] AppIntents: StopAlarmIntent/SnoozeAlarmIntent가 `LiveActivityIntent` 프로토콜 구현, `@Parameter` 사용
+- [PASS] ActivityKit: `Activity<AlarmActivityAttributes>` 사용, start/update/end 구현
+- [PASS] UNUserNotificationCenter: 권한 요청, `UNCalendarNotificationTrigger`, 배경 리마인더 구현
+- [PASS] API 호출이 Service 레이어에서만 수행됨
+- [PASS] 에러 처리 구현 (AlarmError enum + LocalizedError)
+- [PASS] R1 지적: AlarmKitService DI 주입으로 상태 유지 문제 해소
+
+**잔존 위반 사항:**
+
+1. **`Services/AlarmKitService.swift` — AlarmKit API 타입 경로 불확실**: 68행 `AlarmKit.Alarm.Schedule`, 81행 `AlarmKit.Alarm.Schedule.Relative.Time`, 83행 `AlarmKit.Alarm.Schedule.Relative.Recurrence.weekly` 등의 fully qualified 타입 경로가 실제 AlarmKit 공개 API와 일치하는지 검증 불가능하다. AlarmKit은 iOS 26 신규 프레임워크로, 실제 컴파일 시 타입이 맞지 않을 수 있다. iOS 26 SDK가 없는 환경에서는 `#if os(iOS)` 가드로 조건부 컴파일되므로 당장 빌드 에러는 나지 않겠으나, 실제 iOS 26 타겟 빌드 시 문제가 될 수 있다.
+
+2. **`Services/AlarmKitService.swift` 22행 — `requestAuthorization()` 반환 타입**: `manager.requestAuthorization()`의 반환값을 `status`로 받아 `== .authorized`와 비교한다. 실제 AlarmKit API의 시그니처가 이와 일치하는지 확인 불가. `requestAuthorization()`이 `AlarmAuthorizationStatus` enum을 반환하는지, `Bool`을 반환하는지 공개 문서가 확정되지 않았다.
+
+3. **`SettingsViewModel.swift` 73행 — AlarmKitService 새 인스턴스**: `loadAlarmKitAuthStatus()` 내부에서 `AlarmKitService()`를 매번 새로 생성한다. AlarmStore에 주입된 AlarmKitService 인스턴스를 재활용해야 한다. SettingsViewModel이 AlarmStore를 가지고 있으므로, AlarmStore를 통해 권한 상태를 확인하는 메서드를 추가하는 것이 바람직하다.
+
+4. **`LiveActivityManager.swift` 41행 — `@available(iOS 17.0, *)`**: 최소 타겟이 iOS 17.0인데 `@available(iOS 17.0, *)` 가드가 있다. 기능적으로 무해하지만 불필요한 가드다.
+
+---
+
+### 5. 기능성 및 코드 가독성: 7/10
+
+**합격 기준 충족:**
+- [PASS] SPEC 11개 기능 모두 구현 (상세 아래 표 참고)
+- [PASS] 파일명이 SPEC 컨벤션과 일치
+- [PASS] `private(set)` 적절히 사용 (모든 ViewModel, AppDelegate)
+- [PASS] 에러 타입 `enum AlarmError: Error, LocalizedError, Sendable` 정의
+- [PASS] MARK 주석으로 코드 영역 구분
+- [PASS] 코드 중복 최소화 (AlarmRowView 재사용)
+- [PASS] R1 지적: 불필요한 do 블록 제거 (AlarmDetailViewModel.save())
+- [PASS] R1 지적: 빈 메서드 `checkForCompletedAlarms()` 제거
+
+**잔존 위반 사항:**
+
+1. **접근 제어자 미명시 (R1 피드백 #15 미반영)**: `struct Alarm`, `enum AlarmMode`, `enum AlarmSchedule`, `enum Weekday`, `enum AlarmError`, `final class AlarmListViewModel`, `actor AlarmStore`, `struct AlarmListView` 등 주요 타입 선언에 명시적 접근 제어자가 없다. Swift의 기본값 `internal`이 적용되므로 동작에 문제 없으나, SPEC에서 "모든 public/internal 프로퍼티에 접근 제어자 명시"를 요구했다. 2회 연속 미반영.
+
+2. **`AlarmStore.swift` 259행 — `try?`로 에러 무시**: `scheduleNextAlarm()` 내에서 `try? await localNotificationService.scheduleAlarm(for: alarm)`, `try? await service.scheduleAlarm(for: next)`로 에러를 무시한다. 스케줄링 실패 시 사용자에게 알림이 없다. 최소한 `AppLogger.error`로 로깅해야 한다.
+
+3. **`SnoozeAlarmIntent.swift` 33행 — `AlarmKitService()` 새 인스턴스**: `perform()` 내부에서 `let service = AlarmKitService()`로 새 인스턴스를 생성한다. AppIntent에서는 앱 프로세스와 별개로 실행될 수 있으므로 부득이한 측면이 있으나, 이전 AlarmKit ID 추적이 불가능하다.
+
+---
+
+## 기능 구현 현황 (R2)
+
+| # | 기능 | 구현 여부 | 근거 |
+|---|------|-----------|------|
+| 1 | 알람 목록 (CRUD) | **PASS** | AlarmListView + AlarmListViewModel + AlarmStore. List + swipeActions 삭제/건너뛰기, 토글, 다음 알람 배너 모두 구현. 에러 표시 UI 추가됨. |
+| 2 | 알람 생성/편집 | **PASS** | AlarmDetailView + AlarmDetailViewModel. 시간(Picker), 제목, 반복, 사운드, AlarmMode 토글, 조용한 알람 토글. iOS 26 미만 토스트 표시. |
+| 3 | AlarmMode 분기 스케줄링 | **PASS** | AlarmStore.scheduleNextAlarm()에서 alarmMode 분기. AlarmKitService DI 주입으로 상태 유지. |
+| 4 | 조용한 알람 | **PASS** | AudioService.isEarphoneConnected() (actor-isolated). AlarmDetailView에서 alarmKit 모드 시 disabled. 이어폰 미연결 시 경고 표시. |
+| 5 | 볼륨 자동 조절 (80%) | **PASS** | VolumeService.ensureMinimumVolume()/restoreVolume(). AudioService에서 playAlarmSound() 시 호출, stopAlarmSound() 시 복원. |
+| 6 | 앱 종료 시 푸시 알림 | **PASS** | AppDelegate.applicationDidEnterBackground에서 scheduleBackgroundReminder, applicationWillEnterForeground에서 cancelBackgroundReminder. `configure()` 메서드로 DI. |
+| 7 | 알람 1번 건너뛰기 | **PASS** | AlarmStore.skipOnceAlarm/clearSkipOnceAlarm. AlarmListView/WeeklyAlarmView에서 swipeActions. AlarmRowView에서 건너뛰기 상태 배지 표시. |
+| 8 | Live Activity | **PASS** | LiveActivityManager actor. AlarmActivityAttributes 정의. AlarmStore.updateLiveActivity()에서 모든 CRUD 후 호출. start/update/end/endAllActivities 구현. |
+| 9 | 설정 화면 | **PASS** | SettingsView: Live Activity 토글 + AlarmKit 권한 상태 + 앱 버전 + 피드백/문의 링크. 로딩 상태 ProgressView 표시. |
+| 10 | 주간 알람 화면 | **PASS** | WeeklyAlarmView + WeeklyAlarmViewModel. weekly 필터링, 삭제, 건너뛰기. (요일 그룹별 표시는 미구현, 기본 리스트) |
+| 11 | 탭바 네비게이션 | **PASS** | BetterAlarmApp에서 TabView 3탭 (알람/주간 알람/설정). @UIApplicationDelegateAdaptor 사용. SF Symbols 아이콘. |
+
+---
+
+## 최종 채점
+
+| 항목 | 점수 | 비중 | 가중점수 |
+|------|------|------|----------|
+| Swift 6 동시성 | 8/10 | 30% | 2.4 |
+| MVVM 분리 | 8/10 | 25% | 2.0 |
+| HIG 준수 | 8/10 | 20% | 1.6 |
+| API 활용 | 7/10 | 15% | 1.05 |
+| 기능성/가독성 | 7/10 | 10% | 0.7 |
+| **합계** | | **100%** | **7.75** |
+
+**반올림 가중 점수**: **7.8 / 10.0**
+
+**합격 조건 확인**:
+- 가중 점수 7.8 >= 7.0: PASS
+- Swift 6 동시성 8점 > 4점: PASS
+- MVVM 분리 8점 > 4점: PASS
+
+---
+
+## 항목별 점수 요약
+
+- Swift 6 동시성: 8/10 — R1 피드백 6개 중 6개 반영. VolumeService의 actor 내부 @MainActor 메서드가 유일한 잔존 이슈이나 기능적으로 정상 동작하며 심각도 낮음.
+- MVVM 분리: 8/10 — 레이어 분리 우수. View가 AlarmStore를 DI 목적으로 소유하는 패턴이 잔존하나 SwiftUI에서 현실적 타협점. Protocol 일관성 부족.
+- HIG 준수: 8/10 — PersonalColorDesignSystem 전면 사용, 44pt 터치 영역 확보, 로딩/에러 UI 추가, 피드백 링크 추가. 주간 알람 요일 그룹 미구현.
+- API 활용: 7/10 — AlarmKit import 해소, DI 주입 해소. AlarmKit API 타입 경로 검증 불가, SettingsViewModel에서 AlarmKitService 신규 인스턴스 생성.
+- 기능성/가독성: 7/10 — 11개 기능 모두 구현. 접근 제어자 명시 2회 연속 미반영. try? 에러 무시 패턴 잔존.
+
+---
+
+## 구체적 개선 지시 (합격 이후 권장 사항)
+
+아래는 합격 판정이므로 필수가 아닌 권장 사항이다. 다음 이터레이션에서 반영하면 코드 품질이 향상된다.
+
+1. **전체 타입 접근 제어자 명시** (3회차 미반영 시 아키텍처 재설계 지시 대상): `struct Alarm`, `enum AlarmMode`, `actor AlarmStore`, `final class AlarmListViewModel` 등 모든 주요 타입에 `internal` 키워드를 명시하라. 프로퍼티 수준에서는 이미 `private(set)` / `private`이 잘 사용되고 있으므로 타입 수준만 보완하면 된다.
+
+2. **`AlarmStore.scheduleNextAlarm()` 에러 로깅**: `try? await`로 무시하는 대신 `do { try await ... } catch { AppLogger.error("Scheduling failed: \(error)", category: .alarm) }`로 변경하여 실패 원인을 추적 가능하게 하라.
+
+3. **`SettingsViewModel.loadAlarmKitAuthStatus()` — AlarmStore를 통한 권한 확인**: `AlarmKitService()`를 새로 만들지 말고, AlarmStore에 `func checkAlarmKitPermission() async -> Bool` 메서드를 추가하여 주입된 AlarmKitService 인스턴스를 재활용하라.
+
+4. **VolumeService의 `@MainActor` 헬퍼 분리**: actor 내부 `@MainActor` 메서드를 별도 `@MainActor` helper struct로 분리하면 격리 경계가 명확해진다.
+
+5. **View의 AlarmStore 직접 소유 해소**: `@Environment`에 AlarmStore를 등록하거나, ViewModel 팩토리 패턴을 도입하여 View가 Service를 직접 참조하지 않도록 개선하라.
+
+6. **`LiveActivityManager` — `@available(iOS 17.0, *)` 불필요 가드 제거**: 최소 타겟이 iOS 17.0이므로 이 가드는 제거해도 된다.
+
+---
+
+**방향 판단**: 현재 방향 유지
+
+R1 피드백 15개 중 14개를 반영하여 컴파일 에러 예상 4건 모두 해소, 핵심 로직 버그(AlarmKitService DI) 해소, 동시성 위반 3건 해소, HIG 위반 6건 해소. 아키텍처 기반(MVVM + actor + @Observable + 단방향 의존)이 견고하게 유지되고 있으며, 잔존 이슈는 모두 권장 수준이다.
