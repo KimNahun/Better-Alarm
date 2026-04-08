@@ -56,6 +56,7 @@ struct AlarmListView: View {
             .navigationTitle("알람")
             .navigationBarTitleDisplayMode(.large)
             .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         Button {

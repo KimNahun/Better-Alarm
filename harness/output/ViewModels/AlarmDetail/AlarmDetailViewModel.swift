@@ -54,7 +54,7 @@ final class AlarmDetailViewModel {
 
     var isEditing: Bool { editingAlarm != nil }
 
-    init(store: AlarmStore, audioService: AudioService = AudioService(), editingAlarm: Alarm? = nil) {
+    init(store: AlarmStore, audioService: AudioService = AudioService(volumeService: VolumeService()), editingAlarm: Alarm? = nil) {
         self.store = store
         self.audioService = audioService
         self.editingAlarm = editingAlarm

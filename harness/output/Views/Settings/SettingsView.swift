@@ -130,6 +130,7 @@ struct SettingsView: View {
             .navigationTitle("설정")
             .navigationBarTitleDisplayMode(.large)
             .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
         }
         .task {
             await viewModel.loadSettings()

@@ -189,6 +189,7 @@ struct AlarmDetailView: View {
 
     private var timePicker: some View {
         HStack(spacing: 0) {
+            Spacer(minLength: 0)
             // 오전/오후 선택
             Picker("오전/오후", selection: $viewModel.isPM) {
                 Text("오전").tag(false)
@@ -220,7 +221,10 @@ struct AlarmDetailView: View {
             .frame(width: 80)
             .clipped()
             .accessibilityLabel("분 선택")
+
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity)
         .frame(height: 150)
     }
 

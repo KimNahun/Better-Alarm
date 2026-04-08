@@ -25,7 +25,7 @@ actor AudioService: AudioServiceProtocol {
     private var audioPlayer: AVAudioPlayer?
     private let volumeService: VolumeService
 
-    init(volumeService: VolumeService = VolumeService()) {
+    init(volumeService: VolumeService) {
         self.volumeService = volumeService
     }
 
@@ -44,10 +44,14 @@ actor AudioService: AudioServiceProtocol {
             }
         }
 
-        // AVAudioSession 설정
+        // AVAudioSession 설정 — 무음 모드에서도 스피커로 울리도록
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playback, mode: .default, options: [])
-        try session.setActive(true)
+        try session.setCategory(
+            .playback,
+            mode: .default,
+            options: [.duckOthers, .defaultToSpeaker]
+        )
+        try session.setActive(true, options: .notifyOthersOnDeactivation)
 
         // 볼륨 자동 조절
         await volumeService.ensureMinimumVolume()

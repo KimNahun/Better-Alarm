@@ -23,7 +23,9 @@ struct WeeklyAlarmView: View {
                 PGradientBackground()
 
                 VStack(spacing: 0) {
-                    if viewModel.weeklyAlarms.isEmpty {
+                    dayTabs
+
+                    if viewModel.filteredAlarms.isEmpty {
                         emptyState
                     } else {
                         weeklyAlarmList
@@ -33,6 +35,7 @@ struct WeeklyAlarmView: View {
             .navigationTitle("주간 알람")
             .navigationBarTitleDisplayMode(.large)
             .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .sheet(isPresented: $showDetail) {
                 if let alarm = selectedAlarm {
                     AlarmDetailView(
@@ -47,13 +50,54 @@ struct WeeklyAlarmView: View {
         .task {
             await viewModel.loadAlarms()
         }
+        .toast(
+            isPresented: Binding(
+                get: { viewModel.showToast },
+                set: { if !$0 { viewModel.dismissToast() } }
+            ),
+            message: viewModel.toastMessage,
+            type: .info
+        )
+    }
+
+    // MARK: - Day Tabs
+
+    private var dayTabs: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                // 전체 탭
+                Button { viewModel.selectedDay = nil } label: {
+                    Text("전체")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(viewModel.selectedDay == nil ? .white : Color.pTextTertiary)
+                        .frame(minWidth: 44, minHeight: 36)
+                        .background(viewModel.selectedDay == nil ? Color.pAccentPrimary : Color.pGlassFill)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+
+                ForEach(Weekday.allCases, id: \.self) { day in
+                    Button { viewModel.selectedDay = day } label: {
+                        Text(day.shortName)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(viewModel.selectedDay == day ? .white : Color.pTextTertiary)
+                            .frame(minWidth: 44, minHeight: 36)
+                            .background(viewModel.selectedDay == day ? Color.pAccentPrimary : Color.pGlassFill)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+        }
     }
 
     // MARK: - Subviews
 
     private var weeklyAlarmList: some View {
         List {
-            ForEach(viewModel.weeklyAlarms) { alarm in
+            ForEach(viewModel.filteredAlarms) { alarm in
                 AlarmRowView(alarm: alarm) { enabled in
                     Task {
                         await viewModel.toggleAlarm(alarm, enabled: enabled)

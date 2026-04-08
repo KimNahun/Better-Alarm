@@ -17,7 +17,7 @@ actor AlarmStore {
 
     init(
         localNotificationService: LocalNotificationService = LocalNotificationService(),
-        audioService: AudioService = AudioService(),
+        audioService: AudioService = AudioService(volumeService: VolumeService()),
         liveActivityManager: LiveActivityManager? = nil,
         alarmKitService: (any AlarmKitServiceProtocol)? = nil
     ) {
