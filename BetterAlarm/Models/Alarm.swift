@@ -1,60 +1,10 @@
 import Foundation
 
-// MARK: - Weekday
-
-enum Weekday: Int, Codable, CaseIterable, Hashable {
-    case sunday = 1, monday, tuesday, wednesday, thursday, friday, saturday
-
-    var shortName: String {
-        switch self {
-        case .sunday: return "일"
-        case .monday: return "월"
-        case .tuesday: return "화"
-        case .wednesday: return "수"
-        case .thursday: return "목"
-        case .friday: return "금"
-        case .saturday: return "토"
-        }
-    }
-
-    var localeWeekday: Locale.Weekday {
-        switch self {
-        case .sunday: return .sunday
-        case .monday: return .monday
-        case .tuesday: return .tuesday
-        case .wednesday: return .wednesday
-        case .thursday: return .thursday
-        case .friday: return .friday
-        case .saturday: return .saturday
-        }
-    }
-
-    init?(from localeWeekday: Locale.Weekday) {
-        switch localeWeekday {
-        case .sunday: self = .sunday
-        case .monday: self = .monday
-        case .tuesday: self = .tuesday
-        case .wednesday: self = .wednesday
-        case .thursday: self = .thursday
-        case .friday: self = .friday
-        case .saturday: self = .saturday
-        @unknown default: return nil
-        }
-    }
-    
-}
-
-// MARK: - Alarm Schedule
-
-enum AlarmSchedule: Codable, Equatable {
-    case once
-    case weekly(Set<Weekday>)
-    case specificDate(Date)
-}
-
 // MARK: - Alarm Model
 
-struct Alarm: Codable, Identifiable, Equatable {
+/// 알람 데이터 모델.
+/// Swift 6 동시성: struct + Sendable 준수.
+struct Alarm: Codable, Identifiable, Equatable, Sendable {
     let id: UUID
     var title: String
     var hour: Int
@@ -63,7 +13,9 @@ struct Alarm: Codable, Identifiable, Equatable {
     var isEnabled: Bool
     var soundName: String
     var createdAt: Date
-    var skippedDate: Date?  // Date to skip (for "1번만 끄기" feature)
+    var skippedDate: Date?
+    var alarmMode: AlarmMode
+    var isSilentAlarm: Bool
 
     init(
         id: UUID = UUID(),
@@ -74,7 +26,9 @@ struct Alarm: Codable, Identifiable, Equatable {
         isEnabled: Bool = true,
         soundName: String = "default",
         createdAt: Date = Date(),
-        skippedDate: Date? = nil
+        skippedDate: Date? = nil,
+        alarmMode: AlarmMode = .local,
+        isSilentAlarm: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -85,25 +39,37 @@ struct Alarm: Codable, Identifiable, Equatable {
         self.soundName = soundName
         self.createdAt = createdAt
         self.skippedDate = skippedDate
+        self.alarmMode = alarmMode
+        self.isSilentAlarm = isSilentAlarm
     }
 
+    // MARK: - Computed Properties
+
+    /// 다음 알람 예정일에 건너뛰기 상태인지 여부
     var isSkippingNext: Bool {
-        guard let skippedDate = skippedDate else { return false }
+        guard let skippedDate else { return false }
         return skippedDate > Date()
     }
 
+    /// 주간 반복 알람인지 여부
+    var isWeeklyAlarm: Bool {
+        if case .weekly = schedule { return true }
+        return false
+    }
+
+    /// "오전 8:00" 형식의 시간 문자열
     var timeString: String {
         let period = hour < 12 ? "오전" : "오후"
         let displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour)
         return String(format: "%@ %d:%02d", period, displayHour, minute)
     }
 
+    /// 제목이 없으면 "알람"으로 대체
     var displayTitle: String {
-        return title.isEmpty ? "알람" : title
+        title.isEmpty ? "알람" : title
     }
 
-    // Alarm.swift - repeatDescriptionWithoutSkip 프로퍼티 추가 (repeatDescription 아래에)
-
+    /// 건너뛰기 상태 표시 없이 반복 설명 문자열 반환
     var repeatDescriptionWithoutSkip: String {
         switch schedule {
         case .once:
@@ -127,19 +93,16 @@ struct Alarm: Codable, Identifiable, Equatable {
         }
     }
 
-    var isWeeklyAlarm: Bool {
-        if case .weekly = schedule {
-            return true
-        }
-        return false
-    }
+    // MARK: - Next Trigger Date
 
+    /// 현재 시각(date) 기준으로 다음 알람 발생 시각을 계산한다.
+    /// - Parameter date: 기준 시각 (기본값: 현재)
+    /// - Returns: 다음 발생 Date. 해당 없으면 nil.
     func nextTriggerDate(from date: Date = Date()) -> Date? {
         let calendar = Calendar.current
 
-        // Helper function to check if a date should be skipped
         func shouldSkip(_ alarmDate: Date) -> Bool {
-            guard let skippedDate = skippedDate else { return false }
+            guard let skippedDate else { return false }
             return calendar.isDate(alarmDate, inSameDayAs: skippedDate)
         }
 
@@ -152,14 +115,13 @@ struct Alarm: Codable, Identifiable, Equatable {
 
             guard let alarmDate = calendar.date(from: components) else { return nil }
 
-            var resultDate: Date?
+            let resultDate: Date?
             if alarmDate > date {
                 resultDate = alarmDate
             } else {
                 resultDate = calendar.date(byAdding: .day, value: 1, to: alarmDate)
             }
 
-            // If this date should be skipped, find the next day
             if let result = resultDate, shouldSkip(result) {
                 return calendar.date(byAdding: .day, value: 1, to: result)
             }
@@ -170,7 +132,6 @@ struct Alarm: Codable, Identifiable, Equatable {
 
             let currentWeekday = calendar.component(.weekday, from: date)
 
-            // Search up to 14 days to handle skip case
             for i in 0..<14 {
                 let targetDay = (currentWeekday + i - 1) % 7 + 1
                 if let weekday = Weekday(rawValue: targetDay), days.contains(weekday) {
@@ -198,10 +159,7 @@ struct Alarm: Codable, Identifiable, Equatable {
 
             guard let alarmDate = calendar.date(from: components) else { return nil }
 
-            // If skipped, no next occurrence for specific date
-            if shouldSkip(alarmDate) {
-                return nil
-            }
+            if shouldSkip(alarmDate) { return nil }
             return alarmDate > date ? alarmDate : nil
         }
     }

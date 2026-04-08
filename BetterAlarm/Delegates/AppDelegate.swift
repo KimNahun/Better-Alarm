@@ -1,0 +1,89 @@
+import UIKit
+import UserNotifications
+
+// MARK: - AppDelegate
+
+/// 앱 생명주기 이벤트를 처리하는 AppDelegate.
+/// - 백그라운드 진입 시: local 모드 활성화 알람이 있으면 즉시 로컬 알림 1건 등록
+/// - 포그라운드 복귀 시: 백그라운드 리마인더 알림 취소
+final class AppDelegate: NSObject, UIApplicationDelegate {
+    // AlarmStore와 LocalNotificationService를 BetterAlarmApp에서 주입받는다.
+    var alarmStore: AlarmStore?
+    var localNotificationService: LocalNotificationService?
+
+    // MARK: - Launch
+
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
+        return true
+    }
+
+    // MARK: - Background / Foreground
+
+    func applicationDidEnterBackground(_ application: UIApplication) {
+        Task {
+            guard let store = alarmStore,
+                  let notificationService = localNotificationService else { return }
+
+            // local 모드 활성화 알람이 있으면 즉시 리마인더 등록
+            let hasLocal = await store.hasEnabledLocalAlarms
+            guard hasLocal else { return }
+
+            // 가장 임박한 local 알람 찾기
+            let alarms = await store.alarms
+            let nextLocal = alarms
+                .filter { $0.isEnabled && $0.alarmMode == .local }
+                .compactMap { alarm -> (Alarm, Date)? in
+                    guard let date = alarm.nextTriggerDate() else { return nil }
+                    return (alarm, date)
+                }
+                .min { $0.1 < $1.1 }?
+                .0
+
+            if let alarm = nextLocal {
+                await notificationService.scheduleBackgroundReminder(for: alarm)
+            }
+        }
+    }
+
+    func applicationWillEnterForeground(_ application: UIApplication) {
+        Task {
+            // 백그라운드 리마인더 취소
+            await localNotificationService?.cancelBackgroundReminder()
+        }
+    }
+}
+
+// MARK: - UNUserNotificationCenterDelegate
+
+extension AppDelegate: UNUserNotificationCenterDelegate {
+    /// 앱이 포그라운드 상태에서 알림이 도착하면 배너 + 사운드 표시
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification
+    ) async -> UNNotificationPresentationOptions {
+        return [.banner, .sound, .badge]
+    }
+
+    /// 사용자가 알림을 탭했을 때 처리
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse
+    ) async {
+        // 필요 시 알람 ID를 꺼내 완료 처리
+        let userInfo = response.notification.request.content.userInfo
+        if let alarmIDString = userInfo["alarmID"] as? String,
+           let alarmID = UUID(uuidString: alarmIDString) {
+            Task {
+                guard let store = alarmStore else { return }
+                let alarms = await store.alarms
+                if let alarm = alarms.first(where: { $0.id == alarmID }) {
+                    await store.handleAlarmCompleted(alarm)
+                }
+            }
+        }
+    }
+}

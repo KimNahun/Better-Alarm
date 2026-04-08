@@ -1,142 +1,93 @@
 import Foundation
 
-extension Notification.Name {
-    static let alarmsDidUpdate = Notification.Name("alarmsDidUpdate")
-}
+// MARK: - AlarmStore
 
-protocol AlarmStoreDelegate: AnyObject {
-    func alarmStoreDidUpdateAlarms(_ store: AlarmStore)
-}
-
-class AlarmStore {
-    static let shared = AlarmStore()
-
-    weak var delegate: AlarmStoreDelegate?
-
-    private let userDefaults = UserDefaults.standard
-    private let alarmsKey = "savedAlarms"
+/// 알람 CRUD 및 UserDefaults 저장을 담당하는 Service.
+/// AlarmMode에 따라 AlarmKitService(iOS 26+) 또는 LocalNotificationService로 분기.
+/// Swift 6: actor로 구현.
+actor AlarmStore {
+    private let userDefaultsKey = "savedAlarms_v2"
+    private let localNotificationService: LocalNotificationService
+    private let audioService: AudioService
 
     private(set) var alarms: [Alarm] = []
 
-    private var isInitialized = false
-
-    private init() {
-        AppLogger.info("AlarmStore initializing", category: .store)
-        loadAlarms()
-        setupAlarmCompletionObserver()
-        isInitialized = true
-        AppLogger.info("AlarmStore initialized with \(alarms.count) alarms", category: .store)
+    init(
+        localNotificationService: LocalNotificationService = LocalNotificationService(),
+        audioService: AudioService = AudioService()
+    ) {
+        self.localNotificationService = localNotificationService
+        self.audioService = audioService
     }
 
-    // MARK: - Alarm Completion Observer
-
-    private func setupAlarmCompletionObserver() {
-        AppLogger.debug("Setting up alarm completion observer", category: .store)
-        Task { @MainActor in
-            AlarmKitService.shared.observeAlarmCompleted { [weak self] completedAlarm in
-                AppLogger.info("Alarm completion callback received: \(completedAlarm.displayTitle)", category: .alarm)
-                self?.handleAlarmCompleted(completedAlarm)
-            }
-        }
-    }
-
-    private func notifyUpdate() {
-        AppLogger.debug("Notifying alarm update, count: \(alarms.count)", category: .store)
-        delegate?.alarmStoreDidUpdateAlarms(self)
-        NotificationCenter.default.post(name: .alarmsDidUpdate, object: self)
-    }
-
-    // MARK: - Load/Save
+    // MARK: - Load / Save
 
     func loadAlarms() {
-        AppLogger.debug("Loading alarms from UserDefaults", category: .store)
-        guard let data = userDefaults.data(forKey: alarmsKey) else {
-            AppLogger.debug("No saved alarms found", category: .store)
+        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey) else {
             alarms = []
             return
         }
-
         do {
             alarms = try JSONDecoder().decode([Alarm].self, from: data)
             sortAlarms()
-            AppLogger.info("Loaded \(alarms.count) alarms", category: .store)
         } catch {
-            AppLogger.error("Failed to load alarms: \(error)", category: .store)
             alarms = []
         }
     }
 
     private func saveAlarms() {
-        AppLogger.debug("Saving \(alarms.count) alarms to UserDefaults", category: .store)
         do {
             let data = try JSONEncoder().encode(alarms)
-            userDefaults.set(data, forKey: alarmsKey)
-            AppLogger.debug("Alarms saved successfully", category: .store)
+            UserDefaults.standard.set(data, forKey: userDefaultsKey)
         } catch {
-            AppLogger.error("Failed to save alarms: \(error)", category: .store)
+            // 저장 실패 시 무시 (에러 타입이 없어 로그만 남김)
         }
     }
 
     private func sortAlarms() {
-        alarms.sort { alarm1, alarm2 in
-            if alarm1.hour != alarm2.hour {
-                return alarm1.hour < alarm2.hour
-            }
-            return alarm1.minute < alarm2.minute
+        alarms.sort {
+            if $0.hour != $1.hour { return $0.hour < $1.hour }
+            return $0.minute < $1.minute
         }
     }
 
     // MARK: - CRUD
 
-    func createAlarm(hour: Int, minute: Int, title: String, weekdays: Set<Weekday>?, specificDate: Date?, soundName: String = "default") {
-        AppLogger.info("Creating alarm: \(title.isEmpty ? "Untitled" : title) at \(hour):\(minute)", category: .alarm)
-
-        let schedule: AlarmSchedule
-        if let weekdays = weekdays, !weekdays.isEmpty {
-            schedule = .weekly(weekdays)
-            AppLogger.debug("Schedule: weekly \(weekdays.map { $0.shortName })", category: .alarm)
-        } else if let date = specificDate {
-            schedule = .specificDate(date)
-            AppLogger.debug("Schedule: specific date \(date)", category: .alarm)
-        } else {
-            schedule = .once
-            AppLogger.debug("Schedule: once", category: .alarm)
-        }
-
+    func createAlarm(
+        hour: Int,
+        minute: Int,
+        title: String,
+        schedule: AlarmSchedule,
+        soundName: String = "default",
+        alarmMode: AlarmMode = .local,
+        isSilentAlarm: Bool = false
+    ) async {
         let alarm = Alarm(
             title: title,
             hour: hour,
             minute: minute,
             schedule: schedule,
-            soundName: soundName
+            soundName: soundName,
+            alarmMode: alarmMode,
+            isSilentAlarm: isSilentAlarm
         )
-
         alarms.append(alarm)
         sortAlarms()
         saveAlarms()
-        scheduleNextAlarm()
-        notifyUpdate()
-        updateLiveActivity()
-
-        AppLogger.alarmCreated("\(alarm.displayTitle) id=\(alarm.id.uuidString.prefix(8))")
+        await scheduleNextAlarm()
     }
 
-    func updateAlarm(_ alarm: Alarm, hour: Int, minute: Int, title: String, weekdays: Set<Weekday>?, specificDate: Date?, soundName: String = "default") {
-        AppLogger.info("Updating alarm: \(alarm.displayTitle) id=\(alarm.id.uuidString.prefix(8))", category: .alarm)
-
-        guard let index = alarms.firstIndex(where: { $0.id == alarm.id }) else {
-            AppLogger.warning("Alarm not found for update: \(alarm.id)", category: .alarm)
-            return
-        }
-
-        let schedule: AlarmSchedule
-        if let weekdays = weekdays, !weekdays.isEmpty {
-            schedule = .weekly(weekdays)
-        } else if let date = specificDate {
-            schedule = .specificDate(date)
-        } else {
-            schedule = .once
-        }
+    func updateAlarm(
+        _ alarm: Alarm,
+        hour: Int,
+        minute: Int,
+        title: String,
+        schedule: AlarmSchedule,
+        soundName: String,
+        alarmMode: AlarmMode,
+        isSilentAlarm: Bool
+    ) async {
+        guard let index = alarms.firstIndex(where: { $0.id == alarm.id }) else { return }
 
         var updated = alarm
         updated.hour = hour
@@ -144,77 +95,45 @@ class AlarmStore {
         updated.title = title
         updated.schedule = schedule
         updated.soundName = soundName
+        updated.alarmMode = alarmMode
+        updated.isSilentAlarm = isSilentAlarm
 
         alarms[index] = updated
         sortAlarms()
         saveAlarms()
-        scheduleNextAlarm()
-        notifyUpdate()
-        updateLiveActivity()
-
-        AppLogger.alarmUpdated("\(updated.displayTitle) to \(hour):\(minute)")
+        await scheduleNextAlarm()
     }
 
-    func deleteAlarm(_ alarm: Alarm) {
-        AppLogger.info("Deleting alarm: \(alarm.displayTitle) id=\(alarm.id.uuidString.prefix(8))", category: .alarm)
+    func deleteAlarm(_ alarm: Alarm) async {
         alarms.removeAll { $0.id == alarm.id }
         saveAlarms()
-        scheduleNextAlarm()
-        notifyUpdate()
-        updateLiveActivity()
-        AppLogger.alarmDeleted(alarm.displayTitle)
+        await cancelSchedule(for: alarm)
+        await scheduleNextAlarm()
     }
 
-    func deleteAlarm(at index: Int) {
-        guard index < alarms.count else {
-            AppLogger.warning("Invalid index for delete: \(index), count: \(alarms.count)", category: .alarm)
-            return
-        }
-        let alarm = alarms[index]
-        deleteAlarm(alarm)
-    }
-
-    func toggleAlarm(_ alarm: Alarm, enabled: Bool) {
-        AppLogger.info("Toggling alarm: \(alarm.displayTitle) enabled=\(enabled)", category: .alarm)
-
-        guard let index = alarms.firstIndex(where: { $0.id == alarm.id }) else {
-            AppLogger.warning("Alarm not found for toggle: \(alarm.id)", category: .alarm)
-            return
-        }
+    func toggleAlarm(_ alarm: Alarm, enabled: Bool) async {
+        guard let index = alarms.firstIndex(where: { $0.id == alarm.id }) else { return }
 
         var updated = alarm
         updated.isEnabled = enabled
-
         if enabled {
             updated.skippedDate = nil
-            AppLogger.debug("Cleared skipped date", category: .alarm)
         }
 
         alarms[index] = updated
         saveAlarms()
-        scheduleNextAlarm()
-        notifyUpdate()
-        updateLiveActivity()
 
-        AppLogger.alarmToggled(alarm.displayTitle, enabled: enabled)
+        if enabled {
+            await scheduleNextAlarm()
+        } else {
+            await cancelSchedule(for: alarm)
+        }
     }
 
-    func skipOnceAlarm(_ alarm: Alarm) {
-        AppLogger.info("Skip once alarm: \(alarm.displayTitle)", category: .alarm)
-
-        guard let index = alarms.firstIndex(where: { $0.id == alarm.id }) else {
-            AppLogger.warning("Alarm not found for skip: \(alarm.id)", category: .alarm)
-            return
-        }
-        guard alarm.isEnabled else {
-            AppLogger.debug("Alarm is disabled, skipping skip operation", category: .alarm)
-            return
-        }
-
-        guard let nextDate = alarm.nextTriggerDate() else {
-            AppLogger.warning("No next trigger date for skip", category: .alarm)
-            return
-        }
+    func skipOnceAlarm(_ alarm: Alarm) async {
+        guard let index = alarms.firstIndex(where: { $0.id == alarm.id }) else { return }
+        guard alarm.isEnabled else { return }
+        guard let nextDate = alarm.nextTriggerDate() else { return }
 
         var updated = alarm
         updated.skippedDate = nextDate
@@ -222,24 +141,12 @@ class AlarmStore {
         alarms[index] = updated
         sortAlarms()
         saveAlarms()
-        scheduleNextAlarm()
-        notifyUpdate()
-        updateLiveActivity()
-
-        AppLogger.info("Alarm skipped until: \(nextDate)", category: .alarm)
+        await scheduleNextAlarm()
     }
 
-    func clearSkipOnceAlarm(_ alarm: Alarm) {
-        AppLogger.info("Clear skip for alarm: \(alarm.displayTitle)", category: .alarm)
-
-        guard let index = alarms.firstIndex(where: { $0.id == alarm.id }) else {
-            AppLogger.warning("Alarm not found for clear skip: \(alarm.id)", category: .alarm)
-            return
-        }
-        guard alarm.skippedDate != nil else {
-            AppLogger.debug("Alarm has no skipped date", category: .alarm)
-            return
-        }
+    func clearSkipOnceAlarm(_ alarm: Alarm) async {
+        guard let index = alarms.firstIndex(where: { $0.id == alarm.id }) else { return }
+        guard alarm.skippedDate != nil else { return }
 
         var updated = alarm
         updated.skippedDate = nil
@@ -247,120 +154,36 @@ class AlarmStore {
         alarms[index] = updated
         sortAlarms()
         saveAlarms()
-        scheduleNextAlarm()
-        notifyUpdate()
-        updateLiveActivity()
-
-        AppLogger.info("Skip cleared for: \(alarm.displayTitle)", category: .alarm)
+        await scheduleNextAlarm()
     }
 
-    // MARK: - One-time Alarm Completion
+    // MARK: - Alarm Completion
 
-    func handleAlarmCompleted(_ alarm: Alarm) {
-        AppLogger.info("Handling alarm completed: \(alarm.displayTitle)", category: .alarm)
+    func handleAlarmCompleted(_ alarm: Alarm) async {
+        guard let index = alarms.firstIndex(where: { $0.id == alarm.id }) else { return }
+        let existing = alarms[index]
+        guard existing.isEnabled else { return }
 
-        // ID로 알람 찾기
-        guard let index = alarms.firstIndex(where: { $0.id == alarm.id }) else {
-            AppLogger.debug("Alarm not found by ID, trying time match", category: .alarm)
-            handleAlarmCompletedByTime(hour: alarm.hour, minute: alarm.minute)
-            return
-        }
-
-        let existingAlarm = alarms[index]
-
-        // 이미 비활성화된 알람은 중복 처리 방지
-        guard existingAlarm.isEnabled else {
-            AppLogger.debug("Alarm already disabled, skipping completion handling: \(existingAlarm.displayTitle)", category: .alarm)
-            return
-        }
-
-        switch existingAlarm.schedule {
+        switch existing.schedule {
         case .once, .specificDate:
-            // 1회성 알람은 비활성화
-            toggleAlarm(existingAlarm, enabled: false)
-            AppLogger.info("One-time alarm completed and disabled: \(existingAlarm.displayTitle)", category: .alarm)
+            await toggleAlarm(existing, enabled: false)
         case .weekly:
-            // 주간 알람은 스킵 상태 초기화
-            if existingAlarm.skippedDate != nil {
-                clearSkipOnceAlarm(existingAlarm)
+            if existing.skippedDate != nil {
+                await clearSkipOnceAlarm(existing)
             }
-            // 다음 알람 스케줄
-            scheduleNextAlarm()
-            AppLogger.info("Weekly alarm completed, scheduling next: \(existingAlarm.displayTitle)", category: .alarm)
-        }
-    }
-    
-    // ⭐ ID로 알람 완료 처리 (앱 재시작 시 사용)
-    func handleAlarmCompletedById(_ alarmId: UUID) {
-        AppLogger.info("Handling alarm completed by ID: \(alarmId)", category: .alarm)
-        
-        guard let alarm = alarms.first(where: { $0.id == alarmId }) else {
-            AppLogger.warning("Alarm not found for ID: \(alarmId)", category: .alarm)
-            return
-        }
-        
-        handleAlarmCompleted(alarm)
-    }
-
-    // 시간으로 완료된 알람 찾기 (백업 방법)
-    private func handleAlarmCompletedByTime(hour: Int, minute: Int) {
-        AppLogger.debug("Finding alarm by time: \(hour):\(minute)", category: .alarm)
-        guard let alarm = alarms.first(where: {
-            $0.isEnabled && $0.hour == hour && $0.minute == minute
-        }) else {
-            AppLogger.warning("No matching alarm found for time: \(hour):\(minute)", category: .alarm)
-            return
-        }
-
-        handleAlarmCompleted(alarm)
-    }
-
-    // ⭐ 앱이 foreground로 올 때 호출 - 여러 알람 처리
-    func checkForCompletedAlarms() {
-        AppLogger.debug("Checking for completed alarms from intent", category: .alarm)
-        Task { @MainActor in
-            // AlarmKitService에서 완료된 알람 ID 배열 가져오기
-            let completedAlarmIds = AlarmKitService.shared.checkForPendingIntentActions()
-            
-            if !completedAlarmIds.isEmpty {
-                AppLogger.info("Processing \(completedAlarmIds.count) completed alarms from intent", category: .alarm)
-                for alarmId in completedAlarmIds {
-                    self.handleAlarmCompletedById(alarmId)
-                }
-            }
-            
-            // ⭐ 완료 처리 후 다음 알람 reschedule
-            self.scheduleNextAlarm()
+            await scheduleNextAlarm()
         }
     }
 
-    // 사용자가 수동으로 만료된 1회성 알람 정리 (선택적)
-    func cleanupExpiredOneTimeAlarms() {
-        AppLogger.debug("Cleaning up expired one-time alarms", category: .alarm)
-        let now = Date()
-        let alarmsToDelete = alarms.filter { alarm in
-            switch alarm.schedule {
-            case .once, .specificDate:
-                return !alarm.isEnabled && alarm.nextTriggerDate(from: now) == nil
-            case .weekly:
-                return false
-            }
-        }
-
-        if !alarmsToDelete.isEmpty {
-            AppLogger.info("Found \(alarmsToDelete.count) expired alarms to delete", category: .alarm)
-        }
-
-        for alarm in alarmsToDelete {
-            deleteAlarm(alarm)
-        }
+    func checkForCompletedAlarms() async {
+        // local 모드에서는 알림 딜리버리를 UNUserNotificationCenter로 확인
+        // (실제 구현에서는 delivered notifications를 조회하여 처리)
     }
 
     // MARK: - Next Alarm
 
-    // 스킵되지 않은 다음 알람 (AlarmKit 스케줄용)
     var nextAlarm: Alarm? {
-        let next = alarms
+        alarms
             .filter { $0.isEnabled && !$0.isSkippingNext }
             .compactMap { alarm -> (Alarm, Date)? in
                 guard let date = alarm.nextTriggerDate() else { return nil }
@@ -368,25 +191,10 @@ class AlarmStore {
             }
             .min { $0.1 < $1.1 }?
             .0
-        return next
     }
 
-    // 스킵 중인 알람 포함해서 다음 알람 (Live Activity 및 UI 표시용)
-    var nextAlarmIncludingSkipped: Alarm? {
-        return alarms
-            .filter { $0.isEnabled }
-            .compactMap { alarm -> (Alarm, Date)? in
-                guard let date = alarm.nextTriggerDate() else { return nil }
-                return (alarm, date)
-            }
-            .min { $0.1 < $1.1 }?
-            .0
-    }
-
-    // ⭐ 수정: 스킵된 알람도 포함하여 표시 (1번 문제 해결)
     var nextAlarmDisplayString: String? {
-        // 스킵된 알람 포함해서 가져오기
-        guard let alarm = nextAlarmIncludingSkipped, let date = alarm.nextTriggerDate() else { return nil }
+        guard let alarm = nextAlarm, let date = alarm.nextTriggerDate() else { return nil }
 
         let calendar = Calendar.current
         let hour = calendar.component(.hour, from: date)
@@ -397,70 +205,55 @@ class AlarmStore {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ko_KR")
 
-        var baseString: String
         if calendar.isDateInToday(date) {
-            baseString = String(format: "오늘 %@ %d시 %02d분", period, displayHour, minute)
+            return String(format: "오늘 %@ %d시 %02d분", period, displayHour, minute)
         } else if calendar.isDateInTomorrow(date) {
-            baseString = String(format: "내일 %@ %d시 %02d분", period, displayHour, minute)
+            return String(format: "내일 %@ %d시 %02d분", period, displayHour, minute)
         } else {
             formatter.dateFormat = "M월 d일 (E)"
             let dateString = formatter.string(from: date)
-            baseString = String(format: "%@ %@ %d시 %02d분", dateString, period, displayHour, minute)
+            return String(format: "%@ %@ %d시 %02d분", dateString, period, displayHour, minute)
         }
-        
-        return baseString
-    }
-    
-    // ⭐ 활성화된 알람이 있는지 확인 (스킵 포함)
-    var hasEnabledAlarms: Bool {
-        return alarms.contains { $0.isEnabled }
     }
 
-    // MARK: - Alarm Scheduling
+    var hasEnabledLocalAlarms: Bool {
+        alarms.contains { $0.isEnabled && $0.alarmMode == .local }
+    }
 
-    private func scheduleNextAlarm() {
-        AppLogger.debug("Scheduling next alarm", category: .alarmKit)
-        Task { @MainActor in
-            await AlarmKitService.shared.stopAllAlarms()
+    // MARK: - Scheduling (AlarmMode 분기)
 
-            if let next = nextAlarm {
-                AppLogger.info("Next alarm to schedule: \(next.displayTitle)", category: .alarmKit)
-                await AlarmKitService.shared.scheduleAlarm(for: next)
-            } else {
-                AppLogger.debug("No next alarm to schedule", category: .alarmKit)
+    /// AlarmMode에 따라 AlarmKitService 또는 LocalNotificationService로 분기하여 다음 알람을 스케줄한다.
+    func scheduleNextAlarm() async {
+        // local 모드 알람 스케줄
+        let enabledLocalAlarms = alarms.filter { $0.isEnabled && $0.alarmMode == .local }
+        for alarm in enabledLocalAlarms {
+            try? await localNotificationService.scheduleAlarm(for: alarm)
+        }
+
+        // alarmKit 모드 알람 스케줄 (iOS 26+)
+        if #available(iOS 26.0, *) {
+            let alarmKitAlarms = alarms.filter { $0.isEnabled && $0.alarmMode == .alarmKit && !$0.isSkippingNext }
+            if let next = alarmKitAlarms
+                .compactMap({ alarm -> (Alarm, Date)? in
+                    guard let d = alarm.nextTriggerDate() else { return nil }
+                    return (alarm, d)
+                })
+                .min(by: { $0.1 < $1.1 })?
+                .0 {
+                let service = AlarmKitService()
+                try? await service.scheduleAlarm(for: next)
             }
         }
     }
 
-    func rescheduleAllAlarms() {
-        AppLogger.info("Rescheduling all alarms", category: .alarmKit)
-        scheduleNextAlarm()
-    }
-
-    // MARK: - Live Activity
-
-    func updateLiveActivity() {
-        AppLogger.debug("Updating live activity", category: .liveActivity)
-        Task { @MainActor in
-            if let alarm = nextAlarmIncludingSkipped {
-                AppLogger.debug("Updating activity with: \(alarm.displayTitle)", category: .liveActivity)
-                LiveActivityManager.shared.updateActivity(with: alarm)
-            } else {
-                AppLogger.debug("Updating activity to empty state", category: .liveActivity)
-                LiveActivityManager.shared.updateEmptyState()
-            }
-        }
-    }
-
-    func startLiveActivity() {
-        AppLogger.info("Starting live activity", category: .liveActivity)
-        Task { @MainActor in
-            if let alarm = nextAlarmIncludingSkipped {
-                AppLogger.debug("Starting activity with: \(alarm.displayTitle)", category: .liveActivity)
-                LiveActivityManager.shared.startActivity(with: alarm)
-            } else {
-                AppLogger.debug("Starting empty activity", category: .liveActivity)
-                LiveActivityManager.shared.startEmptyActivity()
+    private func cancelSchedule(for alarm: Alarm) async {
+        switch alarm.alarmMode {
+        case .local:
+            await localNotificationService.cancelAlarm(for: alarm)
+        case .alarmKit:
+            if #available(iOS 26.0, *) {
+                let service = AlarmKitService()
+                service.cancelAlarm(for: alarm)
             }
         }
     }

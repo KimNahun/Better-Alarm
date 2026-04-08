@@ -101,6 +101,67 @@ enum AlarmMode: String, Codable, Sendable {
   - 앱이 다시 포그라운드로 올라오면 해당 알림을 취소한다 (`removeDeliveredNotifications`, `removePendingNotificationRequests`).
   - 이 로직은 `AppDelegate`의 `applicationDidEnterBackground` / `applicationWillEnterForeground`에서 처리한다.
 
+#### 6. Live Activity (잠금화면 실시간 위젯) — 기존 기능 유지 필수
+
+**이미 구현된 기능이다. 반드시 유지하고 새 아키텍처와 통합하라.**
+
+- `ActivityKit`을 사용한 Live Activity로 잠금화면/Dynamic Island에 다음 알람 정보를 실시간 표시한다.
+- `AlarmActivityAttributes` 구조체 (이미 존재, 변경 금지):
+  ```swift
+  struct AlarmActivityAttributes: ActivityAttributes {
+      struct ContentState: Codable, Hashable {
+          var nextAlarmTime: String   // "오전 7:00"
+          var nextAlarmDate: String   // "오늘" | "내일" | "M월 d일"
+          var alarmTitle: String
+          var isSkipped: Bool
+          var isEmpty: Bool
+      }
+      var alarmId: String
+  }
+  ```
+- `LiveActivityManager` (actor로 리팩토링):
+  - `startActivity(for alarm: Alarm) async`
+  - `updateActivity(nextAlarm: Alarm?) async`
+  - `endActivity() async`
+  - `isLiveActivityEnabled: Bool` (UserDefaults 저장, 기본값 true)
+  - `areActivitiesAvailable: Bool`
+- `AlarmStore`가 알람 상태 변경 시 `LiveActivityManager`를 호출하여 Live Activity를 업데이트한다.
+  - 알람 생성/수정/삭제/토글 시 → `LiveActivityManager.updateActivity(nextAlarm:)` 호출
+  - 알람 완료 시 → `LiveActivityManager.endActivity()` 호출
+- **BetterAlarmWidget 타겟** (기존 그대로 유지):
+  - `BetterAlarmWidget/` 폴더의 파일은 수정하지 않는다.
+  - `AlarmActivityAttributes`는 위젯 타겟에도 동일하게 정의되어 있다 (별도 타겟이므로 중복 정의 필수).
+
+#### 7. Settings View (기존 기능 유지 필수)
+
+- `SettingsView.swift` (SwiftUI):
+  - Live Activity 활성화/비활성화 토글 (`LiveActivityManager.isLiveActivityEnabled`)
+  - AlarmKit 권한 상태 표시 (`@available(iOS 26, *)`)
+  - 앱 버전 표시
+  - 피드백/문의 링크
+
+#### 8. Weekly Alarm View (기존 기능 유지 필수)
+
+- `WeeklyAlarmView.swift` (SwiftUI):
+  - 주간 반복 알람만 필터링하여 표시 (`AlarmSchedule.weekly`)
+  - 알람 생성/편집/삭제 지원
+  - 요일 그룹별 표시
+
+#### 9. 탭바 네비게이션 (기존 기능 유지 필수)
+
+- `BetterAlarmApp.swift` 에서 `TabView`로 3탭 구성:
+  - 탭 1: 알람 목록 (`AlarmListView`)
+  - 탭 2: 주간 알람 (`WeeklyAlarmView`)
+  - 탭 3: 설정 (`SettingsView`)
+- `@UIApplicationDelegateAdaptor(AppDelegate.self)` 사용
+
+#### 10. 로거 유틸리티 (기존 기능 유지 필수)
+
+- `Utils/Logger.swift` (기존 파일 유지):
+  - `AppLogger.info(_, category:)` / `AppLogger.debug(_, category:)` / `AppLogger.warning(_, category:)` / `AppLogger.error(_, category:)` 사용
+  - 카테고리: `.lifecycle`, `.ui`, `.action`, `.alarm`, `.store`, `.alarmKit`, `.liveActivity`, `.settings`, `.permission`, `.navigation`
+  - 새로 생성하지 말고 기존 `Utils/Logger.swift`를 그대로 사용한다.
+
 ---
 
 ## 기존 코드 참고 (Generator용)
@@ -109,10 +170,52 @@ enum AlarmMode: String, Codable, Sendable {
 단, 참고만 하고 UIKit 코드를 그대로 복사하지 마라.
 
 **참고할 핵심 로직:**
-- `Alarm.swift` — 알람 모델, `nextTriggerDate()`, 스킵 로직
-- `AlarmKitService.swift` — AlarmKit Fixed/Relative 스케줄 구분 (`@available(iOS 26.0, *)` 추가 필요)
-- `AlarmStore.swift` — 알람 CRUD, UserDefaults 저장
-- `LiveActivityManager.swift` — ActivityKit 연동
+- `BetterAlarm/Models/Alarm.swift` — 알람 모델, `nextTriggerDate()`, 스킵 로직
+- `BetterAlarm/Services/AlarmKitService.swift` — AlarmKit Fixed/Relative 스케줄 구분
+- `BetterAlarm/Services/AlarmStore.swift` — 알람 CRUD, UserDefaults 저장
+- `BetterAlarm/Services/LiveActivityManager.swift` — ActivityKit 연동 (actor로 리팩토링 필요)
+- `BetterAlarm/Utils/Logger.swift` — 로거 (그대로 사용)
+- `BetterAlarmWidget/BetterAlarmWidgetLiveActivity.swift` — 위젯 Live Activity UI
+
+## Xcode 프로젝트 통합 (Generator 완료 후 필수)
+
+이 프로젝트는 `PBXFileSystemSynchronizedRootGroup`을 사용하므로, **`BetterAlarm/` 폴더에 파일을 복사하면 Xcode가 자동으로 빌드 대상에 포함한다.**
+xcodeproj 직접 수정이나 Ruby 스크립트는 필요 없다.
+
+### Generator 완료 후 실행할 통합 명령어
+
+```bash
+# 루트 프로젝트 경로 (절대 경로 사용)
+PROJECT_ROOT="/Users/kimnahun/Desktop/Side-Project/BetterAlarm"
+OUTPUT="$PROJECT_ROOT/harness/output"
+TARGET="$PROJECT_ROOT/BetterAlarm"
+
+# 필요한 폴더 생성
+mkdir -p "$TARGET/App" "$TARGET/Models" "$TARGET/Services" \
+         "$TARGET/ViewModels/AlarmList" "$TARGET/ViewModels/AlarmDetail" \
+         "$TARGET/Views/AlarmList" "$TARGET/Views/AlarmDetail" \
+         "$TARGET/Views/Components" "$TARGET/Views/Settings" "$TARGET/Views/Weekly" \
+         "$TARGET/Intents" "$TARGET/Delegates" "$TARGET/Shared"
+
+# output/ → BetterAlarm/ 복사 (덮어쓰기)
+cp -R "$OUTPUT/Models/"* "$TARGET/Models/"
+cp -R "$OUTPUT/Services/"* "$TARGET/Services/"
+cp -R "$OUTPUT/ViewModels/"* "$TARGET/ViewModels/"
+cp -R "$OUTPUT/Views/"* "$TARGET/Views/"
+cp -R "$OUTPUT/Intents/"* "$TARGET/Intents/"
+cp -R "$OUTPUT/Delegates/"* "$TARGET/Delegates/"
+cp -R "$OUTPUT/Shared/"* "$TARGET/Shared/"
+[ -d "$OUTPUT/App" ] && cp -R "$OUTPUT/App/"* "$TARGET/App/"
+
+echo "통합 완료. Xcode에서 빌드 확인."
+```
+
+### 통합 시 주의사항
+
+- `BetterAlarm/Utils/Logger.swift` — 기존 파일 덮어쓰지 말 것 (유지)
+- `BetterAlarm/Services/LiveActivityManager.swift` — Generator가 생성/업데이트 후 복사
+- `BetterAlarmWidget/` 폴더 — 수정하지 말 것 (기존 위젯 그대로 유지)
+- 기존 UIKit 파일들 (`AlarmListViewController.swift` 등)은 이미 삭제되어 있음
 
 ---
 
