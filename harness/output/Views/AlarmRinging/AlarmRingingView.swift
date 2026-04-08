@@ -81,7 +81,6 @@ struct AlarmRingingView: View {
         VStack(spacing: 20) {
             // 정지 버튼 (큰 원형)
             Button {
-                HapticManager.notification(.success)
                 Task {
                     await viewModel.stopAlarm()
                     dismiss()
@@ -99,7 +98,6 @@ struct AlarmRingingView: View {
 
             // 스누즈 버튼 (작은 캡슐형 아웃라인)
             Button {
-                HapticManager.impact(.medium)
                 Task {
                     await viewModel.snoozeAlarm()
                     dismiss()

@@ -94,10 +94,11 @@ struct BetterAlarmApp: App {
                     alarmStore: alarmStore
                 )
             }
-            .onReceive(NotificationCenter.default.publisher(for: .alarmShouldRing)) { notification in
-                if let alarmIDString = notification.userInfo?["alarmID"] as? String,
-                   let alarmID = UUID(uuidString: alarmIDString) {
-                    Task {
+            .task {
+                // 포그라운드 알림 수신 → 울림 화면 표시
+                for await notification in NotificationCenter.default.notifications(named: .alarmShouldRing) {
+                    if let alarmIDString = notification.userInfo?["alarmID"] as? String,
+                       let alarmID = UUID(uuidString: alarmIDString) {
                         let alarms = await alarmStore.alarms
                         if let alarm = alarms.first(where: { $0.id == alarmID }) {
                             ringingAlarm = alarm
@@ -105,8 +106,10 @@ struct BetterAlarmApp: App {
                     }
                 }
             }
-            .onReceive(Timer.publish(every: 30, on: .main, in: .common).autoconnect()) { _ in
-                Task {
+            .task {
+                // 30초마다 임박한 알람 확인
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(30))
                     await checkForImminentAlarm()
                 }
             }

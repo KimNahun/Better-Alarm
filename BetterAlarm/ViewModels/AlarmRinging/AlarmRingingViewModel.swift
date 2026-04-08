@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 // MARK: - AlarmRingingViewModel
 
@@ -62,6 +63,7 @@ final class AlarmRingingViewModel {
         isRinging = false
         await audioService.stopAlarmSound()
         await alarmStore.handleAlarmCompleted(alarm)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
         cleanup()
     }
 
@@ -70,6 +72,7 @@ final class AlarmRingingViewModel {
         isRinging = false
         await audioService.stopAlarmSound()
         await alarmStore.snoozeAlarm(alarm, minutes: 5)
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         cleanup()
     }
 
@@ -91,9 +94,9 @@ final class AlarmRingingViewModel {
 
     private func startTimeUpdateTimer() {
         timerTask?.cancel()
-        timerTask = Task { [weak self] in
+        timerTask = Task {
             while !Task.isCancelled {
-                self?.updateTimeString()
+                updateTimeString()
                 try? await Task.sleep(for: .seconds(1))
             }
         }

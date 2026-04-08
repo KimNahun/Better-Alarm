@@ -119,4 +119,30 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
         notificationCenter.removePendingNotificationRequests(withIdentifiers: [backgroundReminderIdentifier])
         notificationCenter.removeDeliveredNotifications(withIdentifiers: [backgroundReminderIdentifier])
     }
+
+    // MARK: - Snooze (기능 12)
+
+    /// 스누즈 알림을 지정된 분 뒤에 울리도록 예약한다.
+    func scheduleSnooze(for alarm: Alarm, minutes: Int = 5) async throws {
+        let content = UNMutableNotificationContent()
+        content.title = alarm.displayTitle
+        content.body = "스누즈 알람이 울립니다."
+        content.sound = alarm.soundName == "default"
+            ? .default
+            : UNNotificationSound(named: UNNotificationSoundName(rawValue: "\(alarm.soundName).mp3"))
+        content.userInfo = ["alarmID": alarm.id.uuidString, "isSnooze": true]
+
+        let trigger = UNTimeIntervalNotificationTrigger(
+            timeInterval: TimeInterval(minutes * 60),
+            repeats: false
+        )
+
+        let request = UNNotificationRequest(
+            identifier: "\(alarm.id.uuidString)-snooze",
+            content: content,
+            trigger: trigger
+        )
+
+        try await notificationCenter.add(request)
+    }
 }
