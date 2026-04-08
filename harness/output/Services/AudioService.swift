@@ -44,13 +44,10 @@ actor AudioService: AudioServiceProtocol {
             }
         }
 
-        // AVAudioSession 설정 — 무음 모드에서도 스피커로 울리도록
+        // AVAudioSession 설정 — .playback 카테고리 (무음 모드에서도 스피커로 재생)
+        // 주의: .defaultToSpeaker는 .playAndRecord 전용이므로 .playback에서 사용 금지
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(
-            .playback,
-            mode: .default,
-            options: [.duckOthers, .defaultToSpeaker]
-        )
+        try session.setCategory(.playback, mode: .default, options: [.duckOthers])
         try session.setActive(true, options: .notifyOthersOnDeactivation)
 
         // 볼륨 자동 조절

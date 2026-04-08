@@ -18,32 +18,36 @@ struct WeeklyAlarmView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                PGradientBackground()
+        ZStack {
+            PGradientBackground()
 
-                VStack(spacing: 0) {
-                    dayTabs
+            VStack(spacing: 0) {
+                // 고정 헤더
+                HStack {
+                    Text("주간 알람")
+                        .font(.largeTitle.weight(.bold))
+                        .foregroundStyle(Color.pTextPrimary)
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
 
-                    if viewModel.filteredAlarms.isEmpty {
-                        emptyState
-                    } else {
-                        weeklyAlarmList
-                    }
+                dayTabs
+
+                if viewModel.filteredAlarms.isEmpty {
+                    emptyState
+                } else {
+                    weeklyAlarmList
                 }
             }
-            .navigationTitle("주간 알람")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
-            .sheet(isPresented: $showDetail) {
-                if let alarm = selectedAlarm {
-                    AlarmDetailView(
-                        store: store,
-                        editingAlarm: alarm
-                    ) {
-                        Task { await viewModel.loadAlarms() }
-                    }
+        }
+        .sheet(isPresented: $showDetail) {
+            if let alarm = selectedAlarm {
+                AlarmDetailView(
+                    store: store,
+                    editingAlarm: alarm
+                ) {
+                    Task { await viewModel.loadAlarms() }
                 }
             }
         }

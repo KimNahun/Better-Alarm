@@ -3,8 +3,7 @@ import PersonalColorDesignSystem
 
 // MARK: - SettingsView
 
-/// 설정 화면. Form 기반 UI로 Live Activity 토글, AlarmKit 권한 상태, 앱 정보를 표시.
-/// MVVM: View는 UI 선언만. 비즈니스 로직은 SettingsViewModel에 위임.
+/// 설정 화면. 커스텀 헤더 + Form 기반 UI.
 struct SettingsView: View {
     @State private var viewModel: SettingsViewModel
     @State private var liveActivityToggle: Bool = true
@@ -22,9 +21,19 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                PGradientBackground()
+        ZStack {
+            PGradientBackground()
+
+            VStack(spacing: 0) {
+                // 고정 헤더
+                HStack {
+                    Text("설정")
+                        .font(.largeTitle.weight(.bold))
+                        .foregroundStyle(Color.pTextPrimary)
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
 
                 Form {
                     // MARK: Live Activity 섹션
@@ -127,10 +136,6 @@ struct SettingsView: View {
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
             }
-            .navigationTitle("설정")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
         }
         .task {
             await viewModel.loadSettings()

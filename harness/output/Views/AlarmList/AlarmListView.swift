@@ -3,11 +3,11 @@ import PersonalColorDesignSystem
 
 // MARK: - AlarmListView
 
-/// 알람 목록 화면. NavigationStack 루트.
-/// MVVM: View는 UI 선언만. 비즈니스 로직은 ViewModel로.
+/// 알람 목록 화면.
+/// 상단 "알람" 타이틀 + "다음 알람" 배너는 고정, 아래 알람 리스트만 스크롤.
 struct AlarmListView: View {
     @State private var viewModel: AlarmListViewModel
-    private let store: AlarmStore  // AlarmDetailView 생성 시 주입용
+    private let store: AlarmStore
     @State private var showDetail: Bool = false
     @State private var selectedAlarm: Alarm? = nil
 
@@ -17,87 +17,53 @@ struct AlarmListView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                PGradientBackground()
+        ZStack {
+            PGradientBackground()
 
-                VStack(spacing: 0) {
-                    // 에러 메시지 표시
-                    if let errorMessage = viewModel.errorMessage {
-                        HStack {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(Color.pWarning)
-                            Text(errorMessage)
-                                .font(.caption)
-                                .foregroundStyle(Color.pWarning)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                    }
+            VStack(spacing: 0) {
+                // ── 고정 헤더 영역 (스크롤 안됨) ──
+                header
+                nextAlarmBanner
 
-                    // 다음 알람 표시
-                    nextAlarmBanner
-
-                    // 알람 목록 (스크롤 가능 영역)
-                    if viewModel.isLoading {
-                        Spacer()
-                        ProgressView()
-                            .tint(Color.pAccentPrimary)
-                            .scaleEffect(1.2)
-                        Spacer()
-                    } else if viewModel.alarms.isEmpty {
-                        emptyState
-                    } else {
-                        ScrollView {
-                            LazyVStack(spacing: 0) {
-                                ForEach(viewModel.alarms) { alarm in
-                                    AlarmRowView(alarm: alarm) { enabled in
-                                        Task {
-                                            await viewModel.toggleAlarm(alarm, enabled: enabled)
-                                            HapticManager.selection()
-                                        }
+                // ── 스크롤 가능 영역 (알람 리스트만) ──
+                if viewModel.isLoading {
+                    Spacer()
+                    ProgressView()
+                        .tint(Color.pAccentPrimary)
+                        .scaleEffect(1.2)
+                    Spacer()
+                } else if viewModel.alarms.isEmpty {
+                    emptyState
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            ForEach(viewModel.alarms) { alarm in
+                                AlarmRowView(alarm: alarm) { enabled in
+                                    Task {
+                                        await viewModel.toggleAlarm(alarm, enabled: enabled)
+                                        HapticManager.selection()
                                     }
-                                    .contentShape(Rectangle())
-                                    .onTapGesture {
-                                        selectedAlarm = alarm
-                                        showDetail = true
-                                        HapticManager.impact(.light)
-                                    }
+                                }
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    selectedAlarm = alarm
+                                    showDetail = true
+                                    HapticManager.impact(.light)
                                 }
                             }
                         }
                     }
                 }
             }
-            .navigationTitle("알람")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
-                .toolbar {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            selectedAlarm = nil
-                            showDetail = true
-                            HapticManager.impact(.light)
-                        } label: {
-                            Image(systemName: "plus")
-                                .font(.title3.weight(.semibold))
-                                .foregroundStyle(Color.pAccentPrimary)
-                                .frame(minWidth: 44, minHeight: 44)
-                        }
-                        .accessibilityLabel("새 알람 추가")
-                    }
-                }
-            .sheet(isPresented: $showDetail) {
-                AlarmDetailView(
-                    store: store,
-                    editingAlarm: selectedAlarm
-                ) {
-                    Task {
-                        await viewModel.loadAlarms()
-                        viewModel.showSaveToast(isEditing: selectedAlarm != nil)
-                    }
+        }
+        .sheet(isPresented: $showDetail) {
+            AlarmDetailView(
+                store: store,
+                editingAlarm: selectedAlarm
+            ) {
+                Task {
+                    await viewModel.loadAlarms()
+                    viewModel.showSaveToast(isEditing: selectedAlarm != nil)
                 }
             }
         }
@@ -117,7 +83,31 @@ struct AlarmListView: View {
         )
     }
 
-    // MARK: - Subviews
+    // MARK: - Fixed Header
+
+    private var header: some View {
+        HStack {
+            Text("알람")
+                .font(.largeTitle.weight(.bold))
+                .foregroundStyle(Color.pTextPrimary)
+            Spacer()
+            Button {
+                selectedAlarm = nil
+                showDetail = true
+                HapticManager.impact(.light)
+            } label: {
+                Image(systemName: "plus")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Color.pAccentPrimary)
+                    .frame(minWidth: 44, minHeight: 44)
+            }
+            .accessibilityLabel("새 알람 추가")
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+    }
+
+    // MARK: - Next Alarm Banner
 
     @ViewBuilder
     private var nextAlarmBanner: some View {
@@ -147,7 +137,7 @@ struct AlarmListView: View {
         }
     }
 
-    // alarmList는 인라인으로 ScrollView + LazyVStack으로 이동됨
+    // MARK: - Empty State
 
     private var emptyState: some View {
         VStack(spacing: 16) {
