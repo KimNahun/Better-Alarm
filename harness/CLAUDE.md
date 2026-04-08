@@ -10,7 +10,7 @@
 ## 작업 진행 현황 (다른 AI가 이어받을 때 여기서부터 확인)
 
 > **마지막 업데이트**: 2026-04-08
-> **현재 상태**: Generator 완료, Evaluator 미실행 → **단계 3 (Evaluator)부터 시작하면 됨**
+> **현재 상태**: ✅ **파이프라인 완료 (합격 7.8/10)**
 
 ### 전체 작업 목록
 
@@ -18,60 +18,51 @@
 |---|------|------|------|
 | 0 | API 문서 수집 | NotebookLM MCP → docs/ 저장 | ✅ 완료 |
 | 1 | Planner | SPEC.md 생성 | ✅ 완료 |
-| 2 | Generator (1회차) | output/ Swift 파일 생성 (기능 1~7) | ✅ 완료 |
-| 2a | SPEC.md 보완 | 기능 8~11 추가 (LiveActivity, Settings, Weekly, TabBar) | ✅ 완료 (수동) |
-| 2b | Generator (2회차) | 누락 파일 추가 생성 필요 (아래 목록 참고) | ❌ 미완료 |
-| 3 | Evaluator | QA_REPORT.md 생성 | ❌ 미완료 |
-| 4 | 판정 확인 | 합격/불합격 분기 처리 | ❌ 미완료 |
-| 5 | Generator 피드백 반영 | QA 불합격 시 수정 (최대 3회) | ❌ 대기 중 |
-| 6 | Xcode 통합 | output/ → BetterAlarm/ 복사 (PROJECT_CONTEXT.md 스크립트 참고) | ❌ 대기 중 |
-| 7 | 완료 보고 | output/ 폴더 안내 | ❌ 대기 중 |
+| 2 | Generator R1 | output/ Swift 파일 생성 (기능 1~7) | ✅ 완료 |
+| 2a | SPEC.md 보완 | 기능 8~11 추가 (LiveActivity, Settings, Weekly, TabBar) | ✅ 완료 |
+| 2b | Generator R2 | 기능 8~11 파일 생성 (LiveActivity, Settings, Weekly, BetterAlarmApp) | ✅ 완료 |
+| 3a | Evaluator R1 | 조건부 합격 6.6/10 → 피드백 15건 | ✅ 완료 |
+| 2c | Generator R3 (피드백 반영) | QA 피드백 15건 전부 반영 | ✅ 완료 |
+| 3b | Evaluator R2 | **합격 7.8/10** | ✅ 완료 |
+| 4 | Xcode 통합 | output/ → BetterAlarm/ 동기화 완료 | ✅ 완료 |
+| 5 | 완료 보고 | 아래 참고 | ✅ 완료 |
 
-### 현재 output/ 폴더 상태 (2026-04-08 기준)
+### 최종 output/ 폴더 상태
 
 ```
-output/
-├── App/                                      ← ❌ 비어있음 (BetterAlarmApp.swift 없음)
+output/                                       ← 25개 Swift 파일, 모두 ✅
+├── App/BetterAlarmApp.swift                  ✅ @main, TabView 3탭, DI 루트
 ├── Views/
 │   ├── AlarmDetail/AlarmDetailView.swift     ✅
-│   ├── AlarmList/AlarmListView.swift         ✅
+│   ├── AlarmList/AlarmListView.swift         ✅ (로딩/에러 UI 추가)
 │   ├── Components/AlarmRowView.swift         ✅
-│   ├── Settings/SettingsView.swift           ❌ 미생성 (기능 9)
-│   └── Weekly/WeeklyAlarmView.swift          ❌ 미생성 (기능 10)
+│   ├── Settings/SettingsView.swift           ✅ (피드백 링크, 로딩 UI 추가)
+│   └── Weekly/WeeklyAlarmView.swift          ✅
 ├── ViewModels/
 │   ├── AlarmDetail/AlarmDetailViewModel.swift ✅
 │   ├── AlarmList/AlarmListViewModel.swift     ✅
-│   ├── Settings/SettingsViewModel.swift       ❌ 미생성 (기능 9)
-│   └── Weekly/WeeklyAlarmViewModel.swift      ❌ 미생성 (기능 10)
+│   ├── Settings/SettingsViewModel.swift       ✅ (setLiveActivityEnabled 메서드 패턴)
+│   └── Weekly/WeeklyAlarmViewModel.swift      ✅
 ├── Models/
-│   ├── Alarm.swift               ✅
+│   ├── Alarm.swift               ✅ (Sendable, alarmMode, isSilentAlarm)
 │   ├── AlarmError.swift          ✅
 │   ├── AlarmMode.swift           ✅
 │   └── AlarmSchedule.swift       ✅
 ├── Services/
-│   ├── AlarmKitService.swift     ✅
-│   ├── AlarmStore.swift          ✅ (LiveActivity 연동 누락 → 수정 필요)
-│   ├── AudioService.swift        ✅
+│   ├── AlarmKitService.swift     ✅ (import AlarmKit, DI 주입)
+│   ├── AlarmStore.swift          ✅ (LiveActivity 연동, AlarmKitService DI)
+│   ├── AudioService.swift        ✅ (nonisolated 제거)
 │   ├── LocalNotificationService.swift ✅
-│   ├── LiveActivityManager.swift ❌ 미생성 (기능 8, actor 리팩토링)
+│   ├── LiveActivityManager.swift ✅ (#if os(iOS), actor)
 │   └── VolumeService.swift       ✅
 ├── Intents/
-│   ├── StopAlarmIntent.swift     ✅
-│   └── SnoozeAlarmIntent.swift   ✅
+│   ├── StopAlarmIntent.swift     ✅ (import AlarmKit)
+│   └── SnoozeAlarmIntent.swift   ✅ (import AlarmKit)
 ├── Delegates/
-│   └── AppDelegate.swift         ✅
+│   └── AppDelegate.swift         ✅ (private(set), configure() 패턴)
 └── Shared/
-    └── AlarmMetadata.swift       ✅
+    └── AlarmMetadata.swift       ✅ (import AlarmKit)
 ```
-
-**다음 AI에게**: 단계 2b(Generator 2회차)부터 시작. 아래 파일들을 생성/수정해야 함:
-1. `output/App/BetterAlarmApp.swift` - @main, TabView 3탭, DI 루트
-2. `output/Services/LiveActivityManager.swift` - actor로 구현, AlarmActivityAttributes 포함
-3. `output/Services/AlarmStore.swift` - LiveActivityManager 연동 추가
-4. `output/Views/Settings/SettingsView.swift` + `output/ViewModels/Settings/SettingsViewModel.swift`
-5. `output/Views/Weekly/WeeklyAlarmView.swift` + `output/ViewModels/Weekly/WeeklyAlarmViewModel.swift`
-
-참고: `BetterAlarm/Services/LiveActivityManager.swift` (기존 파일)를 반드시 먼저 읽고 actor로 리팩토링할 것.
 
 ---
 
