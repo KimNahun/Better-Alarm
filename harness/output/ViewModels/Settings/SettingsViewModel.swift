@@ -1,4 +1,5 @@
 import Foundation
+import UserNotifications
 
 // MARK: - SettingsViewModel
 
@@ -12,6 +13,8 @@ final class SettingsViewModel {
     private(set) var isLiveActivityEnabled: Bool = true
 
     private(set) var alarmKitAuthStatus: String = "확인 중..."
+    private(set) var notificationAuthStatus: String = "확인 중..."
+    private(set) var lockScreenWidgetStatus: String = "확인 중..."
     private(set) var appVersion: String = ""
     private(set) var buildNumber: String = ""
     private(set) var isLoading: Bool = false
@@ -21,15 +24,18 @@ final class SettingsViewModel {
     private let liveActivityManager: LiveActivityManager?
     private let alarmStore: AlarmStore
     private let alarmKitService: (any AlarmKitServiceProtocol)?
+    var themeManager: AppThemeManager?
 
     init(
         liveActivityManager: LiveActivityManager? = nil,
         alarmStore: AlarmStore,
-        alarmKitService: (any AlarmKitServiceProtocol)? = nil
+        alarmKitService: (any AlarmKitServiceProtocol)? = nil,
+        themeManager: AppThemeManager? = nil
     ) {
         self.liveActivityManager = liveActivityManager
         self.alarmStore = alarmStore
         self.alarmKitService = alarmKitService
+        self.themeManager = themeManager
         loadAppInfo()
     }
 
@@ -45,8 +51,8 @@ final class SettingsViewModel {
             isLiveActivityEnabled = await manager.isLiveActivityEnabled
         }
 
-        // AlarmKit 권한 상태 확인 (iOS 26+)
-        await loadAlarmKitAuthStatus()
+        // 권한 상태 확인
+        await refreshPermissions()
     }
 
     // MARK: - Live Activity Setting
@@ -55,6 +61,34 @@ final class SettingsViewModel {
     func setLiveActivityEnabled(_ enabled: Bool) async {
         isLiveActivityEnabled = enabled
         await syncLiveActivitySetting(enabled)
+    }
+
+    // MARK: - Refresh Permissions
+
+    /// 권한 상태를 실제로 읽기 (요청 안 함)
+    func refreshPermissions() async {
+        // 알림 권한 상태 확인
+        let notificationSettings = await UNUserNotificationCenter.current().notificationSettings()
+        switch notificationSettings.authorizationStatus {
+        case .authorized, .provisional, .ephemeral:
+            notificationAuthStatus = "허용됨"
+        case .denied:
+            notificationAuthStatus = "허용 안 됨"
+        case .notDetermined:
+            notificationAuthStatus = "미설정"
+        @unknown default:
+            notificationAuthStatus = "알 수 없음"
+        }
+
+        // AlarmKit 권한 상태 확인 (요청 없이)
+        await loadAlarmKitAuthStatus()
+
+        // Lock Screen Widget (ActivityKit) 상태 확인
+        if #available(iOS 17.0, *) {
+            lockScreenWidgetStatus = isLiveActivityEnabled ? "허용됨" : "허용 안 됨"
+        } else {
+            lockScreenWidgetStatus = "iOS 17 이상 필요"
+        }
     }
 
     // MARK: - Private
@@ -73,10 +107,10 @@ final class SettingsViewModel {
         }
     }
 
-    /// AlarmKit 권한 상태를 확인한다.
+    /// AlarmKit 권한 상태를 확인한다 (요청 없이).
     private func loadAlarmKitAuthStatus() async {
         if let service = alarmKitService {
-            let authorized = await service.requestPermission()
+            let authorized = await service.checkPermission()
             alarmKitAuthStatus = authorized ? "허용됨" : "허용 안 됨"
         } else {
             alarmKitAuthStatus = "iOS 26 이상 필요"

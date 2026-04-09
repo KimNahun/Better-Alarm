@@ -11,12 +11,14 @@ struct SettingsView: View {
     init(
         liveActivityManager: LiveActivityManager?,
         alarmStore: AlarmStore,
-        alarmKitService: (any AlarmKitServiceProtocol)? = nil
+        alarmKitService: (any AlarmKitServiceProtocol)? = nil,
+        themeManager: AppThemeManager? = nil
     ) {
         _viewModel = State(initialValue: SettingsViewModel(
             liveActivityManager: liveActivityManager,
             alarmStore: alarmStore,
-            alarmKitService: alarmKitService
+            alarmKitService: alarmKitService,
+            themeManager: themeManager
         ))
     }
 
@@ -33,9 +35,43 @@ struct SettingsView: View {
                     Spacer()
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .padding(.top, 20)
 
                 Form {
+                    // MARK: 테마 섹션
+                    if let themeManager = viewModel.themeManager {
+                        Section {
+                            HStack(spacing: 12) {
+                                ForEach(PTheme.allCases) { theme in
+                                    Button {
+                                        themeManager.setTheme(theme)
+                                    } label: {
+                                        VStack(spacing: 4) {
+                                            Circle()
+                                                .fill(theme.colors.accentPrimary)
+                                                .frame(width: 36, height: 36)
+                                                .overlay(
+                                                    Circle()
+                                                        .stroke(themeManager.currentTheme == theme ? Color.pTextPrimary : Color.clear, lineWidth: 2)
+                                                )
+                                            Text(theme.displayName)
+                                                .font(.caption2)
+                                                .foregroundStyle(Color.pTextSecondary)
+                                        }
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                                Spacer()
+                            }
+                            .padding(.vertical, 4)
+                        } header: {
+                            Text("테마")
+                                .font(.caption)
+                                .foregroundStyle(Color.pTextTertiary)
+                        }
+                        .listRowBackground(Color.pGlassFill)
+                    }
+
                     // MARK: Live Activity 섹션
                     Section {
                         Toggle(isOn: $liveActivityToggle) {
@@ -66,6 +102,32 @@ struct SettingsView: View {
 
                     // MARK: 권한 섹션
                     Section {
+                        // 알림 권한 행
+                        HStack {
+                            Text("알림 권한")
+                                .font(.body)
+                                .foregroundStyle(Color.pTextPrimary)
+                            Spacer()
+                            if viewModel.isLoading {
+                                ProgressView()
+                                    .tint(Color.pAccentPrimary)
+                            } else {
+                                Text(viewModel.notificationAuthStatus)
+                                    .font(.body)
+                                    .foregroundStyle(viewModel.notificationAuthStatus == "허용됨" ? Color.pSuccess : Color.pWarning)
+                                Button("설정 열기") {
+                                    openAppSettings()
+                                }
+                                .font(.caption)
+                                .foregroundStyle(Color.pAccentPrimary)
+                                .padding(.leading, 8)
+                            }
+                        }
+                        .frame(minHeight: 44)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("알림 권한: \(viewModel.notificationAuthStatus)")
+
+                        // AlarmKit 권한 행
                         HStack {
                             Text("AlarmKit 권한")
                                 .font(.body)
@@ -77,7 +139,15 @@ struct SettingsView: View {
                             } else {
                                 Text(viewModel.alarmKitAuthStatus)
                                     .font(.body)
-                                    .foregroundStyle(Color.pTextSecondary)
+                                    .foregroundStyle(viewModel.alarmKitAuthStatus == "허용됨" ? Color.pSuccess : Color.pTextSecondary)
+                                if viewModel.alarmKitAuthStatus != "iOS 26 이상 필요" {
+                                    Button("설정 열기") {
+                                        openAppSettings()
+                                    }
+                                    .font(.caption)
+                                    .foregroundStyle(Color.pAccentPrimary)
+                                    .padding(.leading, 8)
+                                }
                             }
                         }
                         .frame(minHeight: 44)
@@ -137,9 +207,20 @@ struct SettingsView: View {
                 .background(Color.clear)
             }
         }
+        .toolbarBackground(Color.pTabBarBackground, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
         .task {
             await viewModel.loadSettings()
             liveActivityToggle = viewModel.isLiveActivityEnabled
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            Task { await viewModel.refreshPermissions() }
+        }
+    }
+
+    private func openAppSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
         }
     }
 }

@@ -30,7 +30,7 @@ struct WeeklyAlarmView: View {
                     Spacer()
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .padding(.top, 20)
 
                 dayTabs
 
@@ -62,25 +62,42 @@ struct WeeklyAlarmView: View {
             message: viewModel.toastMessage,
             type: .info
         )
+        .confirmationDialog(
+            "주간 알람 처리",
+            isPresented: Binding(
+                get: { viewModel.pendingDisableAlarm != nil },
+                set: { if !$0 { viewModel.cancelDisable() } }
+            ),
+            titleVisibility: .visible
+        ) {
+            if let alarm = viewModel.pendingDisableAlarm {
+                Button("이번만 스킵") {
+                    Task { await viewModel.skipOnceAndDisable(alarm) }
+                }
+                Button("완전히 끄기", role: .destructive) {
+                    Task { await viewModel.confirmDisable(alarm) }
+                }
+                Button("취소", role: .cancel) {
+                    viewModel.cancelDisable()
+                }
+            }
+        } message: {
+            Text("이 주간 알람을 어떻게 처리할까요?")
+        }
     }
 
     // MARK: - Day Tabs
 
     private var dayTabs: some View {
         HStack(spacing: 4) {
-            // 전체 탭
-            Button { viewModel.selectedDay = nil } label: {
-                Text("전체")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(viewModel.selectedDay == nil ? .white : Color.pTextTertiary)
-                    .frame(maxWidth: .infinity, minHeight: 36)
-                    .background(viewModel.selectedDay == nil ? Color.pAccentPrimary : Color.pGlassFill)
-                    .clipShape(Capsule())
-            }
-            .buttonStyle(.plain)
-
             ForEach(Weekday.allCases, id: \.self) { day in
-                Button { viewModel.selectedDay = day } label: {
+                Button {
+                    if viewModel.selectedDay == day {
+                        viewModel.selectedDay = nil  // 다시 누르면 선택 해제
+                    } else {
+                        viewModel.selectedDay = day
+                    }
+                } label: {
                     Text(day.shortName)
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(viewModel.selectedDay == day ? .white : Color.pTextTertiary)
@@ -102,7 +119,7 @@ struct WeeklyAlarmView: View {
             ForEach(viewModel.filteredAlarms) { alarm in
                 AlarmRowView(alarm: alarm) { enabled in
                     Task {
-                        await viewModel.toggleAlarm(alarm, enabled: enabled)
+                        viewModel.requestToggle(alarm, enabled: enabled)
                         HapticManager.selection()
                     }
                 }

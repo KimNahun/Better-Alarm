@@ -16,6 +16,7 @@ final class AlarmListViewModel {
     private(set) var errorMessage: String?
     private(set) var showToast: Bool = false
     private(set) var toastMessage: String = ""
+    private(set) var pendingDisableAlarm: Alarm? = nil
 
     // MARK: - Dependencies
 
@@ -35,11 +36,39 @@ final class AlarmListViewModel {
         await refreshState()
     }
 
+    /// 토글 요청 처리: 주간 알람 끄기 시 다이얼로그 표시
+    func requestToggle(_ alarm: Alarm, enabled: Bool) {
+        if !enabled, case .weekly = alarm.schedule {
+            pendingDisableAlarm = alarm
+        } else {
+            Task { await toggleAlarm(alarm, enabled: enabled) }
+        }
+    }
+
     /// 알람 활성화/비활성화 토글
     func toggleAlarm(_ alarm: Alarm, enabled: Bool) async {
         await store.toggleAlarm(alarm, enabled: enabled)
         await refreshState()
         showToastMessage(enabled ? "알람이 켜졌습니다" : "알람이 꺼졌습니다")
+    }
+
+    /// 이번만 스킵 (isEnabled는 유지)
+    func skipOnceAndDisable(_ alarm: Alarm) async {
+        await store.skipOnceAlarm(alarm)
+        pendingDisableAlarm = nil
+        await refreshState()
+        showToastMessage("다음 1회 건너뜁니다")
+    }
+
+    /// 완전히 끄기
+    func confirmDisable(_ alarm: Alarm) async {
+        await toggleAlarm(alarm, enabled: false)
+        pendingDisableAlarm = nil
+    }
+
+    /// 다이얼로그 취소
+    func cancelDisable() {
+        pendingDisableAlarm = nil
     }
 
     /// 알람 삭제

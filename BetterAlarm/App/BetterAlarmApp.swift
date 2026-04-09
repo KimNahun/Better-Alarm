@@ -22,6 +22,7 @@ struct BetterAlarmApp: App {
     // MARK: - Ringing State
 
     @State private var ringingAlarm: Alarm? = nil
+    @State private var themeManager = AppThemeManager()
 
     init() {
         let notificationService = LocalNotificationService()
@@ -88,7 +89,7 @@ struct BetterAlarmApp: App {
         WindowGroup {
             ZStack {
                 // 루트 배경색: 화면 전환 시 흰색 깜빡임 방지
-                Color(red: 0.08, green: 0.08, blue: 0.15)
+                Color(themeManager.currentTheme.colors.backgroundTop)
                     .ignoresSafeArea()
 
             TabView {
@@ -110,7 +111,8 @@ struct BetterAlarmApp: App {
                 SettingsView(
                     liveActivityManager: liveActivityManager,
                     alarmStore: alarmStore,
-                    alarmKitService: alarmKitService
+                    alarmKitService: alarmKitService,
+                    themeManager: themeManager
                 )
                 .tabItem {
                     Label("설정", systemImage: "gearshape")
@@ -118,6 +120,7 @@ struct BetterAlarmApp: App {
                 .accessibilityLabel("설정 탭")
             }
             .tint(Color.pAccentPrimary)
+            .pTheme(themeManager.currentTheme)
             .fullScreenCover(item: $ringingAlarm) { alarm in
                 AlarmRingingView(
                     alarm: alarm,
@@ -125,6 +128,12 @@ struct BetterAlarmApp: App {
                     volumeService: volumeService,
                     alarmStore: alarmStore
                 )
+            }
+            .onChange(of: ringingAlarm) { _, newValue in
+                if newValue == nil {
+                    // 알람이 dismiss됨 → 즉시 목록 갱신
+                    Task { await alarmStore.loadAlarms() }
+                }
             }
             .task {
                 // 포그라운드 알림 수신 → 울림 화면 표시

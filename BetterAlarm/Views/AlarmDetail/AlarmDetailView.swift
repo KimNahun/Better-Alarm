@@ -226,6 +226,7 @@ struct AlarmDetailView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 150)
+        .colorScheme(.dark)
     }
 
     // MARK: - Schedule Section

@@ -40,7 +40,7 @@ struct AlarmListView: View {
                             ForEach(viewModel.alarms) { alarm in
                                 AlarmRowView(alarm: alarm) { enabled in
                                     Task {
-                                        await viewModel.toggleAlarm(alarm, enabled: enabled)
+                                        viewModel.requestToggle(alarm, enabled: enabled)
                                         HapticManager.selection()
                                     }
                                 }
@@ -81,6 +81,28 @@ struct AlarmListView: View {
             message: viewModel.toastMessage,
             type: .info
         )
+        .confirmationDialog(
+            "주간 알람 처리",
+            isPresented: Binding(
+                get: { viewModel.pendingDisableAlarm != nil },
+                set: { if !$0 { viewModel.cancelDisable() } }
+            ),
+            titleVisibility: .visible
+        ) {
+            if let alarm = viewModel.pendingDisableAlarm {
+                Button("이번만 스킵") {
+                    Task { await viewModel.skipOnceAndDisable(alarm) }
+                }
+                Button("완전히 끄기", role: .destructive) {
+                    Task { await viewModel.confirmDisable(alarm) }
+                }
+                Button("취소", role: .cancel) {
+                    viewModel.cancelDisable()
+                }
+            }
+        } message: {
+            Text("이 주간 알람을 어떻게 처리할까요?")
+        }
     }
 
     // MARK: - Fixed Header
@@ -104,7 +126,7 @@ struct AlarmListView: View {
             .accessibilityLabel("새 알람 추가")
         }
         .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .padding(.top, 20)
     }
 
     // MARK: - Next Alarm Banner

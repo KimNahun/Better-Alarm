@@ -8,6 +8,8 @@ import AlarmKit
 /// AlarmKit 서비스 추상화. DI 및 테스트를 위한 프로토콜.
 protocol AlarmKitServiceProtocol: Sendable {
     func requestPermission() async -> Bool
+    /// 권한을 요청하지 않고 현재 상태만 확인한다.
+    func checkPermission() async -> Bool
     func scheduleAlarm(for alarm: Alarm) async throws
     func cancelAlarm(for alarm: Alarm) async
     func stopAllAlarms() async
@@ -35,6 +37,11 @@ actor AlarmKitService: AlarmKitServiceProtocol {
         } catch {
             return false
         }
+    }
+
+    /// 권한을 요청하지 않고 현재 상태만 확인한다.
+    func checkPermission() async -> Bool {
+        return manager.authorizationState == .authorized
     }
 
     // MARK: - Schedule
