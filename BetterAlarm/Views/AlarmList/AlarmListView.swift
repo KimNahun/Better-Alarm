@@ -130,7 +130,7 @@ struct AlarmListView: View {
             .accessibilityLabel("새 알람 추가")
         }
         .padding(.horizontal, 16)
-        .padding(.top, 20)
+        .padding(.top, 60)
     }
 
     // MARK: - Next Alarm Banner

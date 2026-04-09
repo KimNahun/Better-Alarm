@@ -36,7 +36,7 @@ struct SettingsView: View {
                     Spacer()
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 20)
+                .padding(.top, 60)
 
                 Form {
                     // MARK: 테마 섹션
