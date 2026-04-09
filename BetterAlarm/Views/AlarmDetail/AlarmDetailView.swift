@@ -124,12 +124,18 @@ struct AlarmDetailView: View {
                             } label: {
                                 HStack {
                                     Spacer()
+                                    if viewModel.isDeleting {
+                                        ProgressView()
+                                            .tint(Color.pWarning)
+                                            .scaleEffect(0.8)
+                                    }
                                     Text("알람 삭제")
                                         .font(.body.weight(.medium))
                                         .foregroundStyle(Color.pWarning)
                                     Spacer()
                                 }
                             }
+                            .disabled(viewModel.isDeleting)
                             .frame(minHeight: 44)
                         }
                         .listRowBackground(Color.pGlassFill)
@@ -154,13 +160,23 @@ struct AlarmDetailView: View {
                         .frame(minWidth: 44, minHeight: 44)
                     }
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("저장") {
+                        Button {
                             Task {
                                 await viewModel.save()
                                 if viewModel.saveError == nil {
                                     HapticManager.notification(.success)
                                     onSaved()
                                     dismiss()
+                                }
+                            }
+                        } label: {
+                            Group {
+                                if viewModel.isSaving {
+                                    ProgressView()
+                                        .tint(theme.accentPrimary)
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Text("저장")
                                 }
                             }
                         }

@@ -36,6 +36,7 @@ final class AlarmDetailViewModel {
     private(set) var actionToastMessage: String = ""
     private(set) var earphoneWarning: String? = nil
     private(set) var isSaving: Bool = false
+    private(set) var isDeleting: Bool = false
     private(set) var saveError: String? = nil
 
     // MARK: - Mode
@@ -158,6 +159,8 @@ final class AlarmDetailViewModel {
 
     func deleteAlarm() async {
         guard let alarm = editingAlarm else { return }
+        isDeleting = true
+        defer { isDeleting = false }
         await store.deleteAlarm(alarm)
     }
 
