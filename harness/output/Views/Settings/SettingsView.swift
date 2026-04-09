@@ -154,6 +154,33 @@ struct SettingsView: View {
                         .frame(minHeight: 44)
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel("AlarmKit 권한: \(viewModel.alarmKitAuthStatus)")
+
+                        // 잠금화면 위젯 권한 행
+                        HStack {
+                            Text("잠금화면 위젯 권한")
+                                .font(.body)
+                                .foregroundStyle(Color.pTextPrimary)
+                            Spacer()
+                            if viewModel.isLoading {
+                                ProgressView()
+                                    .tint(theme.accentPrimary)
+                            } else {
+                                Text(viewModel.lockScreenWidgetStatus)
+                                    .font(.body)
+                                    .foregroundStyle(viewModel.lockScreenWidgetStatus == "허용됨" ? Color.pSuccess : Color.pTextSecondary)
+                                if viewModel.lockScreenWidgetStatus != "iOS 17 이상 필요" {
+                                    Button("설정 열기") {
+                                        openAppSettings()
+                                    }
+                                    .font(.caption)
+                                    .foregroundStyle(theme.accentPrimary)
+                                    .padding(.leading, 8)
+                                }
+                            }
+                        }
+                        .frame(minHeight: 44)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("잠금화면 위젯 권한: \(viewModel.lockScreenWidgetStatus)")
                     } header: {
                         Text("권한")
                             .font(.caption)

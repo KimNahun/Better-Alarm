@@ -1,5 +1,6 @@
 import Foundation
 import UserNotifications
+import ActivityKit
 
 // MARK: - SettingsViewModel
 
@@ -83,9 +84,10 @@ final class SettingsViewModel {
         // AlarmKit 권한 상태 확인 (요청 없이)
         await loadAlarmKitAuthStatus()
 
-        // Lock Screen Widget (ActivityKit) 상태 확인
+        // Lock Screen Widget (ActivityKit) 실제 권한 상태 확인
         if #available(iOS 17.0, *) {
-            lockScreenWidgetStatus = isLiveActivityEnabled ? "허용됨" : "허용 안 됨"
+            let info = ActivityAuthorizationInfo()
+            lockScreenWidgetStatus = info.areActivitiesEnabled ? "허용됨" : "허용 안 됨"
         } else {
             lockScreenWidgetStatus = "iOS 17 이상 필요"
         }
