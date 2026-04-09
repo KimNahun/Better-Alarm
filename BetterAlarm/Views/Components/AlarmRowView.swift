@@ -35,7 +35,7 @@ struct AlarmRowView: View {
                         HStack(spacing: 6) {
                             Text(alarm.repeatDescriptionWithoutSkip)
                                 .font(.caption)
-                                .foregroundStyle(Color.pTextTertiary)
+                                .foregroundStyle(Color.pTextSecondary)
 
                             if alarm.isSkippingNext {
                                 Text("다음 1회 건너뜀")
