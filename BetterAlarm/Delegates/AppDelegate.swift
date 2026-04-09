@@ -104,14 +104,18 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
-        // 필요 시 알람 ID를 꺼내 완료 처리
         let userInfo = response.notification.request.content.userInfo
         if let alarmIDString = userInfo["alarmID"] as? String,
            let alarmID = UUID(uuidString: alarmIDString) {
             guard let store = alarmStore else { return }
             let alarms = await store.alarms
-            if let alarm = alarms.first(where: { $0.id == alarmID }) {
-                await store.handleAlarmCompleted(alarm)
+            if alarms.first(where: { $0.id == alarmID }) != nil {
+                // 알람 울리는 화면으로 딥링크
+                NotificationCenter.default.post(
+                    name: .alarmShouldRing,
+                    object: nil,
+                    userInfo: ["alarmID": alarmIDString]
+                )
             }
         }
     }
