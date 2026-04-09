@@ -74,6 +74,8 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
 
         do {
             try await notificationCenter.add(request)
+            // 알람 울릴 때 끄지 않으면 5초 간격 반복 알림 등록
+            await scheduleRepeatingAlerts(for: alarm)
         } catch {
             throw AlarmError.scheduleFailed(error.localizedDescription)
         }
@@ -85,6 +87,7 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
     func cancelAlarm(for alarm: Alarm) async {
         notificationCenter.removePendingNotificationRequests(withIdentifiers: [alarm.id.uuidString])
         notificationCenter.removeDeliveredNotifications(withIdentifiers: [alarm.id.uuidString])
+        await cancelRepeatingAlerts(for: alarm)
     }
 
     /// 모든 알람 알림을 취소한다.
@@ -118,6 +121,42 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
     func cancelBackgroundReminder() async {
         notificationCenter.removePendingNotificationRequests(withIdentifiers: [backgroundReminderIdentifier])
         notificationCenter.removeDeliveredNotifications(withIdentifiers: [backgroundReminderIdentifier])
+    }
+
+    // MARK: - Repeating Alerts
+
+    /// 알람 시각부터 5초 간격으로 반복 알림을 미리 등록한다 (최대 count개).
+    /// 사용자가 알람을 끄지 않으면 계속 울리도록 한다.
+    func scheduleRepeatingAlerts(for alarm: Alarm, count: Int = 30) async {
+        guard let triggerDate = alarm.nextTriggerDate() else { return }
+
+        let content = UNMutableNotificationContent()
+        content.title = alarm.displayTitle
+        content.body = "알람이 울리고 있습니다. 앱을 열어 알람을 끄세요."
+        content.sound = .default
+        content.userInfo = ["alarmID": alarm.id.uuidString]
+
+        for i in 1...count {
+            let delay = TimeInterval(i * 5)
+            let fireDate = triggerDate.addingTimeInterval(delay)
+            let trigger = UNCalendarNotificationTrigger(
+                dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: fireDate),
+                repeats: false
+            )
+            let request = UNNotificationRequest(
+                identifier: "\(alarm.id.uuidString)-repeat-\(i)",
+                content: content,
+                trigger: trigger
+            )
+            try? await notificationCenter.add(request)
+        }
+    }
+
+    /// 반복 알림을 모두 취소한다.
+    func cancelRepeatingAlerts(for alarm: Alarm, count: Int = 30) async {
+        let identifiers = (1...count).map { "\(alarm.id.uuidString)-repeat-\($0)" }
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: identifiers)
+        notificationCenter.removeDeliveredNotifications(withIdentifiers: identifiers)
     }
 
     // MARK: - Snooze (기능 12)
