@@ -192,6 +192,9 @@ actor AlarmStore {
             saveAlarms()
         }
 
+        // 기존 반복 알림을 취소한 뒤 스누즈 예약
+        await localNotificationService.cancelAlarm(for: alarm)
+
         do {
             try await localNotificationService.scheduleSnooze(for: alarm, minutes: minutes)
             AppLogger.info("Snooze scheduled: \(alarm.displayTitle) in \(minutes) min", category: .alarm)
