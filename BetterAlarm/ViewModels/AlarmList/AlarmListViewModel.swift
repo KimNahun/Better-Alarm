@@ -110,18 +110,7 @@ final class AlarmListViewModel {
 
     private func refreshState() async {
         let allAlarms = await store.alarms
-        // 비활성화된 1회성 알람은 목록에서 숨김
-        alarms = allAlarms.filter { alarm in
-            if !alarm.isEnabled {
-                switch alarm.schedule {
-                case .once, .specificDate:
-                    return false // 1회성 알람은 꺼지면 숨김
-                case .weekly:
-                    return true  // 주간 반복은 꺼져있어도 표시
-                }
-            }
-            return true
-        }
+        alarms = allAlarms
         nextAlarmDisplayString = await store.nextAlarmDisplayString
     }
 }
