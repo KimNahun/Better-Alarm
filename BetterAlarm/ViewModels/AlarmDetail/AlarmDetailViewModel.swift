@@ -59,8 +59,8 @@ final class AlarmDetailViewModel {
         self.audioService = audioService
         self.editingAlarm = editingAlarm
 
-        // 기본값: 현재 시간
-        let now = Date()
+        // 기본값: 현재 시간 + 1분
+        let now = Date().addingTimeInterval(60)
         let calendar = Calendar.current
         let currentHour = calendar.component(.hour, from: now)
         let currentMinute = calendar.component(.minute, from: now)
