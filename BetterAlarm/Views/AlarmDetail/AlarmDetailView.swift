@@ -240,6 +240,7 @@ struct AlarmDetailView: View {
             }
         }
         .pickerStyle(.segmented)
+        .colorScheme(.dark)
         .accessibilityLabel("알람 반복 유형 선택")
 
         if viewModel.scheduleType == .weekly {
