@@ -149,9 +149,9 @@ struct BetterAlarmApp: App {
                 }
             }
             .task {
-                // 30초마다 임박한 알람 확인
+                // 10초마다 임박한 알람 확인 (5초 이내만 발화)
                 while !Task.isCancelled {
-                    try? await Task.sleep(for: .seconds(30))
+                    try? await Task.sleep(for: .seconds(10))
                     await checkForImminentAlarm()
                 }
             }
@@ -186,7 +186,9 @@ struct BetterAlarmApp: App {
 
         let alarms = await alarmStore.alarms
         let now = Date()
-        let threshold: TimeInterval = 30
+        // threshold를 5초로 줄여 알람이 너무 일찍 울리지 않도록 하고
+        // notification 경로와의 중복 발화를 방지한다.
+        let threshold: TimeInterval = 5
 
         let imminent = alarms
             .filter { $0.isEnabled && $0.alarmMode == .local && !$0.isSkippingNext }
