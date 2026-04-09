@@ -71,6 +71,25 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             await localNotificationService?.cancelBackgroundReminder()
         }
     }
+
+    func applicationWillTerminate(_ application: UIApplication) {
+        // 앱 종료 시 활성화된 모든 local 알람의 UNCalendar 알림을 재등록하여
+        // 앱이 꺼진 상태에서도 iOS가 알림을 발송할 수 있도록 보장한다.
+        guard let store = alarmStore,
+              let notificationService = localNotificationService else { return }
+
+        let group = DispatchGroup()
+        group.enter()
+        Task {
+            defer { group.leave() }
+            let alarms = await store.alarms
+            for alarm in alarms where alarm.isEnabled && alarm.alarmMode == .local {
+                try? await notificationService.scheduleAlarm(for: alarm)
+            }
+        }
+        // 최대 2초 대기 후 종료 허용
+        _ = group.wait(timeout: .now() + 2)
+    }
 }
 
 // MARK: - UNUserNotificationCenterDelegate
