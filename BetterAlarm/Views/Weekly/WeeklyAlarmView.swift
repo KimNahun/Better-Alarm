@@ -90,7 +90,7 @@ struct WeeklyAlarmView: View {
     // MARK: - Day Tabs
 
     private var dayTabs: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             ForEach(Weekday.allCases, id: \.self) { day in
                 Button {
                     if viewModel.selectedDay == day {
@@ -101,16 +101,17 @@ struct WeeklyAlarmView: View {
                 } label: {
                     let isSelected = viewModel.selectedDay == day
                     Text(day.shortName)
-                        .font(.caption.weight(.semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(isSelected ? .white : Color.pTextTertiary)
-                        .frame(width: 36, height: 36)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
                         .background(isSelected ? theme.accentPrimary : Color.pGlassFill)
-                        .clipShape(Circle())
+                        .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 8)
         .padding(.vertical, 8)
     }
 
