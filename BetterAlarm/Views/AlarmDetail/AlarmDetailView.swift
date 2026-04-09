@@ -136,10 +136,14 @@ struct AlarmDetailView: View {
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
             }
-            .navigationTitle(viewModel.isEditing ? "알람 편집" : "새 알람")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
                 .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        Text(viewModel.isEditing ? "알람 편집" : "새 알람")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(Color.pTextPrimary)
+                    }
                     ToolbarItem(placement: .cancellationAction) {
                         Button("취소") {
                             dismiss()
