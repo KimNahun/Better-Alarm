@@ -38,7 +38,7 @@ struct AlarmListView: View {
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 0) {
-                            ForEach(viewModel.alarms) { alarm in
+                            ForEach(viewModel.alarms, id: \.id) { alarm in
                                 AlarmRowView(alarm: alarm) { enabled in
                                     Task {
                                         viewModel.requestToggle(alarm, enabled: enabled)
@@ -51,8 +51,10 @@ struct AlarmListView: View {
                                     showDetail = true
                                     HapticManager.impact(.light)
                                 }
+                                .transition(.opacity.combined(with: .move(edge: .top)))
                             }
                         }
+                        .animation(.easeInOut(duration: 0.3), value: viewModel.alarms)
                     }
                 }
             }
