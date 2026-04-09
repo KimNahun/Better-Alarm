@@ -101,7 +101,12 @@ final class AlarmListViewModel {
         showToastMessage(isEditing ? "알람이 수정되었습니다" : "알람이 저장되었습니다")
     }
 
+    func showDeleteToast() {
+        showToastMessage("알람이 삭제되었습니다")
+    }
+
     private func showToastMessage(_ message: String) {
+        showToast = false
         toastMessage = message
         showToast = true
     }

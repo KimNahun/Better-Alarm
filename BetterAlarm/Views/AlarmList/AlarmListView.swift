@@ -47,9 +47,15 @@ struct AlarmListView: View {
                                 }
                                 .contentShape(Rectangle())
                                 .onTapGesture {
-                                    selectedAlarm = alarm
-                                    showDetail = true
-                                    HapticManager.impact(.light)
+                                    if !alarm.isEnabled, case .once = alarm.schedule {
+                                        viewModel.requestToggle(alarm, enabled: true)
+                                    } else if !alarm.isEnabled, case .specificDate = alarm.schedule {
+                                        viewModel.requestToggle(alarm, enabled: true)
+                                    } else {
+                                        selectedAlarm = alarm
+                                        showDetail = true
+                                        HapticManager.impact(.light)
+                                    }
                                 }
                                 .transition(.opacity.combined(with: .move(edge: .top)))
                             }
@@ -67,6 +73,11 @@ struct AlarmListView: View {
                 Task {
                     await viewModel.loadAlarms()
                     viewModel.showSaveToast(isEditing: selectedAlarm != nil)
+                }
+            } onDeleted: {
+                Task {
+                    await viewModel.loadAlarms()
+                    viewModel.showDeleteToast()
                 }
             }
         }

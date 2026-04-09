@@ -11,10 +11,12 @@ struct AlarmDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.pThemeColors) private var theme
     private let onSaved: () -> Void
+    private let onDeleted: (() -> Void)?
 
-    init(store: AlarmStore, editingAlarm: Alarm? = nil, onSaved: @escaping () -> Void) {
+    init(store: AlarmStore, editingAlarm: Alarm? = nil, onSaved: @escaping () -> Void, onDeleted: (() -> Void)? = nil) {
         _viewModel = State(initialValue: AlarmDetailViewModel(store: store, editingAlarm: editingAlarm))
         self.onSaved = onSaved
+        self.onDeleted = onDeleted
     }
 
     var body: some View {
@@ -116,7 +118,7 @@ struct AlarmDetailView: View {
                             Button(role: .destructive) {
                                 Task {
                                     await viewModel.deleteAlarm()
-                                    onSaved()
+                                    onDeleted?()
                                     dismiss()
                                 }
                             } label: {
@@ -259,6 +261,7 @@ struct AlarmDetailView: View {
                 displayedComponents: .date
             )
             .datePickerStyle(.compact)
+            .colorScheme(.dark)
             .foregroundStyle(Color.pTextPrimary)
             .accessibilityLabel("특정 날짜 선택")
         }
