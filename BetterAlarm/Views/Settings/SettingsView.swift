@@ -73,35 +73,7 @@ struct SettingsView: View {
                         .listRowBackground(Color.pGlassFill)
                     }
 
-                    // MARK: Live Activity 섹션
-                    Section {
-                        Toggle(isOn: $liveActivityToggle) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("잠금화면 위젯")
-                                    .font(.body)
-                                    .foregroundStyle(Color.pTextPrimary)
-                                Text("잠금화면에 다음 알람 정보를 표시합니다")
-                                    .font(.caption)
-                                    .foregroundStyle(Color.pTextTertiary)
-                            }
-                        }
-                        .tint(theme.accentPrimary)
-                        .accessibilityLabel("잠금화면 위젯")
-                        .accessibilityHint("Live Activity를 통해 잠금화면에 다음 알람 정보를 표시합니다")
-                        .frame(minHeight: 44)
-                        .onChange(of: liveActivityToggle) { _, newValue in
-                            Task {
-                                await viewModel.setLiveActivityEnabled(newValue)
-                            }
-                        }
-                    } header: {
-                        Text("Live Activity")
-                            .font(.caption)
-                            .foregroundStyle(Color.pTextTertiary)
-                    }
-                    .listRowBackground(Color.pGlassFill)
-
-                    // MARK: 권한 섹션
+                    // MARK: 알림 권한 섹션
                     Section {
                         // 알림 권한 행
                         HStack {
@@ -154,6 +126,34 @@ struct SettingsView: View {
                         .frame(minHeight: 44)
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel("AlarmKit 권한: \(viewModel.alarmKitAuthStatus)")
+                    } header: {
+                        Text("권한")
+                            .font(.caption)
+                            .foregroundStyle(Color.pTextTertiary)
+                    }
+                    .listRowBackground(Color.pGlassFill)
+
+                    // MARK: 잠금화면 위젯 섹션 (토글 + 권한 통합)
+                    Section {
+                        Toggle(isOn: $liveActivityToggle) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("잠금화면 위젯")
+                                    .font(.body)
+                                    .foregroundStyle(Color.pTextPrimary)
+                                Text("잠금화면에 다음 알람 정보를 표시합니다")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.pTextTertiary)
+                            }
+                        }
+                        .tint(theme.accentPrimary)
+                        .accessibilityLabel("잠금화면 위젯")
+                        .accessibilityHint("Live Activity를 통해 잠금화면에 다음 알람 정보를 표시합니다")
+                        .frame(minHeight: 44)
+                        .onChange(of: liveActivityToggle) { _, newValue in
+                            Task {
+                                await viewModel.setLiveActivityEnabled(newValue)
+                            }
+                        }
 
                         // 잠금화면 위젯 권한 행
                         HStack {
@@ -182,7 +182,7 @@ struct SettingsView: View {
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel("잠금화면 위젯 권한: \(viewModel.lockScreenWidgetStatus)")
                     } header: {
-                        Text("권한")
+                        Text("잠금화면 위젯")
                             .font(.caption)
                             .foregroundStyle(Color.pTextTertiary)
                     }
