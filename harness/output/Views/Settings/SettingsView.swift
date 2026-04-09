@@ -7,6 +7,7 @@ import PersonalColorDesignSystem
 struct SettingsView: View {
     @State private var viewModel: SettingsViewModel
     @State private var liveActivityToggle: Bool = true
+    @Environment(\.pThemeColors) private var theme
 
     init(
         liveActivityManager: LiveActivityManager?,
@@ -84,7 +85,7 @@ struct SettingsView: View {
                                     .foregroundStyle(Color.pTextTertiary)
                             }
                         }
-                        .tint(Color.pAccentPrimary)
+                        .tint(theme.accentPrimary)
                         .accessibilityLabel("잠금화면 위젯")
                         .accessibilityHint("Live Activity를 통해 잠금화면에 다음 알람 정보를 표시합니다")
                         .frame(minHeight: 44)
@@ -110,7 +111,7 @@ struct SettingsView: View {
                             Spacer()
                             if viewModel.isLoading {
                                 ProgressView()
-                                    .tint(Color.pAccentPrimary)
+                                    .tint(theme.accentPrimary)
                             } else {
                                 Text(viewModel.notificationAuthStatus)
                                     .font(.body)
@@ -119,7 +120,7 @@ struct SettingsView: View {
                                     openAppSettings()
                                 }
                                 .font(.caption)
-                                .foregroundStyle(Color.pAccentPrimary)
+                                .foregroundStyle(theme.accentPrimary)
                                 .padding(.leading, 8)
                             }
                         }
@@ -135,7 +136,7 @@ struct SettingsView: View {
                             Spacer()
                             if viewModel.isLoading {
                                 ProgressView()
-                                    .tint(Color.pAccentPrimary)
+                                    .tint(theme.accentPrimary)
                             } else {
                                 Text(viewModel.alarmKitAuthStatus)
                                     .font(.body)
@@ -145,7 +146,7 @@ struct SettingsView: View {
                                         openAppSettings()
                                     }
                                     .font(.caption)
-                                    .foregroundStyle(Color.pAccentPrimary)
+                                    .foregroundStyle(theme.accentPrimary)
                                     .padding(.leading, 8)
                                 }
                             }
@@ -169,7 +170,7 @@ struct SettingsView: View {
                                     .foregroundStyle(Color.pTextPrimary)
                                 Spacer()
                                 Image(systemName: "envelope")
-                                    .foregroundStyle(Color.pAccentPrimary)
+                                    .foregroundStyle(theme.accentPrimary)
                             }
                         }
                         .frame(minHeight: 44)

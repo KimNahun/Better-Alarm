@@ -11,6 +11,7 @@ struct WeeklyAlarmView: View {
     private let store: AlarmStore
     @State private var selectedAlarm: Alarm? = nil
     @State private var showDetail: Bool = false
+    @Environment(\.pThemeColors) private var theme
 
     init(store: AlarmStore) {
         self.store = store
@@ -89,21 +90,22 @@ struct WeeklyAlarmView: View {
     // MARK: - Day Tabs
 
     private var dayTabs: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 6) {
             ForEach(Weekday.allCases, id: \.self) { day in
                 Button {
                     if viewModel.selectedDay == day {
-                        viewModel.selectedDay = nil  // 다시 누르면 선택 해제
+                        viewModel.selectedDay = nil
                     } else {
                         viewModel.selectedDay = day
                     }
                 } label: {
+                    let isSelected = viewModel.selectedDay == day
                     Text(day.shortName)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(viewModel.selectedDay == day ? .white : Color.pTextTertiary)
-                        .frame(maxWidth: .infinity, minHeight: 36)
-                        .background(viewModel.selectedDay == day ? Color.pAccentPrimary : Color.pGlassFill)
-                        .clipShape(Capsule())
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(isSelected ? .white : Color.pTextTertiary)
+                        .frame(width: 36, height: 36)
+                        .background(isSelected ? theme.accentPrimary : Color.pGlassFill)
+                        .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
             }

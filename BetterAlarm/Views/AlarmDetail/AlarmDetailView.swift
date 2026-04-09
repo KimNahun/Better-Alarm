@@ -9,6 +9,7 @@ import PersonalColorDesignSystem
 struct AlarmDetailView: View {
     @State private var viewModel: AlarmDetailViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.pThemeColors) private var theme
     private let onSaved: () -> Void
 
     init(store: AlarmStore, editingAlarm: Alarm? = nil, onSaved: @escaping () -> Void) {
@@ -158,7 +159,7 @@ struct AlarmDetailView: View {
                             }
                         }
                         .font(.body.weight(.semibold))
-                        .foregroundStyle(Color.pAccentPrimary)
+                        .foregroundStyle(theme.accentPrimary)
                         .disabled(viewModel.isSaving)
                         .frame(minWidth: 44, minHeight: 44)
                     }
@@ -276,7 +277,7 @@ struct AlarmDetailView: View {
                         .frame(width: 40, height: 40)
                         .background(
                             Circle()
-                                .fill(isSelected ? Color.pAccentPrimary : Color.pGlassFill)
+                                .fill(isSelected ? theme.accentPrimary : Color.pGlassFill)
                         )
                 }
                 .buttonStyle(.plain)
@@ -305,7 +306,7 @@ struct AlarmDetailView: View {
                     .foregroundStyle(Color.pTextTertiary)
             }
         }
-        .tint(Color.pAccentPrimary)
+        .tint(theme.accentPrimary)
         .accessibilityLabel("앱이 꺼진 상태에서도 알람 받기")
         .accessibilityHint("iOS 26 이상에서만 사용할 수 있습니다")
     }
@@ -333,7 +334,7 @@ struct AlarmDetailView: View {
             }
         }
         .disabled(viewModel.alarmMode == .alarmKit)
-        .tint(Color.pAccentSecondary)
+        .tint(theme.accentSecondary)
         .accessibilityLabel("조용한 알람")
         .accessibilityHint(
             viewModel.alarmMode == .alarmKit
@@ -342,4 +343,3 @@ struct AlarmDetailView: View {
         )
     }
 }
-

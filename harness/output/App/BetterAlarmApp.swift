@@ -119,7 +119,7 @@ struct BetterAlarmApp: App {
                 }
                 .accessibilityLabel("설정 탭")
             }
-            .tint(Color.pAccentPrimary)
+            .tint(themeManager.currentTheme.colors.accentPrimary)
             .pTheme(themeManager.currentTheme)
             .fullScreenCover(item: $ringingAlarm) { alarm in
                 AlarmRingingView(
@@ -133,6 +133,7 @@ struct BetterAlarmApp: App {
                 if newValue == nil {
                     // 알람이 dismiss됨 → 즉시 목록 갱신
                     Task { await alarmStore.loadAlarms() }
+                    NotificationCenter.default.post(name: .alarmCompleted, object: nil)
                 }
             }
             .task {

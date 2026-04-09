@@ -5,8 +5,9 @@ import UserNotifications
 
 extension Notification.Name {
     /// 포그라운드에서 알람이 울려야 할 때 전송되는 알림.
-    /// userInfo에 "alarm" 키로 Alarm 객체가 포함된다.
     static let alarmShouldRing = Notification.Name("alarmShouldRing")
+    /// 알람 울림 화면이 닫혔을 때 (정지/스누즈 후) 알람 목록 갱신 요청.
+    static let alarmCompleted = Notification.Name("alarmCompleted")
 }
 
 // MARK: - AppDelegate

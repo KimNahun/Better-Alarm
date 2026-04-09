@@ -8,6 +8,7 @@ import PersonalColorDesignSystem
 struct AlarmRowView: View {
     let alarm: Alarm
     let onToggle: (Bool) -> Void
+    @Environment(\.pThemeColors) private var theme
 
     var body: some View {
         GlassCard {
@@ -50,24 +51,24 @@ struct AlarmRowView: View {
                             if alarm.alarmMode == .alarmKit {
                                 Image(systemName: "bell.and.waves.left.and.right.fill")
                                     .font(.caption)
-                                    .foregroundStyle(Color.pAccentPrimary)
+                                    .foregroundStyle(theme.accentPrimary)
                                     .accessibilityLabel("AlarmKit 모드")
                             }
 
                             if alarm.isSnoozed {
                                 Text("스누즈 중")
                                     .font(.caption)
-                                    .foregroundStyle(Color.pAccentSecondary)
+                                    .foregroundStyle(theme.accentSecondary)
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
-                                    .background(Color.pAccentSecondary.opacity(0.15))
+                                    .background(theme.accentSecondary.opacity(0.15))
                                     .clipShape(Capsule())
                             }
 
                             if alarm.isSilentAlarm {
                                 Image(systemName: "headphones")
                                     .font(.caption)
-                                    .foregroundStyle(Color.pAccentSecondary)
+                                    .foregroundStyle(theme.accentSecondary)
                                     .accessibilityLabel("조용한 알람")
                             }
                         }
@@ -81,7 +82,7 @@ struct AlarmRowView: View {
                         set: { onToggle($0) }
                     ))
                     .labelsHidden()
-                    .tint(Color.pAccentPrimary)
+                    .tint(theme.accentPrimary)
                     .accessibilityLabel("\(alarm.displayTitle) 알람 \(alarm.isEnabled ? "비활성화" : "활성화")")
                     .frame(minWidth: 44, minHeight: 44)
                 }
@@ -95,9 +96,9 @@ struct AlarmRowView: View {
 
     private var alarmTypeColor: Color {
         switch alarm.schedule {
-        case .weekly: return Color.pAccentPrimary
-        case .once: return Color.pAccentSecondary
-        case .specificDate: return Color.pSuccess
+        case .weekly: return theme.accentPrimary
+        case .once: return theme.accentSecondary
+        case .specificDate: return theme.success
         }
     }
 }

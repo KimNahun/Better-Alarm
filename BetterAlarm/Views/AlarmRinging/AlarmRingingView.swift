@@ -8,6 +8,7 @@ import PersonalColorDesignSystem
 struct AlarmRingingView: View {
     @State private var viewModel: AlarmRingingViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.pThemeColors) private var theme
 
     init(
         alarm: Alarm,
@@ -71,7 +72,7 @@ struct AlarmRingingView: View {
     private var alarmTitleDisplay: some View {
         Text(viewModel.alarm.displayTitle)
             .font(.title2.weight(.medium))
-            .foregroundStyle(Color.pTextSecondary)
+            .foregroundStyle(Color.pTextPrimary)
             .lineLimit(2)
             .multilineTextAlignment(.center)
             .accessibilityLabel("알람 이름: \(viewModel.alarm.displayTitle)")
@@ -90,7 +91,7 @@ struct AlarmRingingView: View {
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(.white)
                     .frame(width: 120, height: 120)
-                    .background(Color.pAccentPrimary)
+                    .background(theme.accentPrimary)
                     .clipShape(Circle())
             }
             .accessibilityLabel("알람 정지")
@@ -105,11 +106,11 @@ struct AlarmRingingView: View {
             } label: {
                 Text("스누즈 (5분)")
                     .font(.body.weight(.medium))
-                    .foregroundStyle(Color.pAccentSecondary)
+                    .foregroundStyle(theme.accentSecondary)
                     .frame(minWidth: 160, minHeight: 48)
                     .overlay(
                         Capsule()
-                            .stroke(Color.pAccentSecondary, lineWidth: 1.5)
+                            .stroke(theme.accentSecondary, lineWidth: 1.5)
                     )
             }
             .accessibilityLabel("스누즈")

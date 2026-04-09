@@ -10,6 +10,7 @@ struct AlarmListView: View {
     private let store: AlarmStore
     @State private var showDetail: Bool = false
     @State private var selectedAlarm: Alarm? = nil
+    @Environment(\.pThemeColors) private var theme
 
     init(store: AlarmStore) {
         self.store = store
@@ -29,7 +30,7 @@ struct AlarmListView: View {
                 if viewModel.isLoading {
                     Spacer()
                     ProgressView()
-                        .tint(Color.pAccentPrimary)
+                        .tint(theme.accentPrimary)
                         .scaleEffect(1.2)
                     Spacer()
                 } else if viewModel.alarms.isEmpty {
@@ -71,6 +72,9 @@ struct AlarmListView: View {
             await viewModel.loadAlarms()
         }
         .onAppear {
+            Task { await viewModel.loadAlarms() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .alarmCompleted)) { _ in
             Task { await viewModel.loadAlarms() }
         }
         .toast(
@@ -120,7 +124,7 @@ struct AlarmListView: View {
             } label: {
                 Image(systemName: "plus")
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(Color.pAccentPrimary)
+                    .foregroundStyle(theme.accentPrimary)
                     .frame(minWidth: 44, minHeight: 44)
             }
             .accessibilityLabel("새 알람 추가")
@@ -147,7 +151,7 @@ struct AlarmListView: View {
                     Spacer()
                     Image(systemName: "alarm.fill")
                         .font(.title3)
-                        .foregroundStyle(Color.pAccentPrimary)
+                        .foregroundStyle(theme.accentPrimary)
                 }
                 .padding(16)
             }
