@@ -71,10 +71,11 @@ struct AlarmRingingView: View {
 
     private var alarmTitleDisplay: some View {
         Text(viewModel.alarm.displayTitle)
-            .font(.title2.weight(.medium))
+            .font(.title.weight(.semibold))
             .foregroundStyle(Color.pTextPrimary)
             .lineLimit(2)
             .multilineTextAlignment(.center)
+            .padding(.horizontal, 8)
             .accessibilityLabel("알람 이름: \(viewModel.alarm.displayTitle)")
     }
 
