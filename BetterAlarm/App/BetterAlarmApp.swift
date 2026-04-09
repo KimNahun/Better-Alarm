@@ -128,6 +128,7 @@ struct BetterAlarmApp: App {
                     volumeService: volumeService,
                     alarmStore: alarmStore
                 )
+                .pTheme(themeManager.currentTheme)
             }
             .onChange(of: ringingAlarm) { _, newValue in
                 if newValue == nil {
