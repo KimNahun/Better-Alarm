@@ -167,6 +167,9 @@ final class AlarmDetailViewModel {
     // MARK: - Save
 
     func save() async {
+        // 주간 알람은 최소 1개 이상의 요일이 선택되어야 저장 가능
+        guard !(scheduleType == .weekly && selectedWeekdays.isEmpty) else { return }
+
         isSaving = true
         defer { isSaving = false }
         saveError = nil

@@ -129,10 +129,10 @@ actor AlarmKitService: AlarmKitServiceProtocol {
     // MARK: - Cancel / Stop
 
     /// 현재 스케줄된 알람을 취소한다.
+    /// E7/E13 수정: currentAlarmKitID 단일 UUID에 의존하지 않고 stopAllAlarms()로 전체 취소.
+    /// AlarmStore는 AlarmKit 모드에서 항상 1개만 스케줄하므로 전체 취소가 올바른 동작.
     func cancelAlarm(for alarm: Alarm) async {
-        guard let id = currentAlarmKitID else { return }
-        try? manager.stop(id: id)
-        currentAlarmKitID = nil
+        await stopAllAlarms()
     }
 
     /// 모든 AlarmKit 알람을 중지한다.

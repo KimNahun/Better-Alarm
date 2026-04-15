@@ -6,6 +6,7 @@ import UserNotifications
 protocol LocalNotificationServiceProtocol: Sendable {
     func requestPermission() async -> Bool
     func scheduleAlarm(for alarm: Alarm) async throws
+    func scheduleSnooze(for alarm: Alarm, minutes: Int) async throws
     func cancelAlarm(for alarm: Alarm) async
     func cancelAllAlarms() async
     func scheduleBackgroundReminder(for alarm: Alarm) async
@@ -163,6 +164,13 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
 
     /// 스누즈 알림을 지정된 분 뒤에 울리도록 예약한다.
     func scheduleSnooze(for alarm: Alarm, minutes: Int = 5) async throws {
+        // E12 수정: scheduleAlarm()과 동일하게 권한 확인 추가.
+        // 사용 중 권한 철회 시 스누즈가 silently 실패하는 것을 방지.
+        let settings = await notificationCenter.notificationSettings()
+        guard settings.authorizationStatus == .authorized else {
+            throw AlarmError.notAuthorized
+        }
+
         let content = UNMutableNotificationContent()
         content.title = alarm.displayTitle
         content.body = "스누즈 알람이 울립니다."

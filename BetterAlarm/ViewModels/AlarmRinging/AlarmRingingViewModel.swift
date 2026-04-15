@@ -21,7 +21,13 @@ final class AlarmRingingViewModel {
     private let audioService: AudioService
     private let volumeService: VolumeService
     private let alarmStore: AlarmStore
-    private var timerTask: Task<Void, Never>?
+    nonisolated(unsafe) private var timerTask: Task<Void, Never>?
+
+    // E16 수정: stopAlarm/snoozeAlarm을 거치지 않고 ViewModel이 해제될 때도 타이머 정리.
+    // 구조화되지 않은 Task는 부모 컨텍스트 해제와 무관하게 실행되므로 명시 취소 필요.
+    deinit {
+        timerTask?.cancel()
+    }
 
     init(
         alarm: Alarm,

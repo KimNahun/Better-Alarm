@@ -8,7 +8,7 @@ import Foundation
 /// Swift 6: actor로 구현.
 actor AlarmStore {
     private let userDefaultsKey = "savedAlarms_v2"
-    private let localNotificationService: LocalNotificationService
+    private let localNotificationService: any LocalNotificationServiceProtocol
     private let audioService: AudioService
     private let liveActivityManager: LiveActivityManager?
     private let alarmKitService: (any AlarmKitServiceProtocol)?
@@ -16,7 +16,7 @@ actor AlarmStore {
     private(set) var alarms: [Alarm] = []
 
     init(
-        localNotificationService: LocalNotificationService = LocalNotificationService(),
+        localNotificationService: any LocalNotificationServiceProtocol = LocalNotificationService(),
         audioService: AudioService = AudioService(volumeService: VolumeService()),
         liveActivityManager: LiveActivityManager? = nil,
         alarmKitService: (any AlarmKitServiceProtocol)? = nil
@@ -214,6 +214,12 @@ actor AlarmStore {
         case .once, .specificDate:
             await toggleAlarm(existing, enabled: false)
         case .weekly:
+            // E10 수정: 주간 알람 완료 시 snoozeDate를 초기화.
+            // 이전에 스누즈된 상태가 다음 주기에 잔존하면 isSnoozed가 잘못 true 반환.
+            if alarms[index].snoozeDate != nil {
+                alarms[index].snoozeDate = nil
+                saveAlarms()
+            }
             if existing.skippedDate != nil {
                 await clearSkipOnceAlarm(existing)
             }

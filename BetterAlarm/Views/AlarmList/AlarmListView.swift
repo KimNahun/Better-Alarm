@@ -67,14 +67,19 @@ struct AlarmListView: View {
                 }
             }
         }
-        .sheet(isPresented: $showDetail) {
+        .sheet(isPresented: $showDetail, onDismiss: {
+            // E14 수정: 시트 닫힘 후 selectedAlarm 초기화.
+            // showSaveToast 판정은 클로저 캡처 시점에 결정되므로 onDismiss 초기화는 안전.
+            selectedAlarm = nil
+        }) {
+            let wasEditing = selectedAlarm != nil
             AlarmDetailView(
                 store: store,
                 editingAlarm: selectedAlarm
             ) {
                 Task {
                     await viewModel.loadAlarms()
-                    viewModel.showSaveToast(isEditing: selectedAlarm != nil)
+                    viewModel.showSaveToast(isEditing: wasEditing)
                 }
             } onDeleted: {
                 Task {

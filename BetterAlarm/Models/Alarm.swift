@@ -141,6 +141,7 @@ struct Alarm: Codable, Identifiable, Equatable, Sendable {
     /// - Parameter date: 기준 시각 (기본값: 현재)
     /// - Returns: 다음 발생 Date. 해당 없으면 nil.
     func nextTriggerDate(from date: Date = Date()) -> Date? {
+        guard isEnabled else { return nil }
         let calendar = Calendar.current
 
         func shouldSkip(_ alarmDate: Date) -> Bool {

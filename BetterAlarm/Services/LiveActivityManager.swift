@@ -127,7 +127,15 @@ actor LiveActivityManager {
 
         let contentState = createContentState(for: alarm)
         await activity.update(ActivityContent(state: contentState, staleDate: nil))
-        AppLogger.info("Updated activity for: \(alarm.displayTitle)", category: .liveActivity)
+
+        // E9 수정: update() 호출 후 activity가 이미 종료된 경우 currentActivity 참조 해제.
+        // activities.contains 확인 → update 사이 TOCTOU로 activity가 끝났을 때 stale 참조 방지.
+        if Activity<AlarmActivityAttributes>.activities.contains(where: { $0.id == activity.id }) {
+            AppLogger.info("Updated activity for: \(alarm.displayTitle)", category: .liveActivity)
+        } else {
+            currentActivity = nil
+            AppLogger.info("Activity ended during update, reference cleared: \(alarm.displayTitle)", category: .liveActivity)
+        }
     }
 
     // MARK: - End Activity

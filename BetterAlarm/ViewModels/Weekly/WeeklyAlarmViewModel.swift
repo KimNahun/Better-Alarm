@@ -112,8 +112,13 @@ final class WeeklyAlarmViewModel {
     }
 
     private func showToastMessage(_ message: String) {
+        // E18 수정: AlarmListViewModel과 동일한 패턴 적용.
+        // showToast = false 없이 true만 설정하면 이미 true인 경우 onChange 미발동.
         toastMessage = message
-        showToast = true
+        showToast = false
+        Task { @MainActor [weak self] in
+            self?.showToast = true
+        }
     }
 
     // MARK: - Private

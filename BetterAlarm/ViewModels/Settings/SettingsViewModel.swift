@@ -1,6 +1,10 @@
 import Foundation
 import UserNotifications
+// E11 수정: ActivityKit은 iOS 16.1+ 전용. 최소 배포 타깃 iOS 16.0에서 unconditional import는
+// 동적 링커 실패 가능. #if canImport 로 가드하여 iOS 16.0 크래시 방지.
+#if canImport(ActivityKit)
 import ActivityKit
+#endif
 
 // MARK: - SettingsViewModel
 

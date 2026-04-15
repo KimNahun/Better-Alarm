@@ -105,10 +105,14 @@ final class AlarmListViewModel {
         showToastMessage("알람이 삭제되었습니다")
     }
 
-    private func showToastMessage(_ message: String) {
-        showToast = false
+    func showToastMessage(_ message: String) {
+        // E6 수정: false→true 전환을 Task로 분리해 SwiftUI 배치 업데이트 경쟁 조건 방지.
+        // 동일 메시지 재호출 시에도 false→true 전환이 새 런루프에서 발생하므로 onChange가 확실히 발동.
         toastMessage = message
-        showToast = true
+        showToast = false
+        Task { @MainActor [weak self] in
+            self?.showToast = true
+        }
     }
 
     // MARK: - Private
