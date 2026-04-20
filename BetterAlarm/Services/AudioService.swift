@@ -26,6 +26,7 @@ extension AudioServiceProtocol {
 actor AudioService: AudioServiceProtocol {
     private var audioPlayer: AVAudioPlayer?
     private let volumeService: VolumeService
+    private(set) var isAlarmPlaying: Bool = false
 
     // MARK: - Silent Loop Properties
     private var silentEngine: AVAudioEngine?
@@ -89,6 +90,7 @@ actor AudioService: AudioServiceProtocol {
         player.prepareToPlay()
         player.play()
         audioPlayer = player
+        isAlarmPlaying = true
     }
 
     // MARK: - Stop
@@ -97,6 +99,7 @@ actor AudioService: AudioServiceProtocol {
     func stopAlarmSound() async {
         audioPlayer?.stop()
         audioPlayer = nil
+        isAlarmPlaying = false
 
         await volumeService.restoreVolume()
 

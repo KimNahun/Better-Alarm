@@ -201,6 +201,15 @@ struct BetterAlarmApp: App {
 
         if let alarm = imminent {
             ringingAlarm = alarm
+            // 백그라운드에서는 AlarmRingingView가 표시되지 않으므로 직접 소리 재생
+            if UIApplication.shared.applicationState != .active {
+                await audioService.stopSilentLoop()
+                try? await audioService.playAlarmSound(
+                    soundName: alarm.soundName,
+                    isSilent: alarm.isSilentAlarm,
+                    loop: true
+                )
+            }
         }
     }
 }

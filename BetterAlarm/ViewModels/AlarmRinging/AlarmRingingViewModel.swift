@@ -59,6 +59,13 @@ final class AlarmRingingViewModel {
         await volumeService.ensureMinimumVolume()
         await volumeService.startVolumeGuard()
 
+        // 백그라운드에서 이미 재생 중이면 중복 재생 방지
+        let alreadyPlaying = await audioService.isAlarmPlaying
+        guard !alreadyPlaying else {
+            AppLogger.info("Alarm already playing from background, skipping re-play", category: .alarm)
+            return
+        }
+
         // 사운드 재생
         do {
             try await audioService.playAlarmSound(
