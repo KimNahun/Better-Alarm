@@ -8,7 +8,31 @@ Swift 6 + SwiftUI + MVVM iOS 알람 앱. iOS 17.0+ (AlarmKit 기능은 iOS 26+).
 - **ViewModel**: `@MainActor @Observable final class`, UIKit import 허용
 - **Service**: `actor`, 프로토콜 기반 (DI + 테스트 목킹)
 - **Model**: `struct Sendable`, Codable
-- **디자인 시스템**: `PersonalColorDesignSystem` 패키지 — `Color.pTextPrimary`, `GlassCard`, `HapticManager` 등 반드시 사용
+- **디자인 시스템**: `PersonalColorDesignSystem` 패키지 — 반드시 사용. 아래 규칙 위반 시 즉시 수정.
+
+  **색상 토큰** (하드코딩 `Color(red:)` / `UIColor(red:)` 사용 금지):
+  ```swift
+  // SwiftUI
+  Color.pTextPrimary / .pTextSecondary / .pTextTertiary
+  Color.pAccentPrimary / .pBackgroundTop / .pBackgroundBottom
+  // UIKit
+  UIColor.pTextPrimary / UIColor.pAccentPrimary
+  // 테마 연동
+  theme.colors.accentPrimary / theme.colors.backgroundTop
+  ```
+
+  **컴포넌트** (자체 구현 금지):
+  ```swift
+  GlassCard { content }          // 카드 컨테이너 (SwiftUI)
+  HapticManager.impact()         // 기본 medium 햅틱
+  HapticManager.impact(.light / .heavy)
+  HapticManager.notification(.success / .error / .warning)
+  HapticManager.selection()
+  // 테마 적용
+  .pTheme(themeManager.currentTheme)
+  ```
+
+  **토스트**: 자체 구현 금지 — `PersonalColorDesignSystem` 내 토스트 컴포넌트 사용
 
 ## 빌드
 

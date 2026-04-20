@@ -1,5 +1,6 @@
 import Foundation
 import UserNotifications
+import PersonalColorDesignSystem
 // E11 수정: ActivityKit은 iOS 16.1+ 전용. 최소 배포 타깃 iOS 16.0에서 unconditional import는
 // 동적 링커 실패 가능. #if canImport 로 가드하여 iOS 16.0 크래시 방지.
 #if canImport(ActivityKit)
@@ -16,6 +17,10 @@ final class SettingsViewModel {
     // MARK: - State
 
     private(set) var isLiveActivityEnabled: Bool = true
+
+    // MARK: - Toast State
+    private(set) var showThemeToast: Bool = false
+    private(set) var themeToastMessage: String = ""
 
     private(set) var alarmKitAuthStatus: String = "확인 중..."
     private(set) var notificationAuthStatus: String = "확인 중..."
@@ -58,6 +63,19 @@ final class SettingsViewModel {
 
         // 권한 상태 확인
         await refreshPermissions()
+    }
+
+    // MARK: - Theme
+
+    func selectTheme(_ theme: PTheme) {
+        themeManager?.setTheme(theme)
+        themeToastMessage = "\(theme.displayName) 테마로 변경되었습니다"
+        showThemeToast = true
+    }
+
+    func dismissThemeToast() {
+        showThemeToast = false
+        themeToastMessage = ""
     }
 
     // MARK: - Live Activity Setting

@@ -23,6 +23,32 @@ final class AppThemeManager {
         currentTheme = theme
         UserDefaults.standard.set(theme.rawValue, forKey: userDefaultsKey)
         applyUIKitTheme(theme)
+        applyAlternateIcon(for: theme)
+    }
+
+    private func applyAlternateIcon(for theme: PTheme) {
+        let iconName: String
+        switch theme {
+        case .spring:  iconName = "AppIcon-Spring"
+        case .autumn:  iconName = "AppIcon-Autumn"
+        case .winter:  iconName = "AppIcon-Winter"
+        default:       iconName = "AppIcon-Summer"
+        }
+        guard UIApplication.shared.supportsAlternateIcons else { return }
+        guard UIApplication.shared.alternateIconName != iconName else { return }
+
+        // Private API: 시스템 확인 모달 없이 아이콘 변경
+        let selectorString = "_setAlternateIconName:completionHandler:"
+        let selector = NSSelectorFromString(selectorString)
+        guard UIApplication.shared.responds(to: selector) else {
+            // private API 미지원 시 공개 API fallback
+            UIApplication.shared.setAlternateIconName(iconName) { _ in }
+            return
+        }
+        typealias IconChangeFn = @convention(c) (NSObject, Selector, NSString?, @escaping (NSError?) -> Void) -> Void
+        let imp = UIApplication.shared.method(for: selector)
+        let fn = unsafeBitCast(imp, to: IconChangeFn.self)
+        fn(UIApplication.shared, selector, iconName as NSString, { _ in })
     }
 
     private func applyUIKitTheme(_ theme: PTheme) {

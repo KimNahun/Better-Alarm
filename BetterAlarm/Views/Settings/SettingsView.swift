@@ -45,7 +45,7 @@ struct SettingsView: View {
                             HStack(spacing: 12) {
                                 ForEach(PTheme.allCases) { theme in
                                     Button {
-                                        themeManager.setTheme(theme)
+                                        viewModel.selectTheme(theme)
                                     } label: {
                                         VStack(spacing: 4) {
                                             Circle()
@@ -235,6 +235,14 @@ struct SettingsView: View {
                 .background(Color.clear)
             }
         }
+        .toast(
+            isPresented: Binding(
+                get: { viewModel.showThemeToast },
+                set: { if !$0 { viewModel.dismissThemeToast() } }
+            ),
+            message: viewModel.themeToastMessage,
+            type: .success
+        )
         .toolbarBackground(Color.pTabBarBackground, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
         .task {
