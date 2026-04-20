@@ -17,14 +17,16 @@ extension Notification.Name {
 /// - 포그라운드 복귀 시: 백그라운드 리마인더 알림 취소
 @MainActor
 final class AppDelegate: NSObject, UIApplicationDelegate {
-    // AlarmStore와 LocalNotificationService를 BetterAlarmApp에서 주입받는다.
+    // AlarmStore, LocalNotificationService, AudioService를 BetterAlarmApp에서 주입받는다.
     private(set) var alarmStore: AlarmStore?
     private(set) var localNotificationService: LocalNotificationService?
+    private(set) var audioService: AudioService?
 
     /// BetterAlarmApp에서 의존성을 주입한다.
-    func configure(alarmStore: AlarmStore, localNotificationService: LocalNotificationService) {
+    func configure(alarmStore: AlarmStore, localNotificationService: LocalNotificationService, audioService: AudioService) {
         self.alarmStore = alarmStore
         self.localNotificationService = localNotificationService
+        self.audioService = audioService
     }
 
     // MARK: - Launch
@@ -62,6 +64,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             if let alarm = nextLocal {
                 await notificationService.scheduleBackgroundReminder(for: alarm)
             }
+
+            // 무음 루프 시작 (백그라운드 유지)
+            await audioService?.startSilentLoop()
         }
     }
 
@@ -69,7 +74,30 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         Task {
             // 백그라운드 리마인더 취소
             await localNotificationService?.cancelBackgroundReminder()
+            // 무음 루프 정지 (배터리 절약)
+            await audioService?.stopSilentLoop()
         }
+    }
+
+    func applicationWillTerminate(_ application: UIApplication) {
+        // 앱 종료 시 활성화된 모든 local 알람의 UNCalendar 알림을 재등록하여
+        // 앱이 꺼진 상태에서도 iOS가 알림을 발송할 수 있도록 보장한다.
+        guard let store = alarmStore,
+              let notificationService = localNotificationService else { return }
+
+        let group = DispatchGroup()
+        group.enter()
+        Task {
+            defer { group.leave() }
+            // 무음 루프 정지
+            await audioService?.stopSilentLoop()
+            let alarms = await store.alarms
+            for alarm in alarms where alarm.isEnabled && alarm.alarmMode == .local {
+                try? await notificationService.scheduleAlarm(for: alarm)
+            }
+        }
+        // 최대 2초 대기 후 종료 허용
+        _ = group.wait(timeout: .now() + 2)
     }
 }
 
@@ -104,14 +132,18 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
-        // 필요 시 알람 ID를 꺼내 완료 처리
         let userInfo = response.notification.request.content.userInfo
         if let alarmIDString = userInfo["alarmID"] as? String,
            let alarmID = UUID(uuidString: alarmIDString) {
             guard let store = alarmStore else { return }
             let alarms = await store.alarms
-            if let alarm = alarms.first(where: { $0.id == alarmID }) {
-                await store.handleAlarmCompleted(alarm)
+            if alarms.first(where: { $0.id == alarmID }) != nil {
+                // 알람 울리는 화면으로 딥링크
+                NotificationCenter.default.post(
+                    name: .alarmShouldRing,
+                    object: nil,
+                    userInfo: ["alarmID": alarmIDString]
+                )
             }
         }
     }

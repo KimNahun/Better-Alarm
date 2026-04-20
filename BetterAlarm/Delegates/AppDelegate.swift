@@ -17,14 +17,16 @@ extension Notification.Name {
 /// - 포그라운드 복귀 시: 백그라운드 리마인더 알림 취소
 @MainActor
 final class AppDelegate: NSObject, UIApplicationDelegate {
-    // AlarmStore와 LocalNotificationService를 BetterAlarmApp에서 주입받는다.
+    // AlarmStore, LocalNotificationService, AudioService를 BetterAlarmApp에서 주입받는다.
     private(set) var alarmStore: AlarmStore?
     private(set) var localNotificationService: LocalNotificationService?
+    private(set) var audioService: AudioService?
 
     /// BetterAlarmApp에서 의존성을 주입한다.
-    func configure(alarmStore: AlarmStore, localNotificationService: LocalNotificationService) {
+    func configure(alarmStore: AlarmStore, localNotificationService: LocalNotificationService, audioService: AudioService) {
         self.alarmStore = alarmStore
         self.localNotificationService = localNotificationService
+        self.audioService = audioService
     }
 
     // MARK: - Launch
@@ -62,6 +64,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             if let alarm = nextLocal {
                 await notificationService.scheduleBackgroundReminder(for: alarm)
             }
+
+            // 무음 루프 시작 (백그라운드 유지)
+            await audioService?.startSilentLoop()
         }
     }
 
@@ -69,6 +74,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         Task {
             // 백그라운드 리마인더 취소
             await localNotificationService?.cancelBackgroundReminder()
+            // 무음 루프 정지 (배터리 절약)
+            await audioService?.stopSilentLoop()
         }
     }
 
@@ -82,6 +89,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         group.enter()
         Task {
             defer { group.leave() }
+            // 무음 루프 정지
+            await audioService?.stopSilentLoop()
             let alarms = await store.alarms
             for alarm in alarms where alarm.isEnabled && alarm.alarmMode == .local {
                 try? await notificationService.scheduleAlarm(for: alarm)

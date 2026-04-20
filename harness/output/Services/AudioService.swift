@@ -7,6 +7,8 @@ protocol AudioServiceProtocol: Sendable {
     func playAlarmSound(soundName: String, isSilent: Bool, loop: Bool) async throws
     func stopAlarmSound() async
     func isEarphoneConnected() async -> Bool
+    func startSilentLoop() async
+    func stopSilentLoop() async
 }
 
 extension AudioServiceProtocol {
@@ -24,6 +26,11 @@ extension AudioServiceProtocol {
 actor AudioService: AudioServiceProtocol {
     private var audioPlayer: AVAudioPlayer?
     private let volumeService: VolumeService
+
+    // MARK: - Silent Loop Properties
+    private var silentEngine: AVAudioEngine?
+    private var silentPlayerNode: AVAudioPlayerNode?
+    private var isSilentLoopRunning: Bool = false
 
     init(volumeService: VolumeService) {
         self.volumeService = volumeService
@@ -94,6 +101,71 @@ actor AudioService: AudioServiceProtocol {
         await volumeService.restoreVolume()
 
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    // MARK: - Silent Loop
+
+    /// 무음 PCM 버퍼를 AVAudioEngine으로 무한 루프 재생하여 백그라운드 앱 유지.
+    /// 실패해도 throw하지 않고 로그만 남긴다 (크래시 방지).
+    func startSilentLoop() async {
+        guard !isSilentLoopRunning else { return }
+
+        do {
+            // AVAudioSession 설정 (.playback, .mixWithOthers — 다른 오디오 방해 안 함)
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try session.setActive(true)
+
+            let engine = AVAudioEngine()
+            let playerNode = AVAudioPlayerNode()
+
+            engine.attach(playerNode)
+
+            guard let format = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1) else {
+                AppLogger.error("Failed to create AVAudioFormat for silent loop", category: .alarm)
+                return
+            }
+
+            engine.connect(playerNode, to: engine.mainMixerNode, format: format)
+
+            // 무음 PCM 버퍼 생성 (1초 분량, float 채널 기본값 0 = 무음)
+            guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 44100) else {
+                AppLogger.error("Failed to create AVAudioPCMBuffer for silent loop", category: .alarm)
+                return
+            }
+            buffer.frameLength = buffer.frameCapacity
+
+            // .loops 옵션으로 무한 반복 스케줄
+            await playerNode.scheduleBuffer(buffer, at: nil, options: .loops)
+
+            engine.prepare()
+            try engine.start()
+            playerNode.play()
+
+            // 실제 출력 볼륨 0 (스피커/이어폰에서 소리 안 남)
+            engine.mainMixerNode.outputVolume = 0.0
+
+            silentEngine = engine
+            silentPlayerNode = playerNode
+            isSilentLoopRunning = true
+
+            AppLogger.info("Silent audio loop started", category: .alarm)
+        } catch {
+            AppLogger.error("Failed to start silent audio loop: \(error)", category: .alarm)
+        }
+    }
+
+    /// 무음 루프를 정지하고 관련 리소스를 해제한다.
+    func stopSilentLoop() async {
+        guard isSilentLoopRunning else { return }
+
+        silentPlayerNode?.stop()
+        silentEngine?.stop()
+        silentPlayerNode = nil
+        silentEngine = nil
+        isSilentLoopRunning = false
+
+        AppLogger.info("Silent audio loop stopped", category: .alarm)
     }
 
     // MARK: - Earphone Check

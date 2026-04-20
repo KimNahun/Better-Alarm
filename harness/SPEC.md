@@ -1,564 +1,235 @@
-# BetterAlarm
+# 백그라운드 무음 오디오 루프 기능 SPEC
 
 ## 개요
 
-BetterAlarm은 iOS 사용자를 위한 알람 앱으로, AlarmKit(iOS 26+)과 로컬 알림(iOS 17+)을 이중 지원하여 앱 종료 상태에서도 안정적으로 알람을 울릴 수 있다. Swift 6 엄격 동시성 + SwiftUI + MVVM 아키텍처 기반으로 구현하며, PersonalColorDesignSystem 디자인 시스템을 전면 사용한다.
+앱이 백그라운드 상태일 때도 알람이 정상적으로 울리도록 UIBackgroundModes:audio를 활용하여 앱 프로세스를 살려두는 기능.
+알라미(Alarmy) 앱과 동일한 방식으로, 무음 오디오를 지속 재생하여 iOS가 앱을 suspend하지 못하게 한다.
+이를 통해 `BetterAlarmApp.checkForImminentAlarm()` 루프가 백그라운드에서도 계속 실행되어 알람 시각을 감지할 수 있다.
+
+## 수정 범위
+
+이 SPEC은 **기존 파일 3개의 수정**만 다룬다. 신규 파일 생성 없음.
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `Services/AudioService.swift` | `startSilentLoop()` / `stopSilentLoop()` 메서드 추가 |
+| `Delegates/AppDelegate.swift` | 백그라운드/포그라운드 생명주기에서 무음 루프 제어 + audioService DI 추가 |
+| `App/BetterAlarmApp.swift` | AppDelegate.configure() 호출에 audioService 인자 추가 |
+| `Services/AlarmStore.swift` | 변경 없음 (기존 `hasEnabledLocalAlarms` computed property 활용) |
+
+## 전제조건
+
+- `Info.plist`에 `UIBackgroundModes: audio`가 설정되어 있어야 함 (Xcode 프로젝트 Capabilities에서 별도 처리)
+- 이 SPEC은 코드 수정만 다루며 Info.plist 수정은 범위 밖
 
 ## 타겟 플랫폼
 
-- iOS 17.0 이상 (최소), iOS 26.0 이상 (AlarmKit 기능)
-- Swift 버전: Swift 6 (엄격 동시성 필수)
-- 번들 ID: com.nahun.BetterAlarm
-- 필요 권한: 알림(UNUserNotificationCenter), AlarmKit(iOS 26+), 오디오 세션(AVAudioSession)
+- iOS 17.0+
+- Swift 6 (strict concurrency)
 
 ---
 
-## 아키텍처
+## 기능 1: AudioService — 무음 오디오 루프
 
-### 레이어 구조
+### 설명
 
-```
-output/
-├── App/
-│   └── BetterAlarmApp.swift              # @main, TabView(3탭), 의존성 주입 루트, AppDelegate 연결
-├── Views/
-│   ├── AlarmList/
-│   │   └── AlarmListView.swift           # 알람 목록 화면  ✅ 생성됨
-│   ├── AlarmDetail/
-│   │   └── AlarmDetailView.swift         # 알람 생성/편집 화면  ✅ 생성됨
-│   ├── Settings/
-│   │   └── SettingsView.swift            # 설정 화면 (Live Activity 토글 등)
-│   ├── Weekly/
-│   │   └── WeeklyAlarmView.swift         # 주간 반복 알람 전용 화면
-│   ├── AlarmRinging/
-│   │   └── AlarmRingingView.swift        # 알람 울림 전체 화면 (정지/스누즈)
-│   └── Components/
-│       └── AlarmRowView.swift            # 알람 목록 행 컴포넌트  ✅ 생성됨
-├── ViewModels/
-│   ├── AlarmList/
-│   │   └── AlarmListViewModel.swift      # 알람 목록 상태 관리  ✅ 생성됨
-│   ├── AlarmDetail/
-│   │   └── AlarmDetailViewModel.swift    # 알람 생성/편집 상태 관리  ✅ 생성됨
-│   ├── Settings/
-│   │   └── SettingsViewModel.swift       # 설정 상태 관리
-│   ├── Weekly/
-│   │   └── WeeklyAlarmViewModel.swift    # 주간 알람 상태 관리
-│   └── AlarmRinging/
-│       └── AlarmRingingViewModel.swift   # 알람 울림 상태 관리 (소리/볼륨/스누즈)
-├── Models/
-│   ├── Alarm.swift                       # 알람 데이터 모델  ✅ 생성됨
-│   ├── AlarmMode.swift                   # AlarmMode enum  ✅ 생성됨
-│   ├── AlarmSchedule.swift               # AlarmSchedule enum + Weekday enum  ✅ 생성됨
-│   └── AlarmError.swift                  # 에러 타입 정의  ✅ 생성됨
-├── Services/
-│   ├── AlarmStore.swift                  # 알람 CRUD + UserDefaults + LiveActivity 연동  ✅ 생성됨 (LiveActivity 연동 추가 필요)
-│   ├── AlarmKitService.swift             # AlarmKit 기반 스케줄링 (iOS 26+)  ✅ 생성됨
-│   ├── LocalNotificationService.swift    # UNUserNotificationCenter 기반 스케줄링  ✅ 생성됨
-│   ├── AudioService.swift                # AVAudioPlayer 기반 소리 재생 + 조용한 알람  ✅ 생성됨
-│   ├── VolumeService.swift               # 볼륨 자동 조절 (80%)  ✅ 생성됨
-│   └── LiveActivityManager.swift         # ActivityKit Live Activity 관리 (actor로 리팩토링)
-├── Intents/
-│   ├── StopAlarmIntent.swift             # LiveActivityIntent: 알람 정지  ✅ 생성됨
-│   └── SnoozeAlarmIntent.swift           # LiveActivityIntent: 스누즈  ✅ 생성됨
-├── Delegates/
-│   └── AppDelegate.swift                 # 앱 종료 시 푸시 알림 등록/해제  ✅ 생성됨
-└── Shared/
-    └── AlarmMetadata.swift               # AlarmKit AlarmMetadata 구현  ✅ 생성됨
+AVAudioEngine + AVAudioPlayerNode를 사용하여 무음 PCM 버퍼를 무한 반복 재생한다.
+별도 오디오 파일 없이 코드로 무음 버퍼를 생성하므로 번들에 파일을 추가할 필요가 없다.
+
+### 수정 대상
+
+`harness/output/Services/AudioService.swift`
+
+### AudioServiceProtocol 확장
+
+프로토콜에 다음 메서드를 추가한다:
+
+```swift
+func startSilentLoop() async
+func stopSilentLoop() async
 ```
 
-### 동시성 경계
+### 추가할 프로퍼티 (AudioService actor 내부)
 
-- **View**: `@MainActor` struct -- UI 선언만 담당, 상태 소유 없음
-- **ViewModel**: `@MainActor final class` + `@Observable` -- UI 상태 소유, Service 호출
-- **Service**: `actor` -- 비동기 데이터 처리, 외부 API 호출
-- **Model**: `struct` + `Sendable` -- 순수 데이터, 부수효과 없음
-
-### 의존성 흐름
-
-```
-View → ViewModel → Service → (AlarmKit / UNUserNotificationCenter / AVAudioSession / 기타)
+```swift
+private var silentEngine: AVAudioEngine?
+private var silentPlayerNode: AVAudioPlayerNode?
+private var isSilentLoopRunning: Bool = false
 ```
 
-역방향 의존 금지. Service는 ViewModel을 모른다.
+### 추가할 메서드
+
+#### `func startSilentLoop()`
+
+1. `isSilentLoopRunning`이 이미 `true`이면 즉시 리턴 (중복 실행 방지)
+2. `AVAudioSession` 카테고리를 `.playback`으로 설정 (options: `.mixWithOthers` — 다른 오디오 방해 안 함)
+3. `AVAudioSession.setActive(true)`
+4. `AVAudioEngine` 인스턴스 생성
+5. `AVAudioPlayerNode` 인스턴스 생성, 엔진에 attach
+6. 포맷 정의: `AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1)`
+7. 엔진의 mainMixerNode와 playerNode를 connect (위 포맷 사용)
+8. 무음 PCM 버퍼 생성:
+   - `AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 44100)` — 1초 분량
+   - `buffer.frameLength = buffer.frameCapacity`
+   - float 채널 데이터는 기본값 0 (무음)
+9. `playerNode.scheduleBuffer(buffer, at: nil, options: .loops)`
+10. `engine.prepare()` → `try engine.start()`
+11. `playerNode.play()`
+12. `engine.mainMixerNode.outputVolume = 0.0` — 실제 출력 볼륨 0 (스피커에서 소리 안 남)
+13. 프로퍼티 저장: `silentEngine = engine`, `silentPlayerNode = playerNode`
+14. `isSilentLoopRunning = true`
+15. 로그: `AppLogger.info("Silent audio loop started", category: .alarm)`
+
+**에러 처리**: try/catch로 감싸되 throw하지 않고 `AppLogger.error`로 로그만 남긴다 (백그라운드 진입 시 실패해도 앱이 크래시하면 안 됨).
+
+#### `func stopSilentLoop()`
+
+1. `isSilentLoopRunning`이 `false`이면 즉시 리턴
+2. `silentPlayerNode?.stop()`
+3. `silentEngine?.stop()`
+4. `silentPlayerNode = nil`, `silentEngine = nil`
+5. `isSilentLoopRunning = false`
+6. 로그: `AppLogger.info("Silent audio loop stopped", category: .alarm)`
+
+### 동시성 고려사항
+
+- AudioService는 `actor`이므로 모든 프로퍼티/메서드 접근이 직렬화됨
+- AVAudioEngine/AVAudioPlayerNode는 내부적으로 자체 스레드를 사용하므로 actor 격리와 충돌 없음
+- `startSilentLoop()`/`stopSilentLoop()`는 actor-isolated 메서드로 구현 (async 키워드 불필요하지만 프로토콜 일관성을 위해 유지)
 
 ---
 
-## 기능 목록
+## 기능 2: AppDelegate — 생명주기 연동
 
-### 기능 1: 알람 목록 (CRUD)
+### 설명
 
-- **설명**: 저장된 알람을 목록으로 표시하고, 생성/수정/삭제/토글을 지원한다.
-- **사용자 스토리**: 사용자가 알람 목록을 보고, 스와이프로 삭제하고, 토글로 활성화/비활성화할 수 있다. 다음 알람 시간이 상단에 표시된다.
-- **관련 파일**: `AlarmListView.swift`, `AlarmListViewModel.swift`, `AlarmStore.swift`, `AlarmRowView.swift`
-- **사용 API**: 없음 (내부 CRUD)
-- **HIG 패턴**: `NavigationStack`, `List`, `swipeActions`, `Toggle`
+앱이 백그라운드로 진입할 때 활성 local 모드 알람이 있으면 무음 루프를 시작하고,
+포그라운드로 복귀하거나 앱이 종료될 때 무음 루프를 정지한다.
 
-### 기능 2: 알람 생성/편집
+### 수정 대상
 
-- **설명**: 시간, 제목, 반복 요일, 사운드, AlarmMode 토글, 조용한 알람 토글을 설정하는 화면.
-- **사용자 스토리**: 사용자가 새 알람을 만들거나 기존 알람을 편집한다. "앱이 꺼진 상태에서도 알람 받기" 토글과 "조용한 알람" 토글을 설정할 수 있다.
-- **관련 파일**: `AlarmDetailView.swift`, `AlarmDetailViewModel.swift`, `AlarmStore.swift`
-- **사용 API**: 없음 (UI + 모델 수정)
-- **HIG 패턴**: `sheet`, `DatePicker`, `Toggle`, `NavigationStack`
+`harness/output/Delegates/AppDelegate.swift`
 
-### 기능 3: AlarmMode 분기 스케줄링
+### 추가할 프로퍼티
 
-- **설명**: `alarm.alarmMode`에 따라 AlarmKit 또는 로컬 알림으로 분기하여 알람을 스케줄링한다.
-- **사용자 스토리**: 사용자가 alarmKit 모드를 켜면 앱이 꺼진 상태에서도 알람이 울린다. local 모드는 UNUserNotificationCenter로 스케줄링된다.
-- **관련 파일**: `AlarmStore.swift`, `AlarmKitService.swift`, `LocalNotificationService.swift`
-- **사용 API**: AlarmKit (iOS 26+), UNUserNotificationCenter (iOS 17+)
-- **HIG 패턴**: 없음 (백그라운드 로직)
-
-### 기능 4: 조용한 알람
-
-- **설명**: `isSilentAlarm = true`이면 이어폰으로만 소리를 출력한다. 이어폰 미연결 시 사용자에게 안내한다.
-- **사용자 스토리**: 사용자가 조용한 알람을 켜면, 이어폰이 연결된 경우에만 소리가 출력된다.
-- **관련 파일**: `AudioService.swift`, `AlarmDetailView.swift`, `AlarmDetailViewModel.swift`
-- **사용 API**: AVAudioSession, AVAudioPlayer
-- **HIG 패턴**: `Toggle` (alarmKit 모드일 때 disabled 상태)
-
-### 기능 5: 볼륨 자동 조절 (80%)
-
-- **설명**: local 모드 알람이 시작될 때 볼륨이 0.8 미만이면 자동으로 0.8로 올리고, 알람 종료 후 원래 볼륨으로 복원한다.
-- **사용자 스토리**: 사용자가 볼륨을 낮춰 놓았더라도 알람이 울릴 때 충분한 볼륨으로 들린다.
-- **관련 파일**: `VolumeService.swift`, `AudioService.swift`
-- **사용 API**: MPVolumeView, AVAudioSession
-- **HIG 패턴**: 없음 (자동 동작)
-
-### 기능 6: 앱 종료 시 푸시 알림 (1회)
-
-- **설명**: local 모드 알람이 활성화된 상태에서 앱이 백그라운드/종료되면 즉시 로컬 알림 1건을 등록한다. 포그라운드 복귀 시 취소한다.
-- **사용자 스토리**: 사용자가 앱을 닫아도 알람이 설정되어 있다는 알림을 받아 안심할 수 있다.
-- **관련 파일**: `AppDelegate.swift`, `LocalNotificationService.swift`, `AlarmStore.swift`
-- **사용 API**: UNUserNotificationCenter
-- **HIG 패턴**: 없음 (시스템 알림)
-
-### 기능 7: 알람 1번만 건너뛰기
-
-- **설명**: 주간 반복 알람에서 다음 1회만 건너뛸 수 있다. 건너뛴 상태는 UI에 표시된다.
-- **사용자 스토리**: 사용자가 주간 알람을 끄지 않고 다음 1번만 건너뛸 수 있다.
-- **관련 파일**: `AlarmListView.swift`, `AlarmListViewModel.swift`, `AlarmStore.swift`
-- **사용 API**: 없음
-- **HIG 패턴**: `swipeActions` 또는 컨텍스트 메뉴
-
-### 기능 8: Live Activity 잠금화면 위젯 (기존 기능 유지)
-
-- **설명**: ActivityKit을 사용하여 잠금화면과 Dynamic Island에 다음 알람 정보를 실시간 표시한다.
-- **사용자 스토리**: 잠금화면에서 다음 알람 시각, 제목, 건너뛰기 상태를 확인할 수 있다. 설정에서 Live Activity를 끌 수 있다.
-- **관련 파일**: `Services/LiveActivityManager.swift`, `AlarmStore.swift`, `BetterAlarmWidget/` (수정 금지)
-- **사용 API**: ActivityKit (`Activity`, `ActivityAttributes`, `ActivityContent`)
-- **HIG 패턴**: 없음 (시스템 위젯)
-- **`LiveActivityManager` actor 구조**:
-  - `func startActivity(for alarm: Alarm) async`
-  - `func updateActivity(nextAlarm: Alarm?) async`
-  - `func endActivity() async`
-  - `var isLiveActivityEnabled: Bool` (UserDefaults `"liveActivityEnabled"`)
-  - `var areActivitiesAvailable: Bool` → `ActivityAuthorizationInfo().areActivitiesEnabled`
-- **`AlarmStore` 연동**: createAlarm, updateAlarm, deleteAlarm, toggleAlarm, handleAlarmCompleted 완료 시 `LiveActivityManager.updateActivity(nextAlarm: nextAlarm)` 호출
-
-### 기능 9: 설정 화면 (기존 기능 유지)
-
-- **설명**: 앱 설정을 관리하는 화면.
-- **사용자 스토리**: Live Activity 토글, AlarmKit 권한 상태, 앱 버전 확인, 피드백 전송 가능.
-- **관련 파일**: `Views/Settings/SettingsView.swift`, `ViewModels/Settings/SettingsViewModel.swift`
-- **사용 API**: ActivityKit (권한 확인), AlarmKit (권한 상태)
-- **HIG 패턴**: `Form`, `Toggle`, `Link`
-
-### 기능 10: 주간 알람 화면 (기존 기능 유지)
-
-- **설명**: `AlarmSchedule.weekly` 알람만 필터링하여 별도 탭에 표시하는 화면.
-- **사용자 스토리**: 사용자가 주간 반복 알람을 한눈에 보고 관리할 수 있다.
-- **관련 파일**: `Views/Weekly/WeeklyAlarmView.swift`, `ViewModels/Weekly/WeeklyAlarmViewModel.swift`
-- **사용 API**: 없음 (AlarmStore 필터링)
-- **HIG 패턴**: `List`, `swipeActions`
-
-### 기능 11: 탭바 네비게이션 (기존 기능 유지)
-
-- **설명**: TabView로 알람 목록, 주간 알람, 설정 3탭 구성.
-- **관련 파일**: `App/BetterAlarmApp.swift`
-- **HIG 패턴**: `TabView`, SF Symbols 아이콘
-
-### 기능 12: 알람 울림 화면 (신규)
-
-- **설명**: 알람 시각이 되면 전체 화면으로 알람 울림 화면이 표시되고, AVAudioPlayer로 실제 알람 소리가 반복적으로 울린다. 정지/스누즈 버튼 제공.
-- **사용자 스토리**: 사용자가 알람 시각이 되면 화면에 알람 울림 UI가 나타나고 "띠디디디" 하는 소리가 계속 울린다. 정지 버튼을 누르면 소리가 멈추고 화면이 닫힌다. 스누즈를 누르면 5분 후 다시 울린다.
-- **관련 파일**: `Views/AlarmRinging/AlarmRingingView.swift`, `ViewModels/AlarmRinging/AlarmRingingViewModel.swift`, `Services/AudioService.swift`, `App/BetterAlarmApp.swift`
-- **사용 API**: AVAudioPlayer (numberOfLoops = -1 무한 반복), AVAudioSession, VolumeService
-- **HIG 패턴**: `fullScreenCover`, SF Symbols, 큰 텍스트, 진동
-
-#### AlarmRingingView (fullScreenCover)
-- 현재 시각 (큰 폰트, 실시간 업데이트)
-- 알람 제목
-- "정지" 버튼 — 소리 정지 + 볼륨 복원 + dismiss + handleAlarmCompleted
-- "스누즈" 버튼 — 소리 정지 + 5분 후 재스케줄 + dismiss
-- `PGradientBackground`, `Color.pAccentPrimary`, `HapticManager.notification(.warning)` 사용
-
-#### AlarmRingingViewModel (@MainActor @Observable)
-- `private(set) var currentTimeString: String` — 실시간 시각
-- `private(set) var isRinging: Bool`
-- `let alarm: Alarm`
-- `func startRinging()` — VolumeService.ensureMinimumVolume() + AudioService.playAlarmSound(loop: true) + HapticManager
-- `func stopAlarm()` — AudioService.stopAlarmSound() + VolumeService.restoreVolume()
-- `func snoozeAlarm()` — stopAlarm() + AlarmStore에 5분 후 재스케줄 요청
-
-#### AudioService 수정
-- `playAlarmSound(soundName:isSilent:loop:)` — `loop: Bool = false` 파라미터 추가
-- `loop = true`이면 `player.numberOfLoops = -1` (무한 반복)
-
-#### BetterAlarmApp 수정
-- `@State private var ringingAlarm: Alarm? = nil` — 현재 울리는 알람
-- AlarmStore에서 알람 시각 도달 감지 → ringingAlarm 설정 → fullScreenCover 표시
-- Timer 기반 체크 또는 LocalNotification 수신 시 트리거
-
----
-
-## AlarmMode 분기 설계
-
-### enum 정의
-
-```
-enum AlarmMode: String, Codable, Sendable {
-    case alarmKit   // iOS 26+ 전용: AlarmKit 사용
-    case local      // iOS 17+: UNUserNotificationCenter 기반
-}
+```swift
+private(set) var audioService: AudioService?
 ```
 
-### 분기 흐름 (AlarmStore.scheduleNextAlarm)
+### configure() 시그니처 수정
 
-```
-AlarmStore.scheduleNextAlarm()
-  ├─ alarm.alarmMode == .alarmKit
-  │   └─ if #available(iOS 26, *)
-  │       ├─ YES → AlarmKitService.scheduleAlarm(for:)
-  │       └─ NO  → fallback to LocalNotificationService (이론상 발생하지 않음; UI에서 차단)
-  │
-  └─ alarm.alarmMode == .local
-      └─ LocalNotificationService.scheduleAlarm(for:)
+기존:
+```swift
+func configure(alarmStore: AlarmStore, localNotificationService: LocalNotificationService)
 ```
 
-### AlarmKitService (actor)
-
-- `@available(iOS 26.0, *)` 가드 필수
-- `AlarmManager.shared` 사용
-- `schedule(id:configuration:)`: Fixed(1회성, 특정 날짜) / Relative(주간 반복) 분기
-- `alarmUpdates` AsyncSequence 모니터링
-- `StopAlarmIntent`, `SnoozeAlarmIntent` 연동
-- 조용한 알람 미지원 (alarmKit 모드에서 `isSilentAlarm` 옵션 비활성화)
-
-### LocalNotificationService (actor)
-
-- `UNUserNotificationCenter` 사용
-- `requestAuthorization(options:)`: 알림 권한 요청
-- `scheduleAlarm(for:)`: `UNCalendarNotificationTrigger`로 알람 시간에 알림 등록
-- `cancelAlarm(for:)`: 등록된 알림 제거
-- 앱 포그라운드 시: `AudioService`를 통해 `AVAudioPlayer`로 직접 소리 재생
-- 앱 백그라운드 시: 시스템 알림 사운드 사용
-
-### AudioService (actor)
-
-- `AVAudioPlayer` 인스턴스 관리
-- `playAlarmSound(soundName:isSilent:)`:
-  - `isSilent = true`: `AVAudioSession` 포트 확인 → 이어폰 연결 시만 재생
-  - `isSilent = false`: 기본 스피커 출력
-- `stopAlarmSound()`: 재생 중지
-- `AVAudioSession.Category`: `.playback`
-
-### VolumeService (actor)
-
-- `MPVolumeView`의 슬라이더를 통해 시스템 볼륨 제어
-- `ensureMinimumVolume()`: 현재 볼륨 < 0.8이면 0.8으로 설정, 원래 값 저장
-- `restoreVolume()`: 저장된 원래 볼륨으로 복원
-- local 모드 알람 시작 시 `ensureMinimumVolume()`, 종료 시 `restoreVolume()` 호출
-
----
-
-## iOS 버전 분기 처리 방식
-
-### 컴파일 타임 가드
-
-- AlarmKit 관련 코드 전체에 `@available(iOS 26.0, *)` 적용
-- `AlarmKitService` actor 선언부에 `@available(iOS 26.0, *)` 적용
-- `StopAlarmIntent`, `SnoozeAlarmIntent`에 `@available(iOS 26.0, *)` 적용
-- `AlarmMetadata`에 `@available(iOS 26.0, *)` 적용
-
-### 런타임 가드
-
-- 알람 편집 화면에서 "앱이 꺼진 상태에서도 알람 받기" 토글 ON 시도 시:
-  ```
-  if #available(iOS 26, *) {
-      alarm.alarmMode = .alarmKit
-  } else {
-      // 토글을 ON으로 바꾸지 않음
-      // PersonalColorDesignSystem의 토스트 컴포넌트로 메시지 표시:
-      // "이 기능은 iOS 26 이상에서만 사용할 수 있습니다."
-  }
-  ```
-
-- `AlarmStore.scheduleNextAlarm()`에서:
-  ```
-  if alarm.alarmMode == .alarmKit {
-      if #available(iOS 26, *) {
-          await alarmKitService.scheduleAlarm(for: alarm)
-      }
-      // iOS 26 미만에서는 UI에서 이미 차단되므로 도달하지 않음
-  } else {
-      await localNotificationService.scheduleAlarm(for: alarm)
-  }
-  ```
-
-### 기본값
-
-- `Alarm` 모델의 `alarmMode` 기본값: `.local` (iOS 17+ 모든 기기에서 동작 보장)
-
----
-
-## 데이터 모델 필드 전체 목록
-
-### Alarm (struct, Sendable, Codable, Identifiable, Equatable)
-
-| 필드 | 타입 | 기본값 | 설명 |
-|------|------|--------|------|
-| `id` | `UUID` | `UUID()` | 고유 식별자 |
-| `title` | `String` | `""` | 알람 제목 |
-| `hour` | `Int` | `8` | 시 (0-23) |
-| `minute` | `Int` | `0` | 분 (0-59) |
-| `schedule` | `AlarmSchedule` | `.once` | 반복 스케줄 |
-| `isEnabled` | `Bool` | `true` | 활성화 여부 |
-| `soundName` | `String` | `"default"` | 알람 사운드 파일명 |
-| `createdAt` | `Date` | `Date()` | 생성 시각 |
-| `skippedDate` | `Date?` | `nil` | 건너뛸 날짜 |
-| `alarmMode` | `AlarmMode` | `.local` | 알람 모드 (alarmKit / local) |
-| `isSilentAlarm` | `Bool` | `false` | 조용한 알람 여부 |
-
-### AlarmMode (enum, String, Codable, Sendable)
-
-| 케이스 | 설명 |
-|--------|------|
-| `.alarmKit` | iOS 26+ AlarmKit 사용, 앱 꺼진 상태에서도 울림 |
-| `.local` | iOS 17+ UNUserNotificationCenter 기반 |
-
-### AlarmSchedule (enum, Codable, Equatable, Sendable)
-
-| 케이스 | 연관값 | 설명 |
-|--------|--------|------|
-| `.once` | 없음 | 1회성 알람 |
-| `.weekly(Set<Weekday>)` | 요일 집합 | 주간 반복 |
-| `.specificDate(Date)` | 날짜 | 특정 날짜 1회 |
-
-### Weekday (enum, Int, Codable, CaseIterable, Hashable, Sendable)
-
-| 케이스 | rawValue | shortName |
-|--------|----------|-----------|
-| `.sunday` | 1 | "일" |
-| `.monday` | 2 | "월" |
-| `.tuesday` | 3 | "화" |
-| `.wednesday` | 4 | "수" |
-| `.thursday` | 5 | "목" |
-| `.friday` | 6 | "금" |
-| `.saturday` | 7 | "토" |
-
-### AlarmError (enum, Error)
-
-| 케이스 | 설명 |
-|--------|------|
-| `.notAuthorized` | 알림/AlarmKit 권한 없음 |
-| `.scheduleFailed(String)` | 스케줄링 실패 |
-| `.soundNotFound(String)` | 사운드 파일 없음 |
-| `.earphoneNotConnected` | 조용한 알람: 이어폰 미연결 |
-| `.alarmKitUnavailable` | iOS 26 미만에서 AlarmKit 시도 |
-
----
-
-## API 활용 계획
-
-### AlarmKit (iOS 26+)
-
-- **사용 타입**: `AlarmManager`, `AlarmAttributes`, `AlarmPresentation`, `AlarmButton`, `AlarmSchedule.fixed`, `AlarmSchedule.relative`, `AlarmManager.AlarmConfiguration`, `AlarmMetadata`
-- **권한 요청 시점**: 알람 생성 시 `alarmMode = .alarmKit`이 처음 설정될 때 `requestAuthorization()` 호출
-- **연동 기능**: 기능 3 (AlarmMode 분기 스케줄링)
-- **스트림**: `alarmUpdates` AsyncSequence로 알람 상태(alerting, completed) 실시간 모니터링
-
-### AppIntents
-
-- **Intent 목록**:
-  - `StopAlarmIntent`: 잠금화면 Live Activity에서 알람 정지
-  - `SnoozeAlarmIntent`: 잠금화면 Live Activity에서 스누즈 (5분 후 재알람)
-- **Siri / Shortcuts 연동**: Live Activity 버튼을 통한 실행 (Siri 직접 연동은 범위 외)
-- **`@Parameter` 목록**: `alarmID: String` (UUID 문자열)
-
-### UNUserNotificationCenter (iOS 17+)
-
-- **사용 타입**: `UNUserNotificationCenter`, `UNMutableNotificationContent`, `UNCalendarNotificationTrigger`, `UNNotificationRequest`
-- **권한 요청 시점**: 앱 최초 실행 시 또는 알람 최초 생성 시
-- **연동 기능**: 기능 3 (local 모드), 기능 6 (앱 종료 시 푸시 알림)
-
----
-
-## 뷰 계층 (Navigation Flow)
-
-```
-BetterAlarmApp (@main)
-  └─ NavigationStack
-       └─ AlarmListView (루트)
-            ├─ [+] 버튼 → sheet → AlarmDetailView (생성 모드)
-            ├─ 알람 행 탭 → sheet → AlarmDetailView (편집 모드)
-            ├─ 알람 행 swipeActions → 삭제 / 건너뛰기
-            └─ 알람 행 Toggle → 활성화/비활성화
+수정:
+```swift
+func configure(alarmStore: AlarmStore, localNotificationService: LocalNotificationService, audioService: AudioService)
 ```
 
-- `AlarmListView`: `NavigationStack` 루트, `List` + `AlarmRowView` 반복
-- `AlarmDetailView`: `.sheet`으로 표시, `DatePicker`(시/분), 제목 입력, 요일 선택, AlarmMode 토글, 조용한 알람 토글, 사운드 선택
+본문에 `self.audioService = audioService` 추가.
+
+### applicationDidEnterBackground 수정
+
+기존 Task 블록 내부, `guard hasLocal else { return }` 통과 후 (리마인더 등록 로직 뒤에) 무음 루프 시작 추가:
+
+```swift
+// 무음 루프 시작 (백그라운드 유지)
+await audioService?.startSilentLoop()
+```
+
+활성 local 알람이 **없으면** guard에서 이미 return하므로 무음 루프도 시작되지 않음 (배터리 최적화).
+
+### applicationWillEnterForeground 수정
+
+기존 Task 블록 내부, 리마인더 취소 뒤에 추가:
+
+```swift
+await audioService?.stopSilentLoop()
+```
+
+### applicationWillTerminate 수정
+
+기존 DispatchGroup 로직 **앞에**, 동기적으로 처리할 수 있도록 별도 Task+group 패턴 또는 기존 group 내부에 추가:
+
+기존 `group.enter()` Task 내부에 `await audioService?.stopSilentLoop()`를 첫 줄로 추가.
 
 ---
 
-## 각 파일의 책임과 주요 타입/메서드
+## 기능 3: BetterAlarmApp — DI 연결
 
-### App/BetterAlarmApp.swift
+### 설명
 
-- `@main struct BetterAlarmApp: App`
-- `@UIApplicationDelegateAdaptor` -- `AppDelegate` 연결
-- 의존성 생성 및 주입 (AlarmStore, Services)
+AppDelegate.configure() 호출 시 audioService를 함께 전달하도록 수정.
 
-### Views/AlarmList/AlarmListView.swift
+### 수정 대상
 
-- `@MainActor struct AlarmListView: View`
-- `@State private var viewModel: AlarmListViewModel`
-- 다음 알람 표시, 알람 목록 List, 생성 버튼, swipeActions(삭제, 건너뛰기)
-- `PersonalColorDesignSystem` 색상/폰트/컴포넌트 사용
+`harness/output/App/BetterAlarmApp.swift`
 
-### Views/AlarmDetail/AlarmDetailView.swift
+### 수정 내용
 
-- `@MainActor struct AlarmDetailView: View`
-- `@State private var viewModel: AlarmDetailViewModel`
-- 시간 선택(DatePicker), 제목 입력, 요일 선택, AlarmMode 토글, 조용한 알람 토글
-- AlarmMode 토글 ON 시 iOS 버전 체크 + 토스트 표시
-- `alarmMode == .alarmKit`일 때 조용한 알람 토글 비활성화(disabled)
+`.task` 블록 내의 `appDelegate.configure(...)` 호출을 수정:
 
-### Views/Components/AlarmRowView.swift
+기존:
+```swift
+appDelegate.configure(alarmStore: alarmStore, localNotificationService: localNotificationService)
+```
 
-- `@MainActor struct AlarmRowView: View`
-- 시간 표시, 제목, 반복 설명, 활성화 토글
-- `GlassCardView` 컴포넌트 사용
-
-### ViewModels/AlarmList/AlarmListViewModel.swift
-
-- `@MainActor @Observable final class AlarmListViewModel`
-- `private(set) var alarms: [Alarm]`
-- `private(set) var nextAlarmDisplayString: String?`
-- `func loadAlarms()`, `func toggleAlarm(_:enabled:)`, `func deleteAlarm(_:)`, `func skipOnceAlarm(_:)`, `func clearSkip(_:)`
-- `AlarmStore` 의존
-
-### ViewModels/AlarmDetail/AlarmDetailViewModel.swift
-
-- `@MainActor @Observable final class AlarmDetailViewModel`
-- `var hour: Int`, `var minute: Int`, `var title: String`, `var selectedWeekdays: Set<Weekday>`, `var alarmMode: AlarmMode`, `var isSilentAlarm: Bool`, `var soundName: String`
-- `private(set) var showAlarmKitUnavailableToast: Bool`
-- `func save()`, `func toggleAlarmMode(_:)` (iOS 버전 체크 포함), `func validateSilentAlarm()`
-- `AlarmStore` 의존
-
-### Models/Alarm.swift
-
-- `struct Alarm: Codable, Identifiable, Equatable, Sendable`
-- 전체 필드 (위 데이터 모델 참조)
-- `var timeString: String`, `var displayTitle: String`, `var repeatDescriptionWithoutSkip: String`
-- `var isSkippingNext: Bool`, `var isWeeklyAlarm: Bool`
-- `func nextTriggerDate(from:) -> Date?`
-
-### Models/AlarmMode.swift
-
-- `enum AlarmMode: String, Codable, Sendable`
-
-### Models/AlarmSchedule.swift
-
-- `enum AlarmSchedule: Codable, Equatable, Sendable`
-- `enum Weekday: Int, Codable, CaseIterable, Hashable, Sendable`
-
-### Models/AlarmError.swift
-
-- `enum AlarmError: Error`
-
-### Services/AlarmStore.swift
-
-- `actor AlarmStore`
-- `private(set) var alarms: [Alarm]`
-- `func loadAlarms()`, `func saveAlarms()`
-- `func createAlarm(...)`, `func updateAlarm(...)`, `func deleteAlarm(...)`, `func toggleAlarm(_:enabled:)`
-- `func skipOnceAlarm(...)`, `func clearSkipOnceAlarm(...)`
-- `func scheduleNextAlarm()` -- AlarmMode 분기 포함
-- `func handleAlarmCompleted(...)`, `func checkForCompletedAlarms()`
-- `var nextAlarm: Alarm?`, `var nextAlarmDisplayString: String?`
-- UserDefaults 저장/로드
-
-### Services/AlarmKitService.swift
-
-- `@available(iOS 26.0, *) actor AlarmKitService`
-- `func requestPermission() async -> Bool`
-- `func scheduleAlarm(for:) async throws`
-- `func cancelAlarm(for:)`, `func stopAllAlarms() async`
-- `func snoozeAlarm(id:) async`
-- `func startMonitoring()` -- `alarmUpdates` AsyncSequence 감시
-- AlarmKit 타입 사용: `AlarmManager`, `AlarmAttributes`, `AlarmSchedule`, `AlarmConfiguration`
-
-### Services/LocalNotificationService.swift
-
-- `actor LocalNotificationService`
-- `func requestPermission() async -> Bool`
-- `func scheduleAlarm(for:) async throws` -- `UNCalendarNotificationTrigger` 사용
-- `func cancelAlarm(for:) async`
-- `func cancelAllAlarms() async`
-- `func scheduleBackgroundReminder(for:) async` -- 기능 6: 앱 종료 시 즉시 알림 1건
-- `func cancelBackgroundReminder() async` -- 포그라운드 복귀 시 알림 취소
-
-### Services/AudioService.swift
-
-- `actor AudioService`
-- `func playAlarmSound(soundName:isSilent:) async throws`
-- `func stopAlarmSound() async`
-- `func isEarphoneConnected() -> Bool` -- `AVAudioSession.currentRoute.outputs` 포트 확인
-- AVAudioSession 카테고리: `.playback`
-
-### Services/VolumeService.swift
-
-- `actor VolumeService`
-- `private var originalVolume: Float?`
-- `func ensureMinimumVolume() async` -- 볼륨 < 0.8이면 0.8으로 설정
-- `func restoreVolume() async` -- 원래 볼륨 복원
-- MPVolumeView 슬라이더를 통한 시스템 볼륨 제어
-
-### Intents/StopAlarmIntent.swift
-
-- `@available(iOS 26.0, *) struct StopAlarmIntent: LiveActivityIntent`
-- `@Parameter(title: "알람 ID") var alarmID: String`
-- `func perform() async throws -> some IntentResult`
-
-### Intents/SnoozeAlarmIntent.swift
-
-- `@available(iOS 26.0, *) struct SnoozeAlarmIntent: LiveActivityIntent`
-- `@Parameter(title: "알람 ID") var alarmID: String`
-- `func perform() async throws -> some IntentResult`
-
-### Delegates/AppDelegate.swift
-
-- `class AppDelegate: NSObject, UIApplicationDelegate`
-- `func applicationDidEnterBackground(_:)` -- local 모드 알람 활성화 시 즉시 알림 등록
-- `func applicationWillEnterForeground(_:)` -- 알림 취소 (`removeDeliveredNotifications`, `removePendingNotificationRequests`)
-- 알림 내용: `"[알람 제목] 알람이 설정되어 있습니다. 알람 시각: [시간]"`
-
-### Shared/AlarmMetadata.swift
-
-- `@available(iOS 26.0, *) nonisolated struct BetterAlarmMetadata: AlarmMetadata`
+수정:
+```swift
+appDelegate.configure(alarmStore: alarmStore, localNotificationService: localNotificationService, audioService: audioService)
+```
 
 ---
 
-## 코드 컨벤션 (Generator가 따를 것)
+## 동작 흐름
 
-- 뷰 파일: `[Feature]View.swift` -- body만 갖는 순수 뷰
-- 뷰모델 파일: `[Feature]ViewModel.swift` -- `@Observable`, `@MainActor`
-- 서비스 파일: `[Feature]Service.swift` -- `actor`, `protocol` 우선
-- 모든 `public`/`internal` 프로퍼티에 접근 제어자 명시
-- `private(set)`으로 외부 변이 차단
-- 에러 타입은 `enum [Domain]Error: Error`로 정의
-- `DispatchQueue`, `@Published`, `ObservableObject` 사용 금지
-- PersonalColorDesignSystem 토큰 사용 필수: `Color.p*`, `UIFont.p*`, `GlassCardView`, `HapticManager`
-- 하드코딩 색상/폰트 크기 금지
-- `import SwiftUI`는 View 파일에서만 허용, ViewModel에서 금지
+```
+[앱 실행 중 — 포그라운드]
+  checkForImminentAlarm() 루프가 10초마다 실행
+  무음 루프: 꺼짐
+
+[사용자가 앱을 백그라운드로 보냄]
+  AppDelegate.applicationDidEnterBackground 호출
+  → hasEnabledLocalAlarms 확인
+  → true → audioService.startSilentLoop() 호출
+    → AVAudioEngine이 무음 버퍼를 .loops로 재생
+    → iOS가 앱을 audio 백그라운드 모드로 유지 (suspend 방지)
+  → checkForImminentAlarm() 루프가 계속 실행됨
+  → 알람 시각 도달 시 ringingAlarm 설정 → 울림
+
+[사용자가 앱을 포그라운드로 복귀]
+  AppDelegate.applicationWillEnterForeground 호출
+  → audioService.stopSilentLoop() 호출
+  → 무음 루프 정지 (배터리 절약)
+
+[앱 종료]
+  AppDelegate.applicationWillTerminate 호출
+  → audioService.stopSilentLoop() 호출
+  → 이후 기존 로직(UNCalendar 알림 재등록)으로 폴백
+```
+
+## 배터리 최적화
+
+- 무음 루프는 활성 local 모드 알람이 있을 때**만** 시작 (`hasEnabledLocalAlarms` 체크)
+- 포그라운드 복귀 시 즉시 정지
+- 앱 종료 시 정지
+- `.mixWithOthers` 옵션으로 다른 앱 오디오에 영향 없음
+- `mainMixerNode.outputVolume = 0.0`으로 스피커/이어폰에서 소리 없음
+- 44100Hz 1채널 무음 버퍼 — 최소한의 CPU 사용
+
+## 코드 컨벤션
+
+- Swift 6 strict concurrency 준수
+- AudioService는 기존 `actor` 구조 유지
+- 새 메서드는 actor-isolated (기본)
+- `DispatchQueue` 사용 금지 (기존 applicationWillTerminate의 DispatchGroup은 유지)
+- 에러는 throw 대신 `AppLogger`로 로그만 남김 (무음 루프 실패가 앱 크래시를 유발하면 안 됨)
+- 접근 제어자 명시 (`private`, `private(set)`)
+
+## 테스트 고려사항
+
+- `AudioServiceProtocol`에 `startSilentLoop()`, `stopSilentLoop()` 추가하여 Mock에서 테스트 가능
+- Mock 구현에서는 `startSilentLoopCalled: Bool`, `stopSilentLoopCalled: Bool` 플래그로 호출 여부 확인 가능
+- AppDelegate의 생명주기 메서드는 Mock AudioService를 주입하여 단위 테스트 가능

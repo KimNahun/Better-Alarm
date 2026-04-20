@@ -128,6 +128,7 @@ struct BetterAlarmApp: App {
                     volumeService: volumeService,
                     alarmStore: alarmStore
                 )
+                .pTheme(themeManager.currentTheme)
             }
             .onChange(of: ringingAlarm) { _, newValue in
                 if newValue == nil {
@@ -157,7 +158,7 @@ struct BetterAlarmApp: App {
             }
             .task {
                 // AppDelegate에 의존성 주입
-                appDelegate.configure(alarmStore: alarmStore, localNotificationService: localNotificationService)
+                appDelegate.configure(alarmStore: alarmStore, localNotificationService: localNotificationService, audioService: audioService)
 
                 // 알람 로드
                 await alarmStore.loadAlarms()
