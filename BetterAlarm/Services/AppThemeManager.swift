@@ -16,7 +16,12 @@ final class AppThemeManager {
         if let saved = UserDefaults.standard.string(forKey: userDefaultsKey),
            let theme = PTheme(rawValue: saved) {
             currentTheme = theme
+        } else {
+            currentTheme = .summer
+            UserDefaults.standard.set(PTheme.summer.rawValue, forKey: userDefaultsKey)
         }
+        applyUIKitTheme(currentTheme)
+        applyAlternateIcon(for: currentTheme)
     }
 
     func setTheme(_ theme: PTheme) {

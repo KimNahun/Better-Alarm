@@ -47,17 +47,9 @@ struct AlarmListView: View {
                                 }
                                 .contentShape(Rectangle())
                                 .onTapGesture {
-                                    if !alarm.isEnabled, case .once = alarm.schedule {
-                                        HapticManager.selection()
-                                        viewModel.requestToggle(alarm, enabled: true)
-                                    } else if !alarm.isEnabled, case .specificDate = alarm.schedule {
-                                        HapticManager.selection()
-                                        viewModel.requestToggle(alarm, enabled: true)
-                                    } else {
-                                        selectedAlarm = alarm
-                                        showDetail = true
-                                        HapticManager.impact(.light)
-                                    }
+                                    selectedAlarm = alarm
+                                    showDetail = true
+                                    HapticManager.impact(.light)
                                 }
                                 .transition(.opacity.combined(with: .move(edge: .top)))
                             }

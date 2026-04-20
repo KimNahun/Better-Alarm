@@ -61,15 +61,8 @@ struct BetterAlarmApp: App {
         AppLogger.info("BetterAlarmApp initialized", category: .lifecycle)
     }
 
-    /// UIKit 전역 외관 설정: 탭바, 네비게이션바, 테이블뷰 배경색을 어둡게 설정하여 흰색 플래시 방지
+    /// UIKit 전역 외관 설정: 네비게이션바, 테이블뷰 배경색 설정. 탭바는 AppThemeManager가 담당.
     private static func configureAppearance() {
-        // 탭바 배경
-        let tabBarAppearance = UITabBarAppearance()
-        tabBarAppearance.configureWithOpaqueBackground()
-        tabBarAppearance.backgroundColor = UIColor(red: 0.08, green: 0.08, blue: 0.15, alpha: 1.0)
-        UITabBar.appearance().standardAppearance = tabBarAppearance
-        UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
-
         // 네비게이션바 배경
         let navAppearance = UINavigationBarAppearance()
         navAppearance.configureWithTransparentBackground()
