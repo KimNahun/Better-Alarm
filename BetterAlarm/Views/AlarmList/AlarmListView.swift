@@ -39,18 +39,16 @@ struct AlarmListView: View {
                     ScrollView {
                         LazyVStack(spacing: 0) {
                             ForEach(viewModel.alarms, id: \.id) { alarm in
-                                AlarmRowView(alarm: alarm) { enabled in
+                                AlarmRowView(alarm: alarm, onToggle: { enabled in
                                     Task {
                                         viewModel.requestToggle(alarm, enabled: enabled)
                                         HapticManager.selection()
                                     }
-                                }
-                                .contentShape(Rectangle())
-                                .onTapGesture {
+                                }, onTap: {
                                     selectedAlarm = alarm
                                     showDetail = true
                                     HapticManager.impact(.light)
-                                }
+                                })
                                 .transition(.opacity.combined(with: .move(edge: .top)))
                             }
                         }

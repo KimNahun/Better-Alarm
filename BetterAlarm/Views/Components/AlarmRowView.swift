@@ -8,6 +8,7 @@ import PersonalColorDesignSystem
 struct AlarmRowView: View {
     let alarm: Alarm
     let onToggle: (Bool) -> Void
+    var onTap: (() -> Void)? = nil
     @Environment(\.pThemeColors) private var theme
 
     var body: some View {
@@ -20,7 +21,7 @@ struct AlarmRowView: View {
                     .padding(.vertical, 12)
 
                 HStack(spacing: 16) {
-                    // 시간 + 제목
+                    // 시간 + 제목 (탭 영역)
                     VStack(alignment: .leading, spacing: 4) {
                         Text(alarm.timeString)
                             .font(.title2.weight(.semibold))
@@ -73,8 +74,11 @@ struct AlarmRowView: View {
                             }
                         }
                     }
-
-                    Spacer()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        onTap?()
+                    }
 
                     // 활성화 토글
                     Toggle("", isOn: Binding(
