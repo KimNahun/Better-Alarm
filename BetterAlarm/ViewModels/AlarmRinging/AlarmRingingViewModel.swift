@@ -52,6 +52,9 @@ final class AlarmRingingViewModel {
         // 시간 업데이트 타이머 시작
         startTimeUpdateTimer()
 
+        // 백그라운드 무음 루프가 실행 중이면 먼저 종료 (세션 충돌 방지)
+        await audioService.stopSilentLoop()
+
         // 볼륨 먼저 올리기 (80% 보장) + 볼륨 가드 시작
         await volumeService.ensureMinimumVolume()
         await volumeService.startVolumeGuard()
