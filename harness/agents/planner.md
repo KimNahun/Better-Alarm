@@ -15,12 +15,26 @@
 
 ---
 
-## docs/ 폴더 활용
+## docs/ 폴더 활용 + NotebookLM 질의
 
 docs/ 폴더에 API 레퍼런스 파일이 있으면:
 - 해당 API의 핵심 타입과 메서드를 숙지하라
 - 설계에서 구체적인 타입명을 사용하라 (예: `AlarmKit.Alarm`, `AppIntent`, `TimelineProvider`)
 - API 제약 사항(최소 OS 버전, 필요 권한 등)을 SPEC.md에 명시하라
+
+**docs/ 내용만으로 부족한 경우 → NotebookLM에 직접 질의하라:**
+
+다음 상황에서 `mcp__notebooklm__ask_question` 도구를 사용한다:
+- 특정 API의 동작 방식이 불확실해서 설계에 반영하기 어려운 경우
+- docs/에 해당 API가 없거나 내용이 너무 간략한 경우
+- OS 버전 제약, 권한 요구사항 등 세부 스펙이 필요한 경우
+
+```
+노트북 ID: alarmkit-scheduling-and-managi
+질의 예시: "AlarmKit의 AlarmSchedule.relative와 fixed의 차이점과 각각 언제 써야 하는지 설명해줘"
+```
+
+질의 결과는 SPEC.md 해당 섹션에 바로 반영하라. 별도 파일로 저장하지 않아도 된다.
 
 ---
 

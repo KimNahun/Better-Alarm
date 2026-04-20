@@ -120,6 +120,22 @@ final class AlarmDetailViewModel {
         toastMessage = ""
     }
 
+    // MARK: - ScheduleType 변경 시 iOS 버전 체크
+
+    /// specificDate 선택 시 iOS 26 미만이면 .once로 되돌리고 토스트를 표시한다.
+    func handleScheduleTypeChange() {
+        if scheduleType == .specificDate {
+            if #available(iOS 26, *) {
+                // iOS 26+: AlarmKit 기반이므로 alarmMode를 alarmKit으로 강제
+                alarmMode = .alarmKit
+            } else {
+                scheduleType = .once
+                toastMessage = "특정 날짜 알람은 iOS 26 이상에서만 지원됩니다."
+                showAlarmKitUnavailableToast = true
+            }
+        }
+    }
+
     func dismissActionToast() {
         showActionToast = false
         actionToastMessage = ""

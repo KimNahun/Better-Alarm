@@ -111,6 +111,22 @@ evaluation_criteria.md의 피드백 형식을 따른다.
 [ ] Service 레이어에서만 호출 (ViewModel 직접 호출 금지)
 ```
 
+**API 코드가 올바른지 확신이 없으면 → NotebookLM에 직접 확인 후 판정하라:**
+
+"이 코드가 맞는 것 같은데..." 수준으로 합격을 주지 마라.
+다음 상황에서 `mcp__notebooklm__ask_question`으로 확인하라:
+- Generator가 사용한 API 타입/메서드가 실제로 존재하는지 불확실한 경우
+- 권한 요청 순서나 에러 처리 방식이 문서와 다른 것 같은 경우
+- 새 기능이 추가되어 기존 docs/에 없는 API가 등장한 경우
+
+```
+노트북 ID: alarmkit-scheduling-and-managi
+질의 예시: "AlarmKit에서 AlarmManager.cancel(id:)의 올바른 사용법과
+           취소 실패 시 에러 타입을 알려줘"
+```
+
+확인 결과를 QA_REPORT.md의 해당 항목 근거로 명시하라.
+
 ---
 
 ## 피드백 작성 규칙
@@ -140,3 +156,19 @@ evaluation_criteria.md의 피드백 형식을 따른다.
 ## 출력
 
 결과를 QA_REPORT.md로 저장한다.
+
+**QA_REPORT.md는 반드시 아래 VERDICT 블록으로 시작해야 한다. 이 형식이 없으면 오케스트레이터가 판정을 읽을 수 없다.**
+
+```
+RESULT: pass
+SCORE: 8.2
+BLOCKERS: 0
+```
+
+| 필드 | 허용값 | 설명 |
+|------|--------|------|
+| `RESULT` | `pass` / `conditional_pass` / `fail` | 최종 판정 (정확히 이 값만 사용) |
+| `SCORE` | `0.0` ~ `10.0` | 가중 평균 점수 |
+| `BLOCKERS` | 정수 | 반드시 수정해야 할 항목 수 (pass면 0) |
+
+VERDICT 블록 이후에 상세 분석 내용을 자유 형식으로 작성한다.

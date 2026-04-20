@@ -264,6 +264,9 @@ struct AlarmDetailView: View {
         .pickerStyle(.segmented)
         .colorScheme(.dark)
         .accessibilityLabel("알람 반복 유형 선택")
+        .onChange(of: viewModel.scheduleType) { _, _ in
+            viewModel.handleScheduleTypeChange()
+        }
 
         if viewModel.scheduleType == .weekly {
             weekdayPicker

@@ -128,11 +128,34 @@ git commit -m "harness: 파이프라인 완료 - 최종 점수 {X.X}/10"
 
 ## 단계별 실행 지시
 
-### 단계 0: API 문서 수집 (NotebookLM MCP) ← 필수, 건너뛰기 금지
+### 단계 -1: output/ 사전 동기화 ← 파이프라인 시작 전 항상 실행
+
+**오케스트레이터가 직접 실행. BetterAlarm/ → harness/output/ 동기화.**
+
+피드백 반영으로 BetterAlarm/이 output/보다 최신 상태일 수 있으므로,
+Planner/Generator/Evaluator가 항상 최신 코드를 기준으로 동작하도록 먼저 동기화한다.
+
+```bash
+ROOT="/Users/haesuyoun/Desktop/NahunPersonalFolder/Better-Alarm"
+cp -fR "$ROOT/BetterAlarm/App/"*        "$ROOT/harness/output/App/"
+cp -fR "$ROOT/BetterAlarm/Models/"*     "$ROOT/harness/output/Models/"
+cp -fR "$ROOT/BetterAlarm/Services/"*   "$ROOT/harness/output/Services/"
+cp -fR "$ROOT/BetterAlarm/ViewModels/"* "$ROOT/harness/output/ViewModels/"
+cp -fR "$ROOT/BetterAlarm/Views/"*      "$ROOT/harness/output/Views/"
+cp -fR "$ROOT/BetterAlarm/Intents/"*    "$ROOT/harness/output/Intents/"
+cp -fR "$ROOT/BetterAlarm/Delegates/"*  "$ROOT/harness/output/Delegates/"
+cp -fR "$ROOT/BetterAlarm/Shared/"*     "$ROOT/harness/output/Shared/"
+```
+
+---
+
+### 단계 0: API 문서 수집 (NotebookLM MCP)
 
 **오케스트레이터가 직접 실행. 이 단계를 완료하지 않으면 Planner를 호출하지 마라.**
 
-NotebookLM MCP의 `mcp__notebooklm__ask_question` 도구를 사용하여
+**스킵 조건**: `docs/alarmkit_notes.md`, `docs/appintent_notes.md`, `docs/widgetkit_notes.md` 3개 파일이 모두 존재하고 비어있지 않으면 → 단계 0을 건너뛰고 즉시 단계 1로 진행.
+
+파일이 하나라도 없거나 비어있으면 NotebookLM MCP의 `mcp__notebooklm__ask_question` 도구를 사용하여
 노트북 ID `alarmkit-scheduling-and-managi` 에서 아래 3가지 질문을 순서대로 질의한다.
 응답 내용을 각각 파일로 저장한다.
 
@@ -192,7 +215,6 @@ prompt: |
 
   PROJECT_CONTEXT.md의 디자인 시스템, 아키텍처 요구사항을 반드시 준수하라.
   output/ 폴더 아래에 파일 구조에 따라 Swift 파일들을 생성하라.
-  완료 후 SELF_CHECK.md를 작성하라.
 ```
 
 **피드백 반영 시 (2회차 이상) — `model: "opus"` 사용:**
@@ -212,7 +234,57 @@ prompt: |
 
   QA 피드백의 "구체적 개선 지시"를 모두 반영하여 코드를 수정하라.
   "방향 판단"이 "아키텍처 재설계"이면 레이어 구조 자체를 다시 잡아라.
-  완료 후 SELF_CHECK.md를 업데이트하라.
+```
+
+
+### 단계 2.5: 빌드 게이트 + 테스트 게이트 ← Evaluator 호출 전 필수
+
+**오케스트레이터가 직접 실행. SELF_CHECK.md 대신 xcodebuild가 코드 품질의 객관적 기준이다.**
+
+Evaluator는 빌드와 테스트를 모두 통과한 코드만 검수한다. 통과 못 하면 Evaluator 호출 없이 즉시 Generator로 복귀.
+
+**① 빌드 게이트:**
+```bash
+ROOT="/Users/haesuyoun/Desktop/NahunPersonalFolder/Better-Alarm"
+# output/ → BetterAlarm/ 임시 통합
+cp -fR "$ROOT/harness/output/"* "$ROOT/BetterAlarm/" 2>/dev/null || true
+
+BUILD_LOG=$(xcodebuild -project "$ROOT/BetterAlarm.xcodeproj" \
+  -scheme BetterAlarm \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \
+  build 2>&1)
+BUILD_RESULT=$(echo "$BUILD_LOG" | grep -E "BUILD (SUCCEEDED|FAILED)" | tail -1)
+echo "$BUILD_RESULT"
+```
+
+- **BUILD SUCCEEDED** → ② 테스트 게이트로 진행
+- **BUILD FAILED** → 에러 라인만 추출해서 Generator R{N+1}에 전달하고 단계 2로 복귀:
+  ```bash
+  echo "$BUILD_LOG" | grep "error:" | head -20
+  ```
+
+**② 테스트 게이트:**
+```bash
+TEST_LOG=$(xcodebuild test -project "$ROOT/BetterAlarm.xcodeproj" \
+  -scheme BetterAlarm \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' 2>&1)
+FAIL_COUNT=$(echo "$TEST_LOG" | grep -c " FAILED")
+echo "$TEST_LOG" | grep -E "Executed [0-9]+ test"
+```
+
+- **0 failures** → 단계 3(Evaluator) 호출
+- **실패 있음** → 실패한 테스트 목록을 Generator R{N+1}에 전달하고 단계 2로 복귀:
+  ```bash
+  echo "$TEST_LOG" | grep "FAILED\|failed"
+  ```
+
+**결과 기록:**
+빌드/테스트 결과를 `harness/BUILD_RESULT.md`에 저장:
+```markdown
+## 빌드/테스트 결과 (단계 2.5)
+- 빌드: SUCCEEDED / FAILED
+- 테스트: {통과수}/{전체수}
+- 실패 테스트: {목록 또는 없음}
 ```
 
 
@@ -223,6 +295,7 @@ prompt: |
 ```
 description: "Evaluator: QA_REPORT 작성"
 model: "opus"
+isolation: "worktree"
 subagent_type: "general-purpose"
 prompt: |
   PROJECT_CONTEXT.md 파일을 반드시 먼저 읽어라. 이것이 프로젝트 고정 요구사항이다.
@@ -242,13 +315,22 @@ prompt: |
 ```
 
 
-### 단계 4: 판정 확인
+### 단계 4: 판정 확인 ← grep으로 결정, LLM 해석 없음
 
-QA_REPORT.md를 읽고 판정을 확인한다.
+QA_REPORT.md 상단의 VERDICT 블록을 grep으로 읽는다. 자연어 해석 없이 결정한다.
 
-- **"합격"** → 단계 5(Xcode 통합)로 진행.
-- **"조건부 합격"** 또는 **"불합격"** → 단계 2로 돌아가 피드백 반영.
-- **최대 반복 횟수**: 3회. 3회 후에도 불합격이면 현재 상태로 전달하고 이슈를 보고.
+```bash
+VERDICT=$(grep "^RESULT:" harness/QA_REPORT.md | cut -d' ' -f2)
+echo "판정: $VERDICT"
+```
+
+| VERDICT 값 | 다음 단계 |
+|------------|----------|
+| `pass` | 단계 5(Xcode 통합)로 진행 |
+| `conditional_pass` | 단계 2로 복귀 (QA_REPORT.md의 BLOCKERS 전달) |
+| `fail` | 단계 2로 복귀 (QA_REPORT.md의 BLOCKERS 전달) |
+
+**최대 반복 횟수**: 3회. 3회 후에도 `pass`가 아니면 현재 상태로 전달하고 이슈를 보고.
 
 ### 단계 5: Xcode 프로젝트 통합 ← QA 합격 후 반드시 실행
 
@@ -257,7 +339,7 @@ QA_REPORT.md를 읽고 판정을 확인한다.
 오케스트레이터가 직접 실행:
 
 ```bash
-PROJECT_ROOT="/Users/kimnahun/Desktop/Side-Project/BetterAlarm"
+PROJECT_ROOT="/Users/haesuyoun/Desktop/NahunPersonalFolder/Better-Alarm"
 OUTPUT="$PROJECT_ROOT/harness/output"
 TARGET="$PROJECT_ROOT/BetterAlarm"
 

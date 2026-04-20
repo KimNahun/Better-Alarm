@@ -72,3 +72,8 @@ xcuserdata/
 *.xcuserstate
 xcshareddata/xcschemes/*
 xcuserdata/*
+# Harness pipeline working directory (not source of truth — BetterAlarm/ is)
+harness/output/
+
+# Claude Code settings (local only)
+.claude/settings.local.json

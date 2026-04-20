@@ -261,6 +261,24 @@ UIFont.pBodyMedium(17) // UIKit
 
 ---
 
+## 모르는 API → 코드 작성 전 NotebookLM 질의 필수
+
+다음 상황에서 코드를 **추측으로 작성하지 마라**. 반드시 `mcp__notebooklm__ask_question`으로 확인 후 구현하라:
+
+- 사용하려는 API 타입/메서드가 docs/에 없거나 예제가 불충분한 경우
+- 기능 추가로 인해 기존에 없던 새로운 Apple 프레임워크 API를 처음 사용하는 경우
+- 동작 방식이 불확실해서 "아마 이렇게 되겠지"로 작성하려는 순간
+
+```
+노트북 ID: alarmkit-scheduling-and-managi
+질의 예시: "AlarmKit에서 AlarmManager.shared.schedule()을 호출할 때 필요한 entitlement와
+           권한 요청 순서를 코드 예제와 함께 설명해줘"
+```
+
+**질의 → 확인 → 구현** 순서를 지켜라. 확인 없이 작성한 코드는 컴파일 에러 또는 런타임 크래시로 이어진다.
+
+---
+
 ## AlarmKit / AppIntent / WidgetKit 구현 가이드
 
 ### AlarmKit
@@ -329,40 +347,11 @@ output/
 
 ---
 
-## 구현 완료 후 SELF_CHECK.md 작성
+## 구현 완료 후
 
-```markdown
-# 자체 점검
+SELF_CHECK.md는 작성하지 않는다. 코드 품질 검증은 오케스트레이터의 빌드 게이트(xcodebuild)와 테스트 게이트(xcodebuild test)가 담당한다.
 
-## SPEC 기능 체크
-- [x] 기능 1: [구현 파일 + 핵심 구현 방법]
-- [x] 기능 2: [구현 파일 + 핵심 구현 방법]
-...
-
-## Swift 6 동시성 체크
-- [ ] 모든 ViewModel이 @MainActor + @Observable인가?
-- [ ] 모든 Service가 actor인가?
-- [ ] 모든 Model이 struct + Sendable인가?
-- [ ] DispatchQueue 사용 없음?
-- [ ] Sendable 경계 위반 없음?
-
-## MVVM 분리 체크
-- [ ] View에 비즈니스 로직 없음?
-- [ ] ViewModel에 SwiftUI import 없음?
-- [ ] Service가 ViewModel을 참조하지 않음?
-- [ ] 의존성이 단방향 (View→VM→Service)인가?
-
-## HIG 체크
-- [ ] Dynamic Type 지원?
-- [ ] Semantic color 사용?
-- [ ] 터치 영역 44pt 이상?
-- [ ] 접근성 레이블 추가?
-
-## API 활용 체크
-- [ ] AlarmKit: [사용 여부 + 어떻게]
-- [ ] AppIntent: [사용 여부 + 어떻게]
-- [ ] WidgetKit: [사용 여부 + 어떻게]
-```
+네가 할 일은 **output/ 폴더에 Swift 파일을 생성하는 것뿐**이다. 자기 평가 불필요.
 
 ---
 

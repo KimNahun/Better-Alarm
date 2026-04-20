@@ -60,6 +60,7 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
             ? .default
             : UNNotificationSound(named: UNNotificationSoundName(rawValue: "\(alarm.soundName).mp3"))
         content.userInfo = ["alarmID": alarm.id.uuidString]
+        content.interruptionLevel = .timeSensitive
 
         let components = Calendar.current.dateComponents(
             [.year, .month, .day, .hour, .minute],
@@ -136,6 +137,7 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
         content.body = "알람이 울리고 있습니다. 앱을 열어 알람을 끄세요."
         content.sound = .default
         content.userInfo = ["alarmID": alarm.id.uuidString]
+        content.interruptionLevel = .timeSensitive
 
         for i in 1...count {
             let delay = TimeInterval(i * 5)
@@ -178,6 +180,7 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
             ? .default
             : UNNotificationSound(named: UNNotificationSoundName(rawValue: "\(alarm.soundName).mp3"))
         content.userInfo = ["alarmID": alarm.id.uuidString, "isSnooze": true]
+        content.interruptionLevel = .timeSensitive
 
         let trigger = UNTimeIntervalNotificationTrigger(
             timeInterval: TimeInterval(minutes * 60),
