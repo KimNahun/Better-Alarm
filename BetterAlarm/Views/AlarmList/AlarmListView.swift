@@ -90,28 +90,21 @@ struct AlarmListView: View {
             message: viewModel.toastMessage,
             type: .info
         )
-        .confirmationDialog(
-            "주간 알람 처리",
+        .pActionSheet(
             isPresented: Binding(
                 get: { viewModel.pendingDisableAlarm != nil },
                 set: { if !$0 { viewModel.cancelDisable() } }
             ),
-            titleVisibility: .visible
-        ) {
-            if let alarm = viewModel.pendingDisableAlarm {
-                Button("이번만 스킵") {
+            title: "이 주간 알람을 어떻게 처리할까요?",
+            items: viewModel.pendingDisableAlarm.map { alarm in [
+                PActionSheetItem(title: "이번만 스킵", icon: "forward.fill") {
                     Task { await viewModel.skipOnceAndDisable(alarm) }
-                }
-                Button("완전히 끄기", role: .destructive) {
+                },
+                PActionSheetItem(title: "완전히 끄기", icon: "bell.slash.fill", role: .destructive) {
                     Task { await viewModel.confirmDisable(alarm) }
                 }
-                Button("취소", role: .cancel) {
-                    viewModel.cancelDisable()
-                }
-            }
-        } message: {
-            Text("이 주간 알람을 어떻게 처리할까요?")
-        }
+            ]} ?? []
+        )
     }
 
     // MARK: - Fixed Header
