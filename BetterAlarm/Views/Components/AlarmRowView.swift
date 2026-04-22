@@ -81,12 +81,11 @@ struct AlarmRowView: View {
                     }
 
                     // 활성화 토글
-                    Toggle("", isOn: Binding(
+                    PToggle("", isOn: Binding(
                         get: { alarm.isEnabled },
                         set: { onToggle($0) }
                     ))
                     .labelsHidden()
-                    .tint(theme.accentPrimary)
                     .accessibilityLabel("\(alarm.displayTitle) 알람 \(alarm.isEnabled ? "비활성화" : "활성화")")
                     .frame(minWidth: 44, minHeight: 44)
                 }

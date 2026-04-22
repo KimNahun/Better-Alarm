@@ -27,13 +27,7 @@ struct AlarmListView: View {
                 nextAlarmBanner
 
                 // ── 스크롤 가능 영역 (알람 리스트만) ──
-                if viewModel.isLoading {
-                    Spacer()
-                    ProgressView()
-                        .tint(theme.accentPrimary)
-                        .scaleEffect(1.2)
-                    Spacer()
-                } else if viewModel.alarms.isEmpty {
+                if viewModel.alarms.isEmpty && !viewModel.isLoading {
                     emptyState
                 } else {
                     ScrollView {
@@ -57,6 +51,7 @@ struct AlarmListView: View {
                 }
             }
         }
+        .pLoadingOverlay(isLoading: Binding(get: { viewModel.isLoading }, set: { _ in }))
         .sheet(isPresented: $showDetail, onDismiss: {
             // E14 수정: 시트 닫힘 후 selectedAlarm 초기화.
             // showSaveToast 판정은 클로저 캡처 시점에 결정되므로 onDismiss 초기화는 안전.

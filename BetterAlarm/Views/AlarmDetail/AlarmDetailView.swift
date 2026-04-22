@@ -119,12 +119,7 @@ struct AlarmDetailView: View {
                             } label: {
                                 HStack {
                                     Spacer()
-                                    if viewModel.isDeleting {
-                                        ProgressView()
-                                            .tint(Color.pWarning)
-                                            .scaleEffect(0.8)
-                                    }
-                                    Text("알람 삭제")
+                                            Text("알람 삭제")
                                         .font(.body.weight(.medium))
                                         .foregroundStyle(Color.pWarning)
                                     Spacer()
@@ -165,15 +160,7 @@ struct AlarmDetailView: View {
                                 }
                             }
                         } label: {
-                            Group {
-                                if viewModel.isSaving {
-                                    ProgressView()
-                                        .tint(theme.accentPrimary)
-                                        .scaleEffect(0.8)
-                                } else {
-                                    Text("저장")
-                                }
-                            }
+                            Text("저장")
                         }
                         .font(.body.weight(.semibold))
                         .foregroundStyle(theme.accentPrimary)
@@ -182,6 +169,10 @@ struct AlarmDetailView: View {
                     }
                 }
         }
+        .pLoadingOverlay(
+            isLoading: Binding(get: { viewModel.isSaving || viewModel.isDeleting }, set: { _ in }),
+            message: viewModel.isSaving ? "저장 중..." : "삭제 중..."
+        )
         .toast(
             isPresented: Binding(
                 get: { viewModel.showAlarmKitUnavailableToast },
@@ -316,22 +307,10 @@ struct AlarmDetailView: View {
     // MARK: - AlarmMode Toggle
 
     private var alarmModeToggle: some View {
-        Toggle(isOn: Binding(
+        PToggle("앱이 꺼진 상태에서도 알람 받기", isOn: Binding(
             get: { viewModel.alarmMode == .alarmKit },
-            set: { wantsAlarmKit in
-                viewModel.toggleAlarmMode(wantsAlarmKit: wantsAlarmKit)
-            }
-        )) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("앱이 꺼진 상태에서도 알람 받기")
-                    .font(.body)
-                    .foregroundStyle(Color.pTextPrimary)
-                Text("iOS 26 이상에서만 사용 가능")
-                    .font(.caption)
-                    .foregroundStyle(Color.pTextTertiary)
-            }
-        }
-        .tint(theme.accentPrimary)
+            set: { viewModel.toggleAlarmMode(wantsAlarmKit: $0) }
+        ))
         .accessibilityLabel("앱이 꺼진 상태에서도 알람 받기")
         .accessibilityHint("iOS 26 이상에서만 사용할 수 있습니다")
     }
@@ -339,27 +318,11 @@ struct AlarmDetailView: View {
     // MARK: - Silent Alarm Toggle
 
     private var silentAlarmToggle: some View {
-        Toggle(isOn: Binding(
+        PToggle("조용한 알람", isOn: Binding(
             get: { viewModel.isSilentAlarm },
-            set: { enabled in
-                Task { await viewModel.validateSilentAlarm(enabled: enabled) }
-            }
-        )) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("조용한 알람")
-                    .font(.body)
-                    .foregroundStyle(
-                        viewModel.alarmMode == .alarmKit
-                            ? Color.pTextTertiary
-                            : Color.pTextPrimary
-                    )
-                Text("이어폰 연결 시 이어폰으로만 재생")
-                    .font(.caption)
-                    .foregroundStyle(Color.pTextTertiary)
-            }
-        }
+            set: { enabled in Task { await viewModel.validateSilentAlarm(enabled: enabled) } }
+        ), icon: "headphones")
         .disabled(viewModel.alarmMode == .alarmKit)
-        .tint(theme.accentSecondary)
         .accessibilityLabel("조용한 알람")
         .accessibilityHint(
             viewModel.alarmMode == .alarmKit

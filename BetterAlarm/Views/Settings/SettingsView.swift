@@ -81,20 +81,15 @@ struct SettingsView: View {
                                 .font(.body)
                                 .foregroundStyle(Color.pTextPrimary)
                             Spacer()
-                            if viewModel.isLoading {
-                                ProgressView()
-                                    .tint(theme.accentPrimary)
-                            } else {
-                                Text(viewModel.notificationAuthStatus)
-                                    .font(.body)
-                                    .foregroundStyle(viewModel.notificationAuthStatus == "허용됨" ? Color.pSuccess : Color.pWarning)
-                                Button("설정 열기") {
-                                    openAppSettings()
-                                }
-                                .font(.caption)
-                                .foregroundStyle(theme.accentPrimary)
-                                .padding(.leading, 8)
+                            Text(viewModel.notificationAuthStatus)
+                                .font(.body)
+                                .foregroundStyle(viewModel.notificationAuthStatus == "허용됨" ? Color.pSuccess : Color.pWarning)
+                            Button("설정 열기") {
+                                openAppSettings()
                             }
+                            .font(.caption)
+                            .foregroundStyle(theme.accentPrimary)
+                            .padding(.leading, 8)
                         }
                         .frame(minHeight: 44)
                         .accessibilityElement(children: .combine)
@@ -106,21 +101,16 @@ struct SettingsView: View {
                                 .font(.body)
                                 .foregroundStyle(Color.pTextPrimary)
                             Spacer()
-                            if viewModel.isLoading {
-                                ProgressView()
-                                    .tint(theme.accentPrimary)
-                            } else {
-                                Text(viewModel.alarmKitAuthStatus)
-                                    .font(.body)
-                                    .foregroundStyle(viewModel.alarmKitAuthStatus == "허용됨" ? Color.pSuccess : Color.pTextSecondary)
-                                if viewModel.alarmKitAuthStatus != "iOS 26 이상 필요" {
-                                    Button("설정 열기") {
-                                        openAppSettings()
-                                    }
-                                    .font(.caption)
-                                    .foregroundStyle(theme.accentPrimary)
-                                    .padding(.leading, 8)
+                            Text(viewModel.alarmKitAuthStatus)
+                                .font(.body)
+                                .foregroundStyle(viewModel.alarmKitAuthStatus == "허용됨" ? Color.pSuccess : Color.pTextSecondary)
+                            if viewModel.alarmKitAuthStatus != "iOS 26 이상 필요" {
+                                Button("설정 열기") {
+                                    openAppSettings()
                                 }
+                                .font(.caption)
+                                .foregroundStyle(theme.accentPrimary)
+                                .padding(.leading, 8)
                             }
                         }
                         .frame(minHeight: 44)
@@ -135,25 +125,15 @@ struct SettingsView: View {
 
                     // MARK: 잠금화면 위젯 섹션 (토글 + 권한 통합)
                     Section {
-                        Toggle(isOn: $liveActivityToggle) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("잠금화면 위젯")
-                                    .font(.body)
-                                    .foregroundStyle(Color.pTextPrimary)
-                                Text("잠금화면에 다음 알람 정보를 표시합니다")
-                                    .font(.caption)
-                                    .foregroundStyle(Color.pTextTertiary)
+                        PToggle("잠금화면 위젯", isOn: $liveActivityToggle, icon: "lock.iphone")
+                            .accessibilityLabel("잠금화면 위젯")
+                            .accessibilityHint("Live Activity를 통해 잠금화면에 다음 알람 정보를 표시합니다")
+                            .frame(minHeight: 44)
+                            .onChange(of: liveActivityToggle) { _, newValue in
+                                Task {
+                                    await viewModel.setLiveActivityEnabled(newValue)
+                                }
                             }
-                        }
-                        .tint(theme.accentPrimary)
-                        .accessibilityLabel("잠금화면 위젯")
-                        .accessibilityHint("Live Activity를 통해 잠금화면에 다음 알람 정보를 표시합니다")
-                        .frame(minHeight: 44)
-                        .onChange(of: liveActivityToggle) { _, newValue in
-                            Task {
-                                await viewModel.setLiveActivityEnabled(newValue)
-                            }
-                        }
 
                         // 잠금화면 위젯 권한 행
                         HStack {
@@ -161,21 +141,16 @@ struct SettingsView: View {
                                 .font(.body)
                                 .foregroundStyle(Color.pTextPrimary)
                             Spacer()
-                            if viewModel.isLoading {
-                                ProgressView()
-                                    .tint(theme.accentPrimary)
-                            } else {
-                                Text(viewModel.lockScreenWidgetStatus)
-                                    .font(.body)
-                                    .foregroundStyle(viewModel.lockScreenWidgetStatus == "허용됨" ? Color.pSuccess : Color.pTextSecondary)
-                                if viewModel.lockScreenWidgetStatus != "iOS 17 이상 필요" {
-                                    Button("설정 열기") {
-                                        openAppSettings()
-                                    }
-                                    .font(.caption)
-                                    .foregroundStyle(theme.accentPrimary)
-                                    .padding(.leading, 8)
+                            Text(viewModel.lockScreenWidgetStatus)
+                                .font(.body)
+                                .foregroundStyle(viewModel.lockScreenWidgetStatus == "허용됨" ? Color.pSuccess : Color.pTextSecondary)
+                            if viewModel.lockScreenWidgetStatus != "iOS 17 이상 필요" {
+                                Button("설정 열기") {
+                                    openAppSettings()
                                 }
+                                .font(.caption)
+                                .foregroundStyle(theme.accentPrimary)
+                                .padding(.leading, 8)
                             }
                         }
                         .frame(minHeight: 44)
@@ -252,6 +227,10 @@ struct SettingsView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             Task { await viewModel.refreshPermissions() }
         }
+        .pLoadingOverlay(
+            isLoading: Binding(get: { viewModel.isLoading }, set: { _ in }),
+            message: "권한 확인 중..."
+        )
     }
 
     private func openAppSettings() {
