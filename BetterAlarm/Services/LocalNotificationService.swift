@@ -22,6 +22,46 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
     private let notificationCenter = UNUserNotificationCenter.current()
     private let backgroundReminderIdentifier = "com.nahun.BetterAlarm.backgroundReminder"
 
+    /// 알람 카테고리 ID (Notification Actions 지원)
+    static let alarmCategoryIdentifier = "ALARM_CATEGORY"
+
+    // MARK: - Notification Sound Helper
+
+    /// 알람의 사운드 설정에 따라 UNNotificationSound를 반환한다.
+    /// "default" → 번들 내 default_alarm_long.wav (30초 알람음)
+    /// 커스텀 → {soundName}.mp3
+    private func notificationSound(for alarm: Alarm) -> UNNotificationSound {
+        if alarm.soundName == "default" {
+            return UNNotificationSound(named: UNNotificationSoundName(rawValue: "default_alarm_long.wav"))
+        } else {
+            return UNNotificationSound(named: UNNotificationSoundName(rawValue: "\(alarm.soundName).mp3"))
+        }
+    }
+
+    // MARK: - Category Registration
+
+    /// 알람 알림 카테고리(정지/스누즈 액션)를 등록한다. 앱 시작 시 1회 호출.
+    func registerAlarmCategory() {
+        let stopAction = UNNotificationAction(
+            identifier: "STOP_ACTION",
+            title: "정지",
+            options: [.destructive, .authenticationRequired]
+        )
+        let snoozeAction = UNNotificationAction(
+            identifier: "SNOOZE_ACTION",
+            title: "스누즈 (5분)",
+            options: []
+        )
+        let category = UNNotificationCategory(
+            identifier: Self.alarmCategoryIdentifier,
+            actions: [stopAction, snoozeAction],
+            intentIdentifiers: [],
+            options: [.customDismissAction]
+        )
+        notificationCenter.setNotificationCategories([category])
+        AppLogger.info("Alarm notification category registered", category: .alarm)
+    }
+
     // MARK: - Permission
 
     /// 알림 권한을 요청한다.
@@ -63,10 +103,9 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
         let content = UNMutableNotificationContent()
         content.title = alarm.displayTitle
         content.body = "알람이 울립니다."
-        content.sound = alarm.soundName == "default"
-            ? .default
-            : UNNotificationSound(named: UNNotificationSoundName(rawValue: "\(alarm.soundName).mp3"))
+        content.sound = notificationSound(for: alarm)
         content.userInfo = ["alarmID": alarm.id.uuidString]
+        content.categoryIdentifier = Self.alarmCategoryIdentifier
         content.interruptionLevel = .timeSensitive
 
         let components = Calendar.current.dateComponents(
@@ -147,12 +186,14 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
         let content = UNMutableNotificationContent()
         content.title = alarm.displayTitle
         content.body = "알람이 울리고 있습니다. 앱을 열어 알람을 끄세요."
-        content.sound = .default
+        content.sound = notificationSound(for: alarm)
         content.userInfo = ["alarmID": alarm.id.uuidString]
+        content.categoryIdentifier = Self.alarmCategoryIdentifier
         content.interruptionLevel = .timeSensitive
 
         for i in 1...count {
-            let delay = TimeInterval(i * 5)
+            // 30초 간격: 알림 사운드(30초)가 끝나면 바로 다음 알림이 울림
+            let delay = TimeInterval(i * 30)
             let fireDate = triggerDate.addingTimeInterval(delay)
             let trigger = UNCalendarNotificationTrigger(
                 dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: fireDate),
@@ -189,10 +230,9 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
         let content = UNMutableNotificationContent()
         content.title = alarm.displayTitle
         content.body = "스누즈 알람이 울립니다."
-        content.sound = alarm.soundName == "default"
-            ? .default
-            : UNNotificationSound(named: UNNotificationSoundName(rawValue: "\(alarm.soundName).mp3"))
+        content.sound = notificationSound(for: alarm)
         content.userInfo = ["alarmID": alarm.id.uuidString, "isSnooze": true]
+        content.categoryIdentifier = Self.alarmCategoryIdentifier
         content.interruptionLevel = .timeSensitive
 
         let trigger = UNTimeIntervalNotificationTrigger(

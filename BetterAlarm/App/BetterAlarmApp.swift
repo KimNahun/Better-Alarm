@@ -220,6 +220,9 @@ struct BetterAlarmApp: App {
                     await liveActivityManager?.updateActivity(nextAlarm: nextAlarm)
                 }
 
+                // 알림 카테고리 등록 (정지/스누즈 액션)
+                await localNotificationService.registerAlarmCategory()
+
                 // 알림 권한 요청
                 _ = await localNotificationService.requestPermission()
 
