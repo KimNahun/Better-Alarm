@@ -22,6 +22,17 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     private(set) var localNotificationService: LocalNotificationService?
     private(set) var audioService: AudioService?
 
+    /// Cold launch 시 notification tap으로 들어온 알람 ID를 임시 저장.
+    /// SwiftUI .task 리스너가 아직 attach 안 됐을 때 유실 방지.
+    private var pendingAlarmID: UUID?
+
+    /// 저장된 pending 알람 ID를 소비(반환 후 nil 처리)한다.
+    func consumePendingAlarmID() -> UUID? {
+        let id = pendingAlarmID
+        pendingAlarmID = nil
+        return id
+    }
+
     /// BetterAlarmApp에서 의존성을 주입한다.
     func configure(alarmStore: AlarmStore, localNotificationService: LocalNotificationService, audioService: AudioService) {
         self.alarmStore = alarmStore
@@ -126,6 +137,20 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
                 let alarms = await store.alarms
                 if let alarm = alarms.first(where: { $0.id == alarmID }) {
                     AppLogger.info("Foreground notification → ringing screen: \(alarm.displayTitle)", category: .alarm)
+
+                    // 즉시 오디오 재생 (UI 렌더링 대기 없이 소리부터)
+                    if let audioService {
+                        await audioService.stopSilentLoop()
+                        let isPlaying = await audioService.isAlarmPlaying
+                        if !isPlaying {
+                            try? await audioService.playAlarmSound(
+                                soundName: alarm.soundName,
+                                isSilent: alarm.isSilentAlarm,
+                                loop: true
+                            )
+                        }
+                    }
+
                     NotificationCenter.default.post(
                         name: .alarmShouldRing,
                         object: nil,
@@ -147,11 +172,28 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         let userInfo = response.notification.request.content.userInfo
         if let alarmIDString = userInfo["alarmID"] as? String,
            let alarmID = UUID(uuidString: alarmIDString) {
-            guard let store = alarmStore else { return }
+            guard let store = alarmStore else {
+                // cold launch: store 주입 전이면 pending에 저장
+                pendingAlarmID = alarmID
+                AppLogger.info("Store not ready — saved pending alarm: \(alarmIDString)", category: .navigation)
+                return
+            }
             let alarms = await store.alarms
-            if alarms.first(where: { $0.id == alarmID }) != nil {
+            if let alarm = alarms.first(where: { $0.id == alarmID }) {
                 AppLogger.info("User tapped notification → deeplink to ringing screen: \(alarmIDString)", category: .navigation)
-                // 알람 울리는 화면으로 딥링크
+
+                // 즉시 오디오 재생 시작 (UI 렌더링 전에 소리부터 나도록)
+                if let audioService {
+                    await audioService.stopSilentLoop()
+                    try? await audioService.playAlarmSound(
+                        soundName: alarm.soundName,
+                        isSilent: alarm.isSilentAlarm,
+                        loop: true
+                    )
+                }
+
+                // pending 저장 + NotificationCenter 동시 발송 (둘 중 하나라도 수신되도록)
+                pendingAlarmID = alarmID
                 NotificationCenter.default.post(
                     name: .alarmShouldRing,
                     object: nil,

@@ -23,6 +23,7 @@ struct BetterAlarmApp: App {
 
     @State private var ringingAlarm: Alarm? = nil
     @State private var themeManager = AppThemeManager()
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         let notificationService = LocalNotificationService()
@@ -137,6 +138,50 @@ struct BetterAlarmApp: App {
                     Task {
                         let nextAlarm = await alarmStore.nextAlarm
                         await liveActivityManager?.updateActivity(nextAlarm: nextAlarm)
+                    }
+                }
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                Task {
+                    switch newPhase {
+                    case .background:
+                        AppLogger.info("ScenePhase → background", category: .lifecycle)
+                        // 백그라운드 무음 루프 시작 (앱 유지)
+                        await audioService.startSilentLoop()
+                        // 가장 임박한 local 알람에 대해 백그라운드 리마인더 등록
+                        let alarms = await alarmStore.alarms
+                        let nextLocal = alarms
+                            .filter { $0.isEnabled && $0.alarmMode == .local }
+                            .compactMap { alarm -> (Alarm, Date)? in
+                                guard let date = alarm.nextTriggerDate() else { return nil }
+                                return (alarm, date)
+                            }
+                            .min { $0.1 < $1.1 }?
+                            .0
+                        if let alarm = nextLocal {
+                            await localNotificationService.scheduleBackgroundReminder(for: alarm)
+                        }
+                    case .active:
+                        AppLogger.info("ScenePhase → active", category: .lifecycle)
+                        // 백그라운드 리마인더 취소 + 무음 루프 정지
+                        await localNotificationService.cancelBackgroundReminder()
+                        // 알람 재생 중이 아닐 때만 무음 루프 정지
+                        let isPlaying = await audioService.isAlarmPlaying
+                        if !isPlaying {
+                            await audioService.stopSilentLoop()
+                        }
+                        // pending 알람 처리 (race condition 방지)
+                        if let pendingID = appDelegate.consumePendingAlarmID() {
+                            let alarms = await alarmStore.alarms
+                            if let alarm = alarms.first(where: { $0.id == pendingID }) {
+                                AppLogger.info("Processing pending alarm from notification tap: \(alarm.displayTitle)", category: .alarm)
+                                ringingAlarm = alarm
+                            }
+                        }
+                    case .inactive:
+                        break
+                    @unknown default:
+                        break
                     }
                 }
             }

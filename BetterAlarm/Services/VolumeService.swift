@@ -76,7 +76,7 @@ final class VolumeService: VolumeServiceProtocol, @unchecked Sendable {
 
     // MARK: - Private
 
-    private func setVolumeWithDelay(_ volume: Float) {
+    private func setVolumeWithDelay(_ volume: Float, retryCount: Int = 0) {
         volumeView?.removeFromSuperview()
 
         let newVolumeView = MPVolumeView()
@@ -93,7 +93,15 @@ final class VolumeService: VolumeServiceProtocol, @unchecked Sendable {
                 .first
 
         guard let window else {
-            AppLogger.error("No window found for volume adjustment", category: .alarm)
+            // Cold launch 시 window가 아직 없으면 최대 3회 재시도 (0.3초 간격)
+            if retryCount < 3 {
+                AppLogger.warning("No window found for volume adjustment — retry \(retryCount + 1)/3", category: .alarm)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                    self?.setVolumeWithDelay(volume, retryCount: retryCount + 1)
+                }
+            } else {
+                AppLogger.error("No window found for volume adjustment after 3 retries", category: .alarm)
+            }
             return
         }
 
