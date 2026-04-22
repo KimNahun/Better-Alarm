@@ -143,8 +143,9 @@ actor AudioService: AudioServiceProtocol {
             try engine.start()
             playerNode.play()
 
-            // 실제 출력 볼륨 0 (스피커/이어폰에서 소리 안 남)
-            engine.mainMixerNode.outputVolume = 0.0
+            // 거의 무음이지만 0이 아닌 볼륨 — iOS가 "진짜 오디오 재생 중"으로 인식하도록.
+            // 0.0이면 iOS가 실제 오디오가 아니라고 판단하여 앱을 suspend할 수 있음.
+            engine.mainMixerNode.outputVolume = 0.01
 
             silentEngine = engine
             silentPlayerNode = playerNode

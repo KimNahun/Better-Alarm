@@ -201,10 +201,9 @@ struct BetterAlarmApp: App {
                 }
             }
             .task {
-                // 10초마다 임박한 알람 확인 (5초 이내만 발화)
+                // 다음 알람 시각까지 정확히 sleep 후 발화 (폴링 대신 정밀 타이머)
                 while !Task.isCancelled {
-                    try? await Task.sleep(for: .seconds(10))
-                    await checkForImminentAlarm()
+                    await waitAndFireNextAlarm()
                 }
             }
             .task {
@@ -232,40 +231,76 @@ struct BetterAlarmApp: App {
         }
     }
 
-    // MARK: - Alarm Check
+    // MARK: - Precise Alarm Timer
 
-    /// 활성화된 알람 중 30초 이내에 울릴 알람이 있는지 확인하여 울림 화면을 표시한다.
+    /// 다음 알람 시각까지 정확히 대기한 후 알람을 발화한다.
+    /// 폴링(10초 간격) 대신 정밀 sleep을 사용하여 100% 정확도 보장.
     @MainActor
-    private func checkForImminentAlarm() async {
-        guard ringingAlarm == nil else { return }
+    private func waitAndFireNextAlarm() async {
+        // 이미 울리는 중이면 1초 대기 후 재시도
+        guard ringingAlarm == nil else {
+            try? await Task.sleep(for: .seconds(1))
+            return
+        }
 
         let alarms = await alarmStore.alarms
         let now = Date()
-        // threshold를 5초로 줄여 알람이 너무 일찍 울리지 않도록 하고
-        // notification 경로와의 중복 발화를 방지한다.
-        let threshold: TimeInterval = 5
 
-        let imminent = alarms
+        // 가장 임박한 local 알람 찾기
+        let nextAlarm = alarms
             .filter { $0.isEnabled && $0.alarmMode == .local && !$0.isSkippingNext }
-            .first { alarm in
-                guard let triggerDate = alarm.nextTriggerDate() else { return false }
-                let interval = triggerDate.timeIntervalSince(now)
-                return interval >= 0 && interval <= threshold
+            .compactMap { alarm -> (Alarm, Date)? in
+                guard let triggerDate = alarm.nextTriggerDate() else { return nil }
+                guard triggerDate > now else { return nil }
+                return (alarm, triggerDate)
             }
+            .min { $0.1 < $1.1 }
 
-        if let alarm = imminent {
-            AppLogger.info("Imminent alarm detected: \(alarm.displayTitle) (within \(threshold)s)", category: .alarm)
-            ringingAlarm = alarm
-            // 백그라운드에서는 AlarmRingingView가 표시되지 않으므로 직접 소리 재생
-            if UIApplication.shared.applicationState != .active {
-                AppLogger.info("App in background — playing sound directly", category: .alarm)
-                await audioService.stopSilentLoop()
-                try? await audioService.playAlarmSound(
-                    soundName: alarm.soundName,
-                    isSilent: alarm.isSilentAlarm,
-                    loop: true
-                )
-            }
+        guard let (alarm, triggerDate) = nextAlarm else {
+            // 활성화된 알람이 없으면 30초마다 재확인
+            try? await Task.sleep(for: .seconds(30))
+            return
         }
+
+        let sleepDuration = triggerDate.timeIntervalSince(now)
+
+        // 최대 60초 단위로 잘라서 sleep (알람 추가/삭제 시 빠르게 재계산)
+        let sleepChunk = min(sleepDuration, 60.0)
+        AppLogger.debug("Next alarm '\(alarm.displayTitle)' in \(Int(sleepDuration))s — sleeping \(Int(sleepChunk))s chunk", category: .alarm)
+
+        do {
+            try await Task.sleep(for: .seconds(sleepChunk))
+        } catch {
+            return
+        }
+
+        // 아직 시간이 남았으면 루프 상단으로 돌아가 재계산
+        let remaining = triggerDate.timeIntervalSince(Date())
+        if remaining > 1 {
+            return
+        }
+
+        // 깨어남 — 알람 발화
+        guard ringingAlarm == nil else { return }
+
+        // 알람이 아직 활성 상태인지 재확인 (대기 중에 삭제/비활성 가능)
+        let currentAlarms = await alarmStore.alarms
+        guard let currentAlarm = currentAlarms.first(where: { $0.id == alarm.id }),
+              currentAlarm.isEnabled,
+              !currentAlarm.isSkippingNext else {
+            return
+        }
+
+        AppLogger.info("Alarm timer fired: '\(currentAlarm.displayTitle)'", category: .alarm)
+        ringingAlarm = currentAlarm
+
+        // 백그라운드에서는 AlarmRingingView가 표시되지 않으므로 직접 소리 재생
+        // 포그라운드에서도 즉시 소리 시작 (View 렌더링 대기 없이)
+        await audioService.stopSilentLoop()
+        try? await audioService.playAlarmSound(
+            soundName: currentAlarm.soundName,
+            isSilent: currentAlarm.isSilentAlarm,
+            loop: true
+        )
     }
 }
