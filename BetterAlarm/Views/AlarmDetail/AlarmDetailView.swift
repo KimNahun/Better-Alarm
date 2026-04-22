@@ -39,14 +39,8 @@ struct AlarmDetailView: View {
                     // MARK: 기본 설정
                     Section {
                         // 제목
-                        HStack {
-                            Text("제목")
-                                .foregroundStyle(Color.pTextPrimary)
-                            Spacer()
-                            TextField("알람", text: $vm.title)
-                                .multilineTextAlignment(.trailing)
-                                .foregroundStyle(Color.pTextSecondary)
-                        }
+                        TextField("알람 제목", text: $vm.title)
+                            .foregroundStyle(Color.pTextPrimary)
 
                         // 반복 스케줄
                         scheduleSection
