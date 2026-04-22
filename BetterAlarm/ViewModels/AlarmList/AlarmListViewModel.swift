@@ -40,6 +40,7 @@ final class AlarmListViewModel {
     /// 토글 요청 처리: 주간 알람 끄기 시 다이얼로그 표시
     func requestToggle(_ alarm: Alarm, enabled: Bool) {
         if !enabled, case .weekly = alarm.schedule {
+            AppLogger.info("Weekly alarm disable requested — showing action sheet: '\(alarm.displayTitle)'", category: .action)
             pendingDisableAlarm = alarm
         } else {
             Task { await toggleAlarm(alarm, enabled: enabled) }
@@ -57,6 +58,7 @@ final class AlarmListViewModel {
 
     /// 이번만 스킵 (isEnabled는 유지)
     func skipOnceAndDisable(_ alarm: Alarm) async {
+        AppLogger.info("Skip-once selected for weekly alarm: '\(alarm.displayTitle)'", category: .action)
         await store.skipOnceAlarm(alarm)
         pendingDisableAlarm = nil
         await refreshState()
@@ -65,12 +67,14 @@ final class AlarmListViewModel {
 
     /// 완전히 끄기
     func confirmDisable(_ alarm: Alarm) async {
+        AppLogger.info("Confirm disable selected for weekly alarm: '\(alarm.displayTitle)'", category: .action)
         await toggleAlarm(alarm, enabled: false)
         pendingDisableAlarm = nil
     }
 
     /// 다이얼로그 취소
     func cancelDisable() {
+        AppLogger.debug("Disable action sheet cancelled", category: .action)
         pendingDisableAlarm = nil
     }
 

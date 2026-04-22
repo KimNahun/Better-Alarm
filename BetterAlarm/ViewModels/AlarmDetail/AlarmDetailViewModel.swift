@@ -71,6 +71,9 @@ final class AlarmDetailViewModel {
 
         if let alarm = editingAlarm {
             populateFromAlarm(alarm)
+            AppLogger.info("AlarmDetailViewModel init — editing: '\(alarm.displayTitle)'", category: .ui)
+        } else {
+            AppLogger.info("AlarmDetailViewModel init — creating new alarm", category: .ui)
         }
     }
 
@@ -104,14 +107,17 @@ final class AlarmDetailViewModel {
             if #available(iOS 26, *) {
                 alarmMode = .alarmKit
                 isSilentAlarm = false
+                AppLogger.info("AlarmMode set to .alarmKit", category: .ui)
             } else {
                 alarmMode = .local
                 toastMessage = AlarmError.alarmKitUnavailable.errorDescription
                     ?? "이 기능은 iOS 26 이상에서만 사용할 수 있습니다."
                 showAlarmKitUnavailableToast = true
+                AppLogger.warning("AlarmKit requested but iOS < 26 — showing unavailable toast", category: .ui)
             }
         } else {
             alarmMode = .local
+            AppLogger.info("AlarmMode set to .local", category: .ui)
         }
     }
 
@@ -128,11 +134,15 @@ final class AlarmDetailViewModel {
             if #available(iOS 26, *) {
                 // iOS 26+: AlarmKit 기반이므로 alarmMode를 alarmKit으로 강제
                 alarmMode = .alarmKit
+                AppLogger.info("ScheduleType .specificDate → forcing .alarmKit mode", category: .ui)
             } else {
                 scheduleType = .once
                 toastMessage = "특정 날짜 알람은 iOS 26 이상에서만 지원됩니다."
                 showAlarmKitUnavailableToast = true
+                AppLogger.warning("ScheduleType .specificDate unavailable on iOS < 26 — reverting to .once", category: .ui)
             }
+        } else {
+            AppLogger.debug("ScheduleType changed to \(scheduleType.rawValue)", category: .ui)
         }
     }
 
@@ -147,19 +157,23 @@ final class AlarmDetailViewModel {
         guard enabled else {
             isSilentAlarm = false
             earphoneWarning = nil
+            AppLogger.debug("Silent alarm disabled", category: .ui)
             return
         }
         guard alarmMode != .alarmKit else {
             isSilentAlarm = false
             earphoneWarning = nil
+            AppLogger.debug("Silent alarm rejected — AlarmKit mode is active", category: .ui)
             return
         }
         isSilentAlarm = true
         let connected = await audioService.isEarphoneConnected()
         if connected {
             earphoneWarning = nil
+            AppLogger.info("Silent alarm enabled — earphone connected", category: .ui)
         } else {
             earphoneWarning = "이어폰이 연결되어 있지 않습니다. 알람 시각에 이어폰을 연결해주세요."
+            AppLogger.warning("Silent alarm enabled but earphone not connected", category: .ui)
         }
     }
 
@@ -177,6 +191,7 @@ final class AlarmDetailViewModel {
         guard let alarm = editingAlarm else { return }
         isDeleting = true
         defer { isDeleting = false }
+        AppLogger.info("Deleting alarm from detail: '\(alarm.displayTitle)'", category: .alarm)
         await store.deleteAlarm(alarm)
     }
 
@@ -184,7 +199,10 @@ final class AlarmDetailViewModel {
 
     func save() async {
         // 주간 알람은 최소 1개 이상의 요일이 선택되어야 저장 가능
-        guard !(scheduleType == .weekly && selectedWeekdays.isEmpty) else { return }
+        guard !(scheduleType == .weekly && selectedWeekdays.isEmpty) else {
+            AppLogger.warning("Save blocked — weekly alarm with no weekdays selected", category: .alarm)
+            return
+        }
 
         isSaving = true
         defer { isSaving = false }
@@ -193,6 +211,7 @@ final class AlarmDetailViewModel {
         let schedule = buildSchedule()
 
         if let alarm = editingAlarm {
+            AppLogger.info("Saving alarm update: '\(title.isEmpty ? "(no title)" : title)' \(hour):\(String(format: "%02d", minute)) schedule=\(scheduleType.rawValue) mode=\(alarmMode)", category: .alarm)
             await store.updateAlarm(
                 alarm,
                 hour: hour,
@@ -205,6 +224,7 @@ final class AlarmDetailViewModel {
             )
             actionToastMessage = "알람이 수정되었습니다"
         } else {
+            AppLogger.info("Saving new alarm: '\(title.isEmpty ? "(no title)" : title)' \(hour):\(String(format: "%02d", minute)) schedule=\(scheduleType.rawValue) mode=\(alarmMode) silent=\(isSilentAlarm)", category: .alarm)
             await store.createAlarm(
                 hour: hour,
                 minute: minute,

@@ -81,6 +81,7 @@ final class AlarmRingingViewModel {
 
     /// 알람을 정지하고 완료 처리한다.
     func stopAlarm() async {
+        AppLogger.info("Alarm stopped by user: '\(alarm.displayTitle)'", category: .alarm)
         isRinging = false
         await volumeService.stopVolumeGuard()
         await audioService.stopAlarmSound()
@@ -91,6 +92,7 @@ final class AlarmRingingViewModel {
 
     /// 스누즈: 사운드를 중지하고 5분 후 재알림을 예약한다.
     func snoozeAlarm() async {
+        AppLogger.info("Alarm snoozed by user: '\(alarm.displayTitle)' — rescheduling in 5min", category: .alarm)
         isRinging = false
         await volumeService.stopVolumeGuard()
         await audioService.stopAlarmSound()

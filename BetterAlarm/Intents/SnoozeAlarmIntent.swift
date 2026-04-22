@@ -24,6 +24,7 @@ struct SnoozeAlarmIntent: LiveActivityIntent {
     }
 
     func perform() async throws -> some IntentResult {
+        AppLogger.info("SnoozeAlarmIntent performed for id=\(alarmID)", category: .alarm)
         // E8 수정: AlarmKitService() 직접 인스턴스화 제거.
         // App Extension은 별도 프로세스 → 앱의 AlarmKitService actor와 메모리 공간이 다름.
         // AlarmManager.shared는 시스템 공유 인스턴스이므로 직접 사용이 올바른 방식.

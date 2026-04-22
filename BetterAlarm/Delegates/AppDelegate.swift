@@ -36,19 +36,24 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+        AppLogger.info("didFinishLaunching", category: .lifecycle)
         return true
     }
 
     // MARK: - Background / Foreground
 
     func applicationDidEnterBackground(_ application: UIApplication) {
+        AppLogger.info("App entered background", category: .lifecycle)
         Task {
             guard let store = alarmStore,
                   let notificationService = localNotificationService else { return }
 
             // local 모드 활성화 알람이 있으면 즉시 리마인더 등록
             let hasLocal = await store.hasEnabledLocalAlarms
-            guard hasLocal else { return }
+            guard hasLocal else {
+                AppLogger.debug("No enabled local alarms — skipping background reminder", category: .lifecycle)
+                return
+            }
 
             // 가장 임박한 local 알람 찾기
             let alarms = await store.alarms
@@ -62,6 +67,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
                 .0
 
             if let alarm = nextLocal {
+                AppLogger.info("Scheduling background reminder for: \(alarm.displayTitle)", category: .lifecycle)
                 await notificationService.scheduleBackgroundReminder(for: alarm)
             }
 
@@ -71,6 +77,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     func applicationWillEnterForeground(_ application: UIApplication) {
+        AppLogger.info("App entering foreground", category: .lifecycle)
         Task {
             // 백그라운드 리마인더 취소
             await localNotificationService?.cancelBackgroundReminder()
@@ -80,6 +87,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
+        AppLogger.info("App will terminate — re-registering alarms", category: .lifecycle)
         // 앱 종료 시 활성화된 모든 local 알람의 UNCalendar 알림을 재등록하여
         // 앱이 꺼진 상태에서도 iOS가 알림을 발송할 수 있도록 보장한다.
         guard let store = alarmStore,
@@ -92,7 +100,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             // 무음 루프 정지
             await audioService?.stopSilentLoop()
             let alarms = await store.alarms
-            for alarm in alarms where alarm.isEnabled && alarm.alarmMode == .local {
+            let localAlarms = alarms.filter { $0.isEnabled && $0.alarmMode == .local }
+            AppLogger.info("Re-registering \(localAlarms.count) local alarms on terminate", category: .lifecycle)
+            for alarm in localAlarms {
                 try? await notificationService.scheduleAlarm(for: alarm)
             }
         }
@@ -115,6 +125,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             if let store = alarmStore {
                 let alarms = await store.alarms
                 if let alarm = alarms.first(where: { $0.id == alarmID }) {
+                    AppLogger.info("Foreground notification → ringing screen: \(alarm.displayTitle)", category: .alarm)
                     NotificationCenter.default.post(
                         name: .alarmShouldRing,
                         object: nil,
@@ -124,6 +135,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
                 }
             }
         }
+        AppLogger.debug("Foreground notification presented as banner (non-alarm or unknown)", category: .alarm)
         return [.banner, .sound, .badge]
     }
 
@@ -138,12 +150,15 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             guard let store = alarmStore else { return }
             let alarms = await store.alarms
             if alarms.first(where: { $0.id == alarmID }) != nil {
+                AppLogger.info("User tapped notification → deeplink to ringing screen: \(alarmIDString)", category: .navigation)
                 // 알람 울리는 화면으로 딥링크
                 NotificationCenter.default.post(
                     name: .alarmShouldRing,
                     object: nil,
                     userInfo: ["alarmID": alarmIDString]
                 )
+            } else {
+                AppLogger.warning("Tapped notification but alarm not found: \(alarmIDString)", category: .navigation)
             }
         }
     }

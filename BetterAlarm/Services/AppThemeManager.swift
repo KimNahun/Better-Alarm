@@ -16,19 +16,23 @@ final class AppThemeManager {
         if let saved = UserDefaults.standard.string(forKey: userDefaultsKey),
            let theme = PTheme(rawValue: saved) {
             currentTheme = theme
+            AppLogger.info("Theme restored from UserDefaults: \(theme.rawValue)", category: .settings)
         } else {
             currentTheme = .summer
             UserDefaults.standard.set(PTheme.summer.rawValue, forKey: userDefaultsKey)
+            AppLogger.info("Theme first launch — defaulting to summer", category: .settings)
         }
         applyUIKitTheme(currentTheme)
         applyAlternateIcon(for: currentTheme)
     }
 
     func setTheme(_ theme: PTheme) {
+        let old = currentTheme
         currentTheme = theme
         UserDefaults.standard.set(theme.rawValue, forKey: userDefaultsKey)
         applyUIKitTheme(theme)
         applyAlternateIcon(for: theme)
+        AppLogger.info("Theme changed: \(old.rawValue) → \(theme.rawValue)", category: .settings)
     }
 
     private func applyAlternateIcon(for theme: PTheme) {
@@ -39,17 +43,25 @@ final class AppThemeManager {
         case .winter:  iconName = "AppIcon-Winter"
         default:       iconName = "AppIcon-Summer"
         }
-        guard UIApplication.shared.supportsAlternateIcons else { return }
-        guard UIApplication.shared.alternateIconName != iconName else { return }
+        guard UIApplication.shared.supportsAlternateIcons else {
+            AppLogger.warning("Alternate icons not supported on this device", category: .settings)
+            return
+        }
+        guard UIApplication.shared.alternateIconName != iconName else {
+            AppLogger.debug("Icon already set to \(iconName) — skipping", category: .settings)
+            return
+        }
 
         // Private API: 시스템 확인 모달 없이 아이콘 변경
         let selectorString = "_setAlternateIconName:completionHandler:"
         let selector = NSSelectorFromString(selectorString)
         guard UIApplication.shared.responds(to: selector) else {
             // private API 미지원 시 공개 API fallback
+            AppLogger.debug("Private icon API unavailable — using public API for \(iconName)", category: .settings)
             UIApplication.shared.setAlternateIconName(iconName) { _ in }
             return
         }
+        AppLogger.debug("Applying alternate icon via private API: \(iconName)", category: .settings)
         typealias IconChangeFn = @convention(c) (NSObject, Selector, NSString?, @escaping (NSError?) -> Void) -> Void
         let imp = UIApplication.shared.method(for: selector)
         let fn = unsafeBitCast(imp, to: IconChangeFn.self)

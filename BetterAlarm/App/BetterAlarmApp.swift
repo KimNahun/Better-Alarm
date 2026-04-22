@@ -58,7 +58,8 @@ struct BetterAlarmApp: App {
         // 전체 앱 배경색을 설정하여 탭/화면 전환 시 흰색 깜빡임 방지
         configureAppearance()
 
-        AppLogger.info("BetterAlarmApp initialized", category: .lifecycle)
+        let mode = alarmKitSvc != nil ? "AlarmKit+Local" : "Local only"
+        AppLogger.info("BetterAlarmApp initialized (mode: \(mode))", category: .lifecycle)
     }
 
     /// UIKit 전역 외관 설정: 네비게이션바, 테이블뷰 배경색 설정. 탭바는 AppThemeManager가 담당.
@@ -137,7 +138,10 @@ struct BetterAlarmApp: App {
                        let alarmID = UUID(uuidString: alarmIDString) {
                         let alarms = await alarmStore.alarms
                         if let alarm = alarms.first(where: { $0.id == alarmID }) {
+                            AppLogger.info("Notification received → showing ringing screen: \(alarm.displayTitle)", category: .alarm)
                             ringingAlarm = alarm
+                        } else {
+                            AppLogger.warning("Notification received but alarm not found: \(alarmIDString)", category: .alarm)
                         }
                     }
                 }
@@ -193,9 +197,11 @@ struct BetterAlarmApp: App {
             }
 
         if let alarm = imminent {
+            AppLogger.info("Imminent alarm detected: \(alarm.displayTitle) (within \(threshold)s)", category: .alarm)
             ringingAlarm = alarm
             // 백그라운드에서는 AlarmRingingView가 표시되지 않으므로 직접 소리 재생
             if UIApplication.shared.applicationState != .active {
+                AppLogger.info("App in background — playing sound directly", category: .alarm)
                 await audioService.stopSilentLoop()
                 try? await audioService.playAlarmSound(
                     soundName: alarm.soundName,

@@ -56,9 +56,12 @@ final class SettingsViewModel {
         isLoading = true
         defer { isLoading = false }
 
+        AppLogger.info("Loading settings", category: .settings)
+
         // Live Activity 상태 로드
         if #available(iOS 17.0, *), let manager = liveActivityManager {
             isLiveActivityEnabled = await manager.isLiveActivityEnabled
+            AppLogger.debug("Live Activity enabled state loaded: \(isLiveActivityEnabled)", category: .settings)
         }
 
         // 권한 상태 확인
@@ -82,6 +85,7 @@ final class SettingsViewModel {
 
     /// Live Activity 활성화/비활성화를 설정하고 LiveActivityManager에 동기화한다.
     func setLiveActivityEnabled(_ enabled: Bool) async {
+        AppLogger.info("Live Activity setting changed: \(enabled)", category: .settings)
         isLiveActivityEnabled = enabled
         await syncLiveActivitySetting(enabled)
     }
@@ -102,6 +106,7 @@ final class SettingsViewModel {
         @unknown default:
             notificationAuthStatus = "알 수 없음"
         }
+        AppLogger.info("Notification permission status: \(notificationAuthStatus)", category: .permission)
 
         // AlarmKit 권한 상태 확인 (요청 없이)
         await loadAlarmKitAuthStatus()
@@ -113,6 +118,8 @@ final class SettingsViewModel {
         } else {
             lockScreenWidgetStatus = "iOS 17 이상 필요"
         }
+        AppLogger.info("Lock Screen Widget status: \(lockScreenWidgetStatus)", category: .permission)
+        AppLogger.info("AlarmKit status: \(alarmKitAuthStatus)", category: .permission)
     }
 
     // MARK: - Private

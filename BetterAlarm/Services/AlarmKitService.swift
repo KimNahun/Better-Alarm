@@ -33,15 +33,20 @@ actor AlarmKitService: AlarmKitServiceProtocol {
     func requestPermission() async -> Bool {
         do {
             let status = try await manager.requestAuthorization()
-            return status == .authorized
+            let granted = status == .authorized
+            AppLogger.info("AlarmKit permission request → \(granted ? "authorized" : "denied")", category: .permission)
+            return granted
         } catch {
+            AppLogger.error("AlarmKit permission request failed: \(error)", category: .permission)
             return false
         }
     }
 
     /// 권한을 요청하지 않고 현재 상태만 확인한다.
     func checkPermission() async -> Bool {
-        return manager.authorizationState == .authorized
+        let authorized = manager.authorizationState == .authorized
+        AppLogger.debug("AlarmKit permission check → \(authorized ? "authorized" : "not authorized")", category: .permission)
+        return authorized
     }
 
     // MARK: - Schedule
@@ -50,9 +55,13 @@ actor AlarmKitService: AlarmKitServiceProtocol {
     /// - .once / .specificDate: Fixed schedule (특정 날짜 1회)
     /// - .weekly: Relative schedule (주간 반복)
     func scheduleAlarm(for alarm: Alarm) async throws {
-        guard alarm.isEnabled else { return }
+        guard alarm.isEnabled else {
+            AppLogger.debug("AlarmKit scheduleAlarm skipped (disabled): \(alarm.displayTitle)", category: .alarmKit)
+            return
+        }
 
         guard await requestPermission() else {
+            AppLogger.error("AlarmKit scheduleAlarm denied — not authorized: \(alarm.displayTitle)", category: .alarmKit)
             throw AlarmError.notAuthorized
         }
 
@@ -88,11 +97,14 @@ actor AlarmKitService: AlarmKitServiceProtocol {
         switch alarm.schedule {
         case .once:
             guard let triggerDate = alarm.nextTriggerDate() else {
+                AppLogger.error("AlarmKit: failed to compute trigger date for '\(alarm.displayTitle)'", category: .alarmKit)
                 throw AlarmError.scheduleFailed("다음 발생 시각 계산 실패")
             }
             guard triggerDate.timeIntervalSinceNow > 0 else {
+                AppLogger.error("AlarmKit: trigger date is in the past for '\(alarm.displayTitle)'", category: .alarmKit)
                 throw AlarmError.scheduleFailed("과거 시각으로는 알람을 설정할 수 없습니다.")
             }
+            AppLogger.info("AlarmKit schedule .once → \(triggerDate)", category: .alarmKit)
             schedule = .fixed(triggerDate)
 
         case .weekly(let weekdays):
@@ -101,6 +113,7 @@ actor AlarmKitService: AlarmKitServiceProtocol {
             let recurrence = AlarmKit.Alarm.Schedule.Relative.Recurrence.weekly(localeWeekdays)
             let relativeSchedule = AlarmKit.Alarm.Schedule.Relative(time: time, repeats: recurrence)
             schedule = .relative(relativeSchedule)
+            AppLogger.info("AlarmKit schedule .weekly [\(weekdays.map(\.shortName).joined(separator: ","))] at \(alarm.hour):\(String(format: "%02d", alarm.minute))", category: .alarmKit)
 
         case .specificDate(let date):
             var components = Calendar.current.dateComponents([.year, .month, .day], from: date)
@@ -108,11 +121,14 @@ actor AlarmKitService: AlarmKitServiceProtocol {
             components.minute = alarm.minute
             components.second = 0
             guard let triggerDate = Calendar.current.date(from: components) else {
+                AppLogger.error("AlarmKit: date component conversion failed for '\(alarm.displayTitle)'", category: .alarmKit)
                 throw AlarmError.scheduleFailed("날짜 변환 실패")
             }
             guard triggerDate.timeIntervalSinceNow > 0 else {
+                AppLogger.error("AlarmKit: specificDate is in the past for '\(alarm.displayTitle)'", category: .alarmKit)
                 throw AlarmError.scheduleFailed("과거 날짜로는 알람을 설정할 수 없습니다.")
             }
+            AppLogger.info("AlarmKit schedule .specificDate → \(triggerDate)", category: .alarmKit)
             schedule = .fixed(triggerDate)
         }
 
@@ -124,6 +140,7 @@ actor AlarmKitService: AlarmKitServiceProtocol {
         )
 
         _ = try await manager.schedule(id: alarmID, configuration: config)
+        AppLogger.info("AlarmKit alarm scheduled: '\(alarm.displayTitle)' id=\(alarmID)", category: .alarmKit)
     }
 
     // MARK: - Cancel / Stop
@@ -139,6 +156,7 @@ actor AlarmKitService: AlarmKitServiceProtocol {
     func stopAllAlarms() async {
         do {
             let existing = try manager.alarms
+            AppLogger.debug("AlarmKit stopping \(existing.count) existing alarm(s)", category: .alarmKit)
             for alarm in existing {
                 try? manager.stop(id: alarm.id)
             }
@@ -150,6 +168,7 @@ actor AlarmKitService: AlarmKitServiceProtocol {
 
     /// 스누즈: 현재 알람 중지 후 5분 뒤 새 AlarmKit 알람 등록.
     func snoozeAlarm(id alarmIDString: String) async {
+        AppLogger.info("AlarmKit snooze requested for id=\(alarmIDString)", category: .alarmKit)
         if let id = UUID(uuidString: alarmIDString) {
             try? manager.stop(id: id)
         }
@@ -178,6 +197,7 @@ actor AlarmKitService: AlarmKitServiceProtocol {
         )
 
         _ = try? await manager.schedule(id: newID, configuration: config)
+        AppLogger.info("AlarmKit snooze scheduled: newID=\(newID) at \(snoozeDate)", category: .alarmKit)
     }
 
     // MARK: - Monitoring

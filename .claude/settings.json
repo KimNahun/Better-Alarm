@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/haesuyoun/Desktop/NahunPersonalFolder/Better-Alarm && git diff --quiet HEAD 2>/dev/null && exit 0; FILES=$(git diff --name-only HEAD 2>/dev/null | head -3 | xargs -I{} basename {} | tr '\\n' ' ' | sed 's/ $//'); git add -A && git commit -m \"fix: ${FILES:-변경사항 자동 커밋}\" 2>/dev/null || true",
+            "statusMessage": "변경사항 커밋 중..."
+          }
+        ]
+      }
+    ]
+  }
+}

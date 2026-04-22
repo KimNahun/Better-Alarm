@@ -23,6 +23,7 @@ struct StopAlarmIntent: LiveActivityIntent {
     }
 
     func perform() async throws -> some IntentResult {
+        AppLogger.info("StopAlarmIntent performed for id=\(alarmID)", category: .alarm)
         if let id = UUID(uuidString: alarmID) {
             try? AlarmManager.shared.stop(id: id)
         }
