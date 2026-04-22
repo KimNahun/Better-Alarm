@@ -20,6 +20,7 @@ struct AlarmDetailView: View {
     }
 
     var body: some View {
+        @Bindable var vm = viewModel
         NavigationStack {
             ZStack {
                 PGradientBackground()
@@ -42,7 +43,7 @@ struct AlarmDetailView: View {
                             Text("제목")
                                 .foregroundStyle(Color.pTextPrimary)
                             Spacer()
-                            TextField("알람", text: $viewModel.title)
+                            TextField("알람", text: $vm.title)
                                 .multilineTextAlignment(.trailing)
                                 .foregroundStyle(Color.pTextSecondary)
                         }
@@ -210,11 +211,13 @@ struct AlarmDetailView: View {
 
     // MARK: - Time Picker
 
+    @ViewBuilder
     private var timePicker: some View {
+        @Bindable var vm = viewModel
         HStack(spacing: 0) {
             Spacer(minLength: 0)
             // 오전/오후 선택
-            Picker("오전/오후", selection: $viewModel.isPM) {
+            Picker("오전/오후", selection: $vm.isPM) {
                 Text("오전").tag(false)
                 Text("오후").tag(true)
             }
@@ -224,7 +227,7 @@ struct AlarmDetailView: View {
             .accessibilityLabel("오전 오후 선택")
 
             // 시 선택 (1~12)
-            Picker("시", selection: $viewModel.displayHour) {
+            Picker("시", selection: $vm.displayHour) {
                 ForEach(1...12, id: \.self) { h in
                     Text("\(h)시").tag(h)
                 }
@@ -235,7 +238,7 @@ struct AlarmDetailView: View {
             .accessibilityLabel("시 선택")
 
             // 분 선택
-            Picker("분", selection: $viewModel.minute) {
+            Picker("분", selection: $vm.minute) {
                 ForEach(0..<60, id: \.self) { m in
                     Text(String(format: "%02d분", m)).tag(m)
                 }
@@ -256,7 +259,8 @@ struct AlarmDetailView: View {
 
     @ViewBuilder
     private var scheduleSection: some View {
-        Picker("반복", selection: $viewModel.scheduleType) {
+        @Bindable var vm = viewModel
+        Picker("반복", selection: $vm.scheduleType) {
             ForEach(AlarmDetailViewModel.ScheduleType.allCases, id: \.self) { type in
                 Text(type.rawValue).tag(type)
             }
@@ -275,7 +279,7 @@ struct AlarmDetailView: View {
         if viewModel.scheduleType == .specificDate {
             DatePicker(
                 "날짜",
-                selection: $viewModel.specificDate,
+                selection: $vm.specificDate,
                 in: Date()...,
                 displayedComponents: .date
             )
