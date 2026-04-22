@@ -141,7 +141,19 @@ actor AlarmStore {
         saveAlarms()
 
         if enabled {
-            await scheduleNextAlarm()
+            // 전체 재스케줄 대신 해당 알람만 스케줄
+            switch updated.alarmMode {
+            case .local:
+                do {
+                    try await localNotificationService.scheduleAlarm(for: updated)
+                } catch {
+                    AppLogger.error("Failed to schedule alarm '\(updated.displayTitle)': \(error)", category: .alarm)
+                }
+            case .alarmKit:
+                if let service = alarmKitService {
+                    try? await service.scheduleAlarm(for: updated)
+                }
+            }
         } else {
             await cancelSchedule(for: alarm)
         }
