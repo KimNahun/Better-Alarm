@@ -17,6 +17,7 @@ final class AlarmListViewModel {
     private(set) var showToast: Bool = false
     private(set) var toastMessage: String = ""
     private(set) var pendingDisableAlarm: Alarm? = nil
+    private(set) var togglingAlarmID: UUID? = nil
 
     // MARK: - Dependencies
 
@@ -47,6 +48,8 @@ final class AlarmListViewModel {
 
     /// 알람 활성화/비활성화 토글
     func toggleAlarm(_ alarm: Alarm, enabled: Bool) async {
+        togglingAlarmID = alarm.id
+        defer { togglingAlarmID = nil }
         await store.toggleAlarm(alarm, enabled: enabled)
         await refreshState()
         showToastMessage(enabled ? "알람이 켜졌습니다" : "알람이 꺼졌습니다")

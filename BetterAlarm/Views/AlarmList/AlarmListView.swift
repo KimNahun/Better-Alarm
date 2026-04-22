@@ -43,6 +43,7 @@ struct AlarmListView: View {
                                     showDetail = true
                                     HapticManager.impact(.light)
                                 })
+                                .pLoadingOverlay(isLoading: .constant(viewModel.togglingAlarmID == alarm.id))
                                 .transition(.opacity.combined(with: .move(edge: .top)))
                             }
                         }

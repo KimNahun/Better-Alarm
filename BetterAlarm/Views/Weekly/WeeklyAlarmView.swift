@@ -113,21 +113,20 @@ struct WeeklyAlarmView: View {
     private var weeklyAlarmList: some View {
         List {
             ForEach(viewModel.filteredAlarms) { alarm in
-                AlarmRowView(alarm: alarm) { enabled in
+                AlarmRowView(alarm: alarm, onToggle: { enabled in
                     Task {
                         viewModel.requestToggle(alarm, enabled: enabled)
                         HapticManager.selection()
                     }
-                }
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets())
-                .contentShape(Rectangle())
-                .onTapGesture {
+                }, onTap: {
                     selectedAlarm = alarm
                     showDetail = true
                     HapticManager.impact(.light)
-                }
+                })
+                .pLoadingOverlay(isLoading: .constant(viewModel.togglingAlarmID == alarm.id))
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets())
                 .alarmSwipeActions(
                     alarm: alarm,
                     onDelete: { Task { await viewModel.deleteAlarm(alarm) } },
