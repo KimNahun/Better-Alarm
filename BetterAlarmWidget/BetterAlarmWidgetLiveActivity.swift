@@ -1,8 +1,3 @@
-//
-//  BetterAlarmWidgetLiveActivity.swift
-//  BetterAlarmWidget
-//
-
 import ActivityKit
 import WidgetKit
 import SwiftUI
@@ -18,28 +13,75 @@ struct AlarmActivityAttributes: ActivityAttributes {
         var alarmTitle: String
         var isSkipped: Bool
         var isEmpty: Bool
-        
-        init(nextAlarmTime: String, nextAlarmDate: String, alarmTitle: String, isSkipped: Bool, isEmpty: Bool = false) {
+        var themeName: String       // PTheme.rawValue — 위젯 테마 색상 동기화
+
+        init(
+            nextAlarmTime: String,
+            nextAlarmDate: String,
+            alarmTitle: String,
+            isSkipped: Bool,
+            isEmpty: Bool = false,
+            themeName: String = "winter"
+        ) {
             self.nextAlarmTime = nextAlarmTime
             self.nextAlarmDate = nextAlarmDate
             self.alarmTitle = alarmTitle
             self.isSkipped = isSkipped
             self.isEmpty = isEmpty
+            self.themeName = themeName
         }
     }
 
     var alarmId: String
 }
 
-// MARK: - Theme Colors
+// MARK: - Theme Palette
 
-private extension Color {
-    static let accentLavender = Color(red: 0.7, green: 0.5, blue: 1.0)
-    static let accentPink = Color(red: 1.0, green: 0.6, blue: 0.7)
-    static let skipOrange = Color(red: 1.0, green: 0.75, blue: 0.4)
-    static let backgroundDark = Color(red: 0.08, green: 0.08, blue: 0.15)
-    static let backgroundPurple = Color(red: 0.12, green: 0.1, blue: 0.22)
-    static let emptyGray = Color(red: 0.5, green: 0.5, blue: 0.55)
+/// 위젯에서 사용하는 테마별 색상 팔레트.
+/// PersonalColorDesignSystem을 직접 import할 수 없으므로 앱 테마와 시각적으로 일치하는 값을 정의.
+struct WidgetTheme {
+    let backgroundFrom: Color
+    let backgroundTo: Color
+    let accentFrom: Color
+    let accentTo: Color
+    let labelAccent: Color
+
+    static func palette(for themeName: String) -> WidgetTheme {
+        switch themeName {
+        case "summer":
+            return WidgetTheme(
+                backgroundFrom: Color(red: 0.10, green: 0.07, blue: 0.01),
+                backgroundTo:   Color(red: 0.16, green: 0.10, blue: 0.02),
+                accentFrom:     Color(red: 1.00, green: 0.72, blue: 0.15),
+                accentTo:       Color(red: 1.00, green: 0.45, blue: 0.10),
+                labelAccent:    Color(red: 1.00, green: 0.76, blue: 0.30)
+            )
+        case "spring":
+            return WidgetTheme(
+                backgroundFrom: Color(red: 0.04, green: 0.08, blue: 0.07),
+                backgroundTo:   Color(red: 0.07, green: 0.11, blue: 0.10),
+                accentFrom:     Color(red: 0.95, green: 0.60, blue: 0.75),
+                accentTo:       Color(red: 0.50, green: 0.88, blue: 0.65),
+                labelAccent:    Color(red: 0.92, green: 0.66, blue: 0.80)
+            )
+        case "autumn":
+            return WidgetTheme(
+                backgroundFrom: Color(red: 0.12, green: 0.07, blue: 0.02),
+                backgroundTo:   Color(red: 0.18, green: 0.09, blue: 0.03),
+                accentFrom:     Color(red: 1.00, green: 0.52, blue: 0.15),
+                accentTo:       Color(red: 0.85, green: 0.25, blue: 0.10),
+                labelAccent:    Color(red: 1.00, green: 0.58, blue: 0.22)
+            )
+        default: // "winter"
+            return WidgetTheme(
+                backgroundFrom: Color(red: 0.08, green: 0.08, blue: 0.15),
+                backgroundTo:   Color(red: 0.12, green: 0.10, blue: 0.22),
+                accentFrom:     Color(red: 0.70, green: 0.50, blue: 1.00),
+                accentTo:       Color(red: 1.00, green: 0.60, blue: 0.70),
+                labelAccent:    Color(red: 0.75, green: 0.55, blue: 1.00)
+            )
+        }
+    }
 }
 
 // MARK: - Live Activity Widget
@@ -47,11 +89,9 @@ private extension Color {
 struct BetterAlarmWidgetLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: AlarmActivityAttributes.self) { context in
-            // Lock screen/banner UI
             LockScreenView(context: context)
         } dynamicIsland: { context in
             DynamicIsland {
-                // Expanded UI - 최소화 (길게 누르면 나타남)
                 DynamicIslandExpandedRegion(.leading) {
                     Text(" ")
                         .font(.system(size: 1))
@@ -70,17 +110,14 @@ struct BetterAlarmWidgetLiveActivity: Widget {
                         .foregroundColor(.clear)
                 }
             } compactLeading: {
-                // 최소한의 투명 요소
                 Text(" ")
                     .font(.system(size: 1))
                     .foregroundColor(.clear)
             } compactTrailing: {
-                // 최소한의 투명 요소
                 Text(" ")
                     .font(.system(size: 1))
                     .foregroundColor(.clear)
             } minimal: {
-                // 최소한의 투명 요소
                 Text(" ")
                     .font(.system(size: 1))
                     .foregroundColor(.clear)
@@ -95,10 +132,14 @@ struct BetterAlarmWidgetLiveActivity: Widget {
 struct LockScreenView: View {
     let context: ActivityViewContext<AlarmActivityAttributes>
 
+    private var theme: WidgetTheme {
+        WidgetTheme.palette(for: context.state.themeName)
+    }
+
     var body: some View {
         ZStack {
             LinearGradient(
-                colors: [.backgroundDark, .backgroundPurple],
+                colors: [theme.backgroundFrom, theme.backgroundTo],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -112,29 +153,29 @@ struct LockScreenView: View {
         .activityBackgroundTint(.clear)
         .activitySystemActionForegroundColor(.white)
     }
-    
-    // MARK: - Empty State Content
+
+    // MARK: - Empty State
 
     private var emptyStateContent: some View {
         HStack(spacing: 14) {
             ZStack {
                 Circle()
-                    .fill(Color.emptyGray.opacity(0.2))
+                    .fill(theme.accentFrom.opacity(0.15))
                     .frame(width: 46, height: 46)
 
                 Image(systemName: "alarm")
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(.emptyGray)
+                    .foregroundColor(theme.accentFrom.opacity(0.5))
             }
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("설정된 알람 없음")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.emptyGray)
+                    .foregroundColor(.white.opacity(0.45))
 
                 Text("알람을 추가해주세요")
                     .font(.caption)
-                    .foregroundColor(.emptyGray.opacity(0.7))
+                    .foregroundColor(.white.opacity(0.30))
             }
 
             Spacer()
@@ -142,7 +183,7 @@ struct LockScreenView: View {
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
     }
-    
+
     // MARK: - Alarm Content
 
     private var alarmContent: some View {
@@ -151,7 +192,7 @@ struct LockScreenView: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [.accentLavender, .accentPink],
+                            colors: [theme.accentFrom, theme.accentTo],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -164,9 +205,21 @@ struct LockScreenView: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("다음 알람")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.accentLavender)
+                HStack(spacing: 6) {
+                    Text("다음 알람")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(theme.labelAccent)
+
+                    if context.state.isSkipped {
+                        Text("건너뛰기")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.orange)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.orange.opacity(0.20))
+                            .clipShape(Capsule())
+                    }
+                }
 
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(context.state.nextAlarmTime)
@@ -176,22 +229,22 @@ struct LockScreenView: View {
 
                     Text(context.state.nextAlarmDate)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.white.opacity(0.6))
+                        .foregroundColor(.white.opacity(0.60))
                 }
 
-                Text(context.state.alarmTitle)
-                    .font(.system(size: 13))
-                    .foregroundColor(.white.opacity(0.8))
-                    .lineLimit(1)
+                if !context.state.alarmTitle.isEmpty {
+                    Text(context.state.alarmTitle)
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.80))
+                        .lineLimit(1)
+                }
             }
 
             Spacer()
 
-            VStack {
-                Image(systemName: "bell.and.waves.left.and.right.fill")
-                    .font(.system(size: 18))
-                    .foregroundColor(.white.opacity(0.15))
-            }
+            Image(systemName: "bell.and.waves.left.and.right.fill")
+                .font(.system(size: 18))
+                .foregroundColor(theme.accentFrom.opacity(0.25))
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
@@ -200,38 +253,63 @@ struct LockScreenView: View {
 
 // MARK: - Previews
 
-#Preview("With Alarm", as: .content, using: AlarmActivityAttributes(alarmId: "preview")) {
-   BetterAlarmWidgetLiveActivity()
+#Preview("Winter", as: .content, using: AlarmActivityAttributes(alarmId: "preview")) {
+    BetterAlarmWidgetLiveActivity()
 } contentStates: {
     AlarmActivityAttributes.ContentState(
         nextAlarmTime: "오전 7:30",
         nextAlarmDate: "내일",
         alarmTitle: "출근 알람",
         isSkipped: false,
-        isEmpty: false
+        themeName: "winter"
     )
 }
 
-#Preview("Skipped", as: .content, using: AlarmActivityAttributes(alarmId: "preview")) {
-   BetterAlarmWidgetLiveActivity()
+#Preview("Summer", as: .content, using: AlarmActivityAttributes(alarmId: "preview")) {
+    BetterAlarmWidgetLiveActivity()
 } contentStates: {
     AlarmActivityAttributes.ContentState(
         nextAlarmTime: "오전 7:30",
-        nextAlarmDate: "1월 22일",
+        nextAlarmDate: "내일",
         alarmTitle: "출근 알람",
-        isSkipped: true,
-        isEmpty: false
+        isSkipped: false,
+        themeName: "summer"
     )
 }
 
-#Preview("Empty State", as: .content, using: AlarmActivityAttributes(alarmId: "empty")) {
-   BetterAlarmWidgetLiveActivity()
+#Preview("Spring", as: .content, using: AlarmActivityAttributes(alarmId: "preview")) {
+    BetterAlarmWidgetLiveActivity()
+} contentStates: {
+    AlarmActivityAttributes.ContentState(
+        nextAlarmTime: "오전 8:00",
+        nextAlarmDate: "오늘",
+        alarmTitle: "아침 운동",
+        isSkipped: false,
+        themeName: "spring"
+    )
+}
+
+#Preview("Autumn", as: .content, using: AlarmActivityAttributes(alarmId: "preview")) {
+    BetterAlarmWidgetLiveActivity()
+} contentStates: {
+    AlarmActivityAttributes.ContentState(
+        nextAlarmTime: "오후 2:00",
+        nextAlarmDate: "1월 22일",
+        alarmTitle: "회의",
+        isSkipped: true,
+        themeName: "autumn"
+    )
+}
+
+#Preview("Empty", as: .content, using: AlarmActivityAttributes(alarmId: "empty")) {
+    BetterAlarmWidgetLiveActivity()
 } contentStates: {
     AlarmActivityAttributes.ContentState(
         nextAlarmTime: "--:--",
-        nextAlarmDate: "설정된 알람 없음",
-        alarmTitle: "알람을 추가해주세요",
+        nextAlarmDate: "",
+        alarmTitle: "",
         isSkipped: false,
-        isEmpty: true
+        isEmpty: true,
+        themeName: "winter"
     )
 }

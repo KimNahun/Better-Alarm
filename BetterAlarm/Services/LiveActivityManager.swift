@@ -14,19 +14,22 @@ struct AlarmActivityAttributes: ActivityAttributes {
         var alarmTitle: String
         var isSkipped: Bool
         var isEmpty: Bool
+        var themeName: String       // PTheme.rawValue — 위젯 테마 색상 동기화
 
         init(
             nextAlarmTime: String,
             nextAlarmDate: String,
             alarmTitle: String,
             isSkipped: Bool,
-            isEmpty: Bool = false
+            isEmpty: Bool = false,
+            themeName: String = "winter"
         ) {
             self.nextAlarmTime = nextAlarmTime
             self.nextAlarmDate = nextAlarmDate
             self.alarmTitle = alarmTitle
             self.isSkipped = isSkipped
             self.isEmpty = isEmpty
+            self.themeName = themeName
         }
     }
 
@@ -162,6 +165,8 @@ actor LiveActivityManager {
 
     /// 알람 데이터에서 Live Activity ContentState를 생성한다.
     private func createContentState(for alarm: Alarm) -> AlarmActivityAttributes.ContentState {
+        let themeName = UserDefaults.standard.string(forKey: "selectedTheme") ?? "winter"
+
         guard let nextDate = alarm.nextTriggerDate() else {
             AppLogger.debug("No next trigger date, returning empty state", category: .liveActivity)
             return AlarmActivityAttributes.ContentState(
@@ -169,7 +174,8 @@ actor LiveActivityManager {
                 nextAlarmDate: "설정된 알람 없음",
                 alarmTitle: "알람을 추가해주세요",
                 isSkipped: false,
-                isEmpty: true
+                isEmpty: true,
+                themeName: themeName
             )
         }
 
@@ -179,14 +185,15 @@ actor LiveActivityManager {
         let timeString = KoreanDateFormatters.timeDisplayString(hour: hour, minute: minute)
         let dateString = KoreanDateFormatters.relativeDateString(for: nextDate)
 
-        AppLogger.debug("Created content state: \(timeString) \(dateString)", category: .liveActivity)
+        AppLogger.debug("Created content state: \(timeString) \(dateString) theme=\(themeName)", category: .liveActivity)
 
         return AlarmActivityAttributes.ContentState(
             nextAlarmTime: timeString,
             nextAlarmDate: dateString,
             alarmTitle: alarm.displayTitle,
             isSkipped: alarm.isSkippingNext,
-            isEmpty: false
+            isEmpty: false,
+            themeName: themeName
         )
     }
 }

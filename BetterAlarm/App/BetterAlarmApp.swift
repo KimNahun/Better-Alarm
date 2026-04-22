@@ -131,6 +131,15 @@ struct BetterAlarmApp: App {
                     NotificationCenter.default.post(name: .alarmCompleted, object: nil)
                 }
             }
+            .onChange(of: themeManager.currentTheme) { _, _ in
+                // 테마 변경 시 Live Activity 색상도 즉시 동기화
+                if #available(iOS 17.0, *) {
+                    Task {
+                        let nextAlarm = await alarmStore.nextAlarm
+                        await liveActivityManager?.updateActivity(nextAlarm: nextAlarm)
+                    }
+                }
+            }
             .task {
                 // 포그라운드 알림 수신 → 울림 화면 표시
                 for await notification in NotificationCenter.default.notifications(named: .alarmShouldRing) {
