@@ -14,6 +14,8 @@ actor AlarmStore {
     private let alarmKitService: (any AlarmKitServiceProtocol)?
 
     private(set) var alarms: [Alarm] = []
+    /// 마지막으로 scheduleNextAlarm()을 실행한 시각 (불필요한 재스케줄 방지)
+    private var lastScheduledAt: Date?
 
     init(
         localNotificationService: any LocalNotificationServiceProtocol = LocalNotificationService(),
@@ -85,7 +87,7 @@ actor AlarmStore {
         alarms.append(alarm)
         sortAlarms()
         saveAlarms()
-        await scheduleNextAlarm()
+        await scheduleNextAlarm(force: true)
         await updateLiveActivity()
         AppLogger.alarmCreated(alarm.displayTitle)
     }
@@ -114,7 +116,7 @@ actor AlarmStore {
         alarms[index] = updated
         sortAlarms()
         saveAlarms()
-        await scheduleNextAlarm()
+        await scheduleNextAlarm(force: true)
         await updateLiveActivity()
         AppLogger.alarmUpdated(updated.displayTitle)
     }
@@ -123,7 +125,7 @@ actor AlarmStore {
         alarms.removeAll { $0.id == alarm.id }
         saveAlarms()
         await cancelSchedule(for: alarm)
-        await scheduleNextAlarm()
+        await scheduleNextAlarm(force: true)
         await updateLiveActivity()
         AppLogger.alarmDeleted(alarm.displayTitle)
     }
@@ -172,7 +174,7 @@ actor AlarmStore {
         alarms[index] = updated
         sortAlarms()
         saveAlarms()
-        await scheduleNextAlarm()
+        await scheduleNextAlarm(force: true)
         await updateLiveActivity()
         AppLogger.info("Alarm skipped once: \(alarm.displayTitle)", category: .alarm)
     }
@@ -187,7 +189,7 @@ actor AlarmStore {
         alarms[index] = updated
         sortAlarms()
         saveAlarms()
-        await scheduleNextAlarm()
+        await scheduleNextAlarm(force: true)
         await updateLiveActivity()
         AppLogger.info("Alarm skip cleared: \(alarm.displayTitle)", category: .alarm)
     }
@@ -235,7 +237,7 @@ actor AlarmStore {
             if existing.skippedDate != nil {
                 await clearSkipOnceAlarm(existing)
             }
-            await scheduleNextAlarm()
+            await scheduleNextAlarm(force: true)
         }
         await updateLiveActivity()
         AppLogger.info("Alarm completed: \(alarm.displayTitle)", category: .alarm)
@@ -290,7 +292,15 @@ actor AlarmStore {
     // MARK: - Scheduling (AlarmMode 분기)
 
     /// AlarmMode에 따라 AlarmKitService 또는 LocalNotificationService로 분기하여 다음 알람을 스케줄한다.
-    func scheduleNextAlarm() async {
+    /// - Parameter force: true이면 쓰로틀링 무시 (CRUD 후 호출 시). 기본 false.
+    func scheduleNextAlarm(force: Bool = false) async {
+        // 포그라운드 복귀 등 빈번한 호출 시 60초 이내 재실행 방지
+        if !force, let last = lastScheduledAt, Date().timeIntervalSince(last) < 60 {
+            AppLogger.debug("scheduleNextAlarm skipped (throttled, \(Int(Date().timeIntervalSince(last)))s ago)", category: .alarm)
+            return
+        }
+        lastScheduledAt = Date()
+
         // local 모드 알람 스케줄
         let enabledLocalAlarms = alarms.filter { $0.isEnabled && $0.alarmMode == .local }
         for alarm in enabledLocalAlarms {
