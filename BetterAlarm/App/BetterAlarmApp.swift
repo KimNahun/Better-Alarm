@@ -170,6 +170,8 @@ struct BetterAlarmApp: App {
                         if !isPlaying {
                             await audioService.stopSilentLoop()
                         }
+                        // 포그라운드 복귀 시 알람 재스케줄링 (local + alarmKit)
+                        await alarmStore.scheduleNextAlarm()
                         // pending 알람 처리 (race condition 방지)
                         if let pendingID = appDelegate.consumePendingAlarmID() {
                             let alarms = await alarmStore.alarms
@@ -210,8 +212,9 @@ struct BetterAlarmApp: App {
                 // AppDelegate에 의존성 주입
                 appDelegate.configure(alarmStore: alarmStore, localNotificationService: localNotificationService, audioService: audioService)
 
-                // 알람 로드
+                // 알람 로드 + OS 알림 동기화 (local + alarmKit)
                 await alarmStore.loadAlarms()
+                await alarmStore.scheduleNextAlarm()
 
                 // Live Activity 초기화
                 if #available(iOS 17.0, *) {
