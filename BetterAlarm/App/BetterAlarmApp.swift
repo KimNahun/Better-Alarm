@@ -57,7 +57,7 @@ struct BetterAlarmApp: App {
         )
 
         // 전체 앱 배경색을 설정하여 탭/화면 전환 시 흰색 깜빡임 방지
-        configureAppearance()
+        Self.configureAppearance()
 
         let mode = alarmKitSvc != nil ? "AlarmKit+Local" : "Local only"
         AppLogger.info("BetterAlarmApp initialized (mode: \(mode))", category: .lifecycle)
@@ -74,10 +74,6 @@ struct BetterAlarmApp: App {
 
         // 테이블뷰/리스트 배경
         UITableView.appearance().backgroundColor = .clear
-    }
-
-    private func configureAppearance() {
-        Self.configureAppearance()
     }
 
     var body: some Scene {

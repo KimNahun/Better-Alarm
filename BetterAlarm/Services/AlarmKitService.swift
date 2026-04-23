@@ -60,7 +60,12 @@ actor AlarmKitService: AlarmKitServiceProtocol {
             return
         }
 
-        guard await requestPermission() else {
+        // 권한이 이미 허용된 경우 불필요한 requestPermission() 호출을 건너뛴다.
+        var authorized = await checkPermission()
+        if !authorized {
+            authorized = await requestPermission()
+        }
+        guard authorized else {
             AppLogger.error("AlarmKit scheduleAlarm denied — not authorized: \(alarm.displayTitle)", category: .alarmKit)
             throw AlarmError.notAuthorized
         }

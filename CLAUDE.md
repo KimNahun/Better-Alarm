@@ -39,7 +39,7 @@ Swift 6 + SwiftUI + MVVM iOS 알람 앱. iOS 17.0+ (AlarmKit 기능은 iOS 26+).
 ```bash
 xcodebuild -project BetterAlarm.xcodeproj \
   -scheme BetterAlarm \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \
+  -destination 'id=1CE14D49-DEB7-4BED-AFEE-AF349E430DB3' \
   build 2>&1 | grep -E 'error:|BUILD (SUCCEEDED|FAILED)'
 ```
 
@@ -49,7 +49,7 @@ xcodebuild -project BetterAlarm.xcodeproj \
 xcodebuild test \
   -project BetterAlarm.xcodeproj \
   -scheme BetterAlarm \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \
+  -destination 'id=1CE14D49-DEB7-4BED-AFEE-AF349E430DB3' \
   2>&1 | tail -5
 ```
 

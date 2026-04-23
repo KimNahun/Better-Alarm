@@ -36,7 +36,7 @@ struct SettingsView: View {
                     Spacer()
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 60)
+                .padding(.top, 16)
 
                 Form {
                     // MARK: 테마 섹션
@@ -45,7 +45,7 @@ struct SettingsView: View {
                             HStack(spacing: 12) {
                                 ForEach(PTheme.allCases) { theme in
                                     Button {
-                                        viewModel.selectTheme(theme)
+                                        viewModel.selectThemeByName(theme.rawValue)
                                     } label: {
                                         VStack(spacing: 4) {
                                             Circle()

@@ -5,19 +5,20 @@ import Foundation
 /// 주간 알람 화면의 상태를 관리하는 ViewModel.
 /// AlarmStore에서 .weekly 스케줄만 필터링하여 표시.
 /// Swift 6: @MainActor + @Observable. SwiftUI import 금지.
+/// 공통 토글/삭제/건너뛰기 로직은 AlarmToggleHandling 프로토콜에서 제공.
 @MainActor
 @Observable
-final class WeeklyAlarmViewModel {
+final class WeeklyAlarmViewModel: AlarmToggleHandling {
     // MARK: - State
 
     private(set) var weeklyAlarms: [Alarm] = []
     private(set) var isLoading: Bool = false
     private(set) var errorMessage: String?
     var selectedDay: Weekday? = nil
-    private(set) var showToast: Bool = false
-    private(set) var toastMessage: String = ""
-    private(set) var pendingDisableAlarm: Alarm? = nil
-    private(set) var togglingAlarmID: UUID? = nil
+    var showToast: Bool = false
+    var toastMessage: String = ""
+    var pendingDisableAlarm: Alarm? = nil
+    var togglingAlarmID: UUID? = nil
 
     // MARK: - Computed
 
@@ -34,6 +35,7 @@ final class WeeklyAlarmViewModel {
     // MARK: - Dependencies
 
     private let store: AlarmStore
+    var alarmToggleStore: AlarmStore { store }
 
     init(store: AlarmStore) {
         self.store = store
@@ -51,86 +53,9 @@ final class WeeklyAlarmViewModel {
         AppLogger.info("Weekly alarms loaded: \(weeklyAlarms.count)", category: .store)
     }
 
-    /// 토글 요청 처리: 주간 알람 끄기 시 다이얼로그 표시
-    func requestToggle(_ alarm: Alarm, enabled: Bool) {
-        if !enabled, case .weekly = alarm.schedule {
-            AppLogger.info("Weekly alarm disable requested — showing action sheet: '\(alarm.displayTitle)'", category: .action)
-            pendingDisableAlarm = alarm
-        } else {
-            Task { await toggleAlarm(alarm, enabled: enabled) }
-        }
-    }
+    // MARK: - AlarmToggleHandling
 
-    /// 알람 활성화/비활성화 토글
-    func toggleAlarm(_ alarm: Alarm, enabled: Bool) async {
-        togglingAlarmID = alarm.id
-        defer { togglingAlarmID = nil }
-        await store.toggleAlarm(alarm, enabled: enabled)
-        await refreshState()
-        showToastMessage(enabled ? "알람이 켜졌습니다" : "알람이 꺼졌습니다")
-    }
-
-    /// 이번만 스킵 (isEnabled는 유지)
-    func skipOnceAndDisable(_ alarm: Alarm) async {
-        AppLogger.info("Skip-once selected for weekly alarm: '\(alarm.displayTitle)'", category: .action)
-        await store.skipOnceAlarm(alarm)
-        pendingDisableAlarm = nil
-        await refreshState()
-        showToastMessage("다음 1회 건너뜁니다")
-    }
-
-    /// 완전히 끄기
-    func confirmDisable(_ alarm: Alarm) async {
-        AppLogger.info("Confirm disable selected for weekly alarm: '\(alarm.displayTitle)'", category: .action)
-        await toggleAlarm(alarm, enabled: false)
-        pendingDisableAlarm = nil
-    }
-
-    /// 다이얼로그 취소
-    func cancelDisable() {
-        AppLogger.debug("Disable action sheet cancelled", category: .action)
-        pendingDisableAlarm = nil
-    }
-
-    /// 알람 삭제
-    func deleteAlarm(_ alarm: Alarm) async {
-        await store.deleteAlarm(alarm)
-        await refreshState()
-        showToastMessage("알람이 삭제되었습니다")
-    }
-
-    /// 다음 1회 건너뛰기
-    func skipOnceAlarm(_ alarm: Alarm) async {
-        await store.skipOnceAlarm(alarm)
-        await refreshState()
-        showToastMessage("다음 1회 건너뜁니다")
-    }
-
-    /// 건너뛰기 취소
-    func clearSkip(_ alarm: Alarm) async {
-        await store.clearSkipOnceAlarm(alarm)
-        await refreshState()
-        showToastMessage("건너뛰기가 취소되었습니다")
-    }
-
-    func dismissToast() {
-        showToast = false
-        toastMessage = ""
-    }
-
-    private func showToastMessage(_ message: String) {
-        // E18 수정: AlarmListViewModel과 동일한 패턴 적용.
-        // showToast = false 없이 true만 설정하면 이미 true인 경우 onChange 미발동.
-        toastMessage = message
-        showToast = false
-        Task { @MainActor [weak self] in
-            self?.showToast = true
-        }
-    }
-
-    // MARK: - Private
-
-    private func refreshState() async {
+    func refreshState() async {
         let allAlarms = await store.alarms
         weeklyAlarms = allAlarms.filter { alarm in
             if case .weekly = alarm.schedule { return true }

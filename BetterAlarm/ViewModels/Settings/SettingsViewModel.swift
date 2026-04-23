@@ -1,6 +1,5 @@
 import Foundation
 import UserNotifications
-import PersonalColorDesignSystem
 // E11 수정: ActivityKit은 iOS 16.1+ 전용. 최소 배포 타깃 iOS 16.0에서 unconditional import는
 // 동적 링커 실패 가능. #if canImport 로 가드하여 iOS 16.0 크래시 방지.
 #if canImport(ActivityKit)
@@ -11,6 +10,7 @@ import ActivityKit
 
 /// 설정 화면의 상태를 관리하는 ViewModel.
 /// Swift 6: @MainActor + @Observable. SwiftUI import 금지.
+/// PersonalColorDesignSystem import 금지 — 테마 관리는 AppThemeManager를 통해 캡슐화.
 @MainActor
 @Observable
 final class SettingsViewModel {
@@ -70,9 +70,11 @@ final class SettingsViewModel {
 
     // MARK: - Theme
 
-    func selectTheme(_ theme: PTheme) {
-        themeManager?.setTheme(theme)
-        themeToastMessage = "\(theme.displayName) 테마로 변경되었습니다"
+    /// 테마 이름(rawValue)으로 테마를 변경한다. PTheme을 직접 참조하지 않고 AppThemeManager를 경유.
+    func selectThemeByName(_ themeName: String) {
+        themeManager?.setThemeByName(themeName)
+        let displayName = themeManager?.currentThemeDisplayName ?? themeName
+        themeToastMessage = "\(displayName) 테마로 변경되었습니다"
         showThemeToast = true
     }
 

@@ -1,5 +1,4 @@
 import Foundation
-import UIKit
 
 // MARK: - AlarmRingingViewModel
 
@@ -21,24 +20,26 @@ final class AlarmRingingViewModel {
     private let audioService: AudioService
     private let volumeService: VolumeService
     private let alarmStore: AlarmStore
-    nonisolated(unsafe) private var timerTask: Task<Void, Never>?
+    private var timerTask: Task<Void, Never>?
 
-    // E16 수정: stopAlarm/snoozeAlarm을 거치지 않고 ViewModel이 해제될 때도 타이머 정리.
-    // 구조화되지 않은 Task는 부모 컨텍스트 해제와 무관하게 실행되므로 명시 취소 필요.
-    deinit {
-        timerTask?.cancel()
-    }
+    /// 햅틱 피드백 클로저 — View 레이어에서 HapticManager를 주입한다.
+    private let onStopHaptic: @MainActor () -> Void
+    private let onSnoozeHaptic: @MainActor () -> Void
 
     init(
         alarm: Alarm,
         audioService: AudioService,
         volumeService: VolumeService,
-        alarmStore: AlarmStore
+        alarmStore: AlarmStore,
+        onStopHaptic: @escaping @MainActor () -> Void = {},
+        onSnoozeHaptic: @escaping @MainActor () -> Void = {}
     ) {
         self.alarm = alarm
         self.audioService = audioService
         self.volumeService = volumeService
         self.alarmStore = alarmStore
+        self.onStopHaptic = onStopHaptic
+        self.onSnoozeHaptic = onSnoozeHaptic
         updateTimeString()
     }
 
@@ -86,7 +87,7 @@ final class AlarmRingingViewModel {
         await volumeService.stopVolumeGuard()
         await audioService.stopAlarmSound()
         await alarmStore.handleAlarmCompleted(alarm)
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        onStopHaptic()
         cleanup()
     }
 
@@ -97,7 +98,7 @@ final class AlarmRingingViewModel {
         await volumeService.stopVolumeGuard()
         await audioService.stopAlarmSound()
         await alarmStore.snoozeAlarm(alarm, minutes: 5)
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        onSnoozeHaptic()
         cleanup()
     }
 

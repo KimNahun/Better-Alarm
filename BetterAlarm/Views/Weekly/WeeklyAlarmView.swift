@@ -31,7 +31,7 @@ struct WeeklyAlarmView: View {
                     Spacer()
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 60)
+                .padding(.top, 16)
 
                 dayTabs
 

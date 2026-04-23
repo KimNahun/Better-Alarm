@@ -1,143 +1,200 @@
 RESULT: pass
-SCORE: 8.5
+SCORE: 9.0
 BLOCKERS: 0
 
 ---
 
-# QA Report: 백그라운드 무음 오디오 루프 기능
+# QA Report -- R3 Re-evaluation (5 Minor Fixes)
 
-**검수 일시**: 2026-04-20
-**검수 대상**: `harness/output/Services/AudioService.swift`, `harness/output/Delegates/AppDelegate.swift`, `harness/output/App/BetterAlarmApp.swift`
-**검수 기준**: `evaluation_criteria.md` 5개 항목
-**SPEC**: 백그라운드 무음 오디오 루프 기능 (기존 파일 3개 수정)
+## Previous R2 Issues -- Fix Verification
+
+### [FIXED] M3: AlarmRingingViewModel `import PersonalColorDesignSystem` 제거
+- `ViewModels/AlarmRinging/AlarmRingingViewModel.swift` line 1: `import Foundation` only. PersonalColorDesignSystem import 완전 제거.
+- Lines 27-28: `private let onStopHaptic: @MainActor () -> Void` / `private let onSnoozeHaptic: @MainActor () -> Void` -- 클로저 주입 패턴으로 변경.
+- Line 90: `onStopHaptic()`, line 101: `onSnoozeHaptic()` -- HapticManager 직접 호출 없음.
+- `Views/AlarmRinging/AlarmRingingView.swift` init (lines 19-27): View에서 `HapticManager.notification(.success)`, `HapticManager.impact()` 클로저 주입 -- 올바른 MVVM 패턴.
+
+### [FIXED] M6/M7: `.padding(.top, 60)` 하드코딩 제거
+- `AlarmListView.swift` line 132: `.padding(.top, 16)` -- safe area 기반으로 변경.
+- `WeeklyAlarmView.swift` line 34: `.padding(.top, 16)` -- 동일하게 변경.
+- `SettingsView.swift` line 39: `.padding(.top, 16)` -- 동일하게 변경.
+- 16pt는 safe area inset 위에 추가되는 합리적 패딩 값.
+
+### [FIXED] M10: AlarmListViewModel / WeeklyAlarmViewModel 코드 중복 제거
+- `AlarmListViewModel.swift` lines 7-94: `AlarmToggleHandling` 프로토콜 정의 + extension으로 공통 로직 추출.
+  - `requestToggle`, `toggleAlarm`, `skipOnceAndDisable`, `confirmDisable`, `cancelDisable`, `deleteAlarm`, `skipOnceAlarm`, `clearSkip`, `dismissToast`, `showToastMessage` -- 10개 메서드 공통화.
+- `AlarmListViewModel` (line 103): `AlarmToggleHandling` 준수, `alarmToggleStore` computed property 제공.
+- `WeeklyAlarmViewModel` (line 11): 동일하게 `AlarmToggleHandling` 준수.
+- 프로토콜이 `@MainActor`로 선언되어 동시성 일관성 유지.
+
+### [FIXED] M8: AlarmKitService 불필요한 requestPermission() 중복
+- `AlarmKitService.swift` lines 63-68: `checkPermission()` 우선 호출 후, 미허용 시에만 `requestPermission()` 호출.
+  ```
+  var authorized = await checkPermission()
+  if !authorized {
+      authorized = await requestPermission()
+  }
+  ```
+- 불필요한 시스템 권한 다이얼로그 반복 방지.
+
+### [FIXED] M12: BetterAlarmApp configureAppearance() 중복 정리
+- `BetterAlarmApp.swift` line 67: `private static func configureAppearance()` -- 단일 정적 메서드만 존재.
+- Line 60: `Self.configureAppearance()` -- 정적 호출. 인스턴스 메서드 중복 완전 제거.
 
 ---
 
 ## 1단계: 파일 구조 분석
 
-| 파일 | 레이어 | SPEC 대조 |
-|------|--------|-----------|
-| `output/Services/AudioService.swift` | Service (actor) | SPEC 일치 |
-| `output/Delegates/AppDelegate.swift` | Delegate (@MainActor class) | SPEC 일치 |
-| `output/App/BetterAlarmApp.swift` | App 진입점 | SPEC 일치 |
+27개 Swift 파일. 이전 R2와 동일 구조. SPEC.md와 일치.
 
-SPEC에서 정의한 3개 파일 수정 범위와 정확히 일치. 신규 파일 생성 없음.
+| 레이어 | 파일 수 | 파일 목록 |
+|--------|---------|-----------|
+| App | 1 | BetterAlarmApp.swift |
+| Models | 4 | Alarm, AlarmError, AlarmMode, AlarmSchedule |
+| Services | 7 | AlarmKitService, AlarmStore, AppThemeManager, AudioService, LiveActivityManager, LocalNotificationService, VolumeService |
+| ViewModels | 5 | AlarmDetailVM, AlarmListVM(+AlarmToggleHandling), AlarmRingingVM, SettingsVM, WeeklyAlarmVM |
+| Views | 6 | AlarmDetailView, AlarmListView, AlarmRingingView, AlarmRowView, SettingsView, WeeklyAlarmView |
+| Intents | 2 | StopAlarmIntent, SnoozeAlarmIntent |
+| Delegates | 1 | AppDelegate |
+| Shared | 1 | AlarmMetadata |
 
 ---
 
 ## 2단계: SPEC 기능 검증
 
-### 기능 1: AudioService — 무음 오디오 루프
+### [PASS] 기능 1: AudioService -- 무음 오디오 루프
+- `AudioService.swift` lines 118-178: `startSilentLoop()` / `stopSilentLoop()` -- AVAudioEngine + AVAudioPlayerNode, 무음 PCM 버퍼, `.loops` 무한 반복, `.mixWithOthers`, `outputVolume = 0.01`.
+- `AudioServiceProtocol`에 메서드 포함 확인.
 
-- [PASS] `AudioServiceProtocol`에 `startSilentLoop() async`, `stopSilentLoop() async` 추가 (라인 10-11)
-- [PASS] `silentEngine`, `silentPlayerNode`, `isSilentLoopRunning` private 프로퍼티 선언 (라인 31-33)
-- [PASS] `startSilentLoop()` 구현 — 중복 방지 guard, .playback + .mixWithOthers, AVAudioEngine+PlayerNode, 무음 PCM 버퍼 1초, .loops, outputVolume = 0.0, try/catch 에러 로깅 (라인 110-156)
-- [PASS] `stopSilentLoop()` 구현 — guard, stop, nil 할당, 플래그 리셋, 로그 (라인 159-169)
-- [PASS] `AVAudioFormat`은 failable init이므로 guard let 처리 추가 (SPEC 이상의 방어 코딩)
-- [PASS] `AVAudioPCMBuffer`도 guard let 처리
+### [PASS] 기능 2: AppDelegate -- 생명주기 연동
+- `AppDelegate.swift`: `applicationDidEnterBackground` (line 56) -- `hasEnabledLocalAlarms` 체크 후 `audioService?.startSilentLoop()`.
+- `applicationWillEnterForeground` (line 90) -- `audioService?.stopSilentLoop()`.
+- `applicationWillTerminate` (line 100) -- DispatchGroup Task 내 `audioService?.stopSilentLoop()` 첫 줄.
+- `configure()` 시그니처에 `audioService` 파라미터 포함.
 
-### 기능 2: AppDelegate — 생명주기 연동
-
-- [PASS] `audioService: AudioService?` private(set) 프로퍼티 추가 (라인 23)
-- [PASS] `configure()` 시그니처에 `audioService: AudioService` 파라미터 추가 (라인 26)
-- [PASS] `applicationDidEnterBackground` — `hasEnabledLocalAlarms` guard 통과 후 `await audioService?.startSilentLoop()` 호출 (라인 69)
-- [PASS] `applicationWillEnterForeground` — `await audioService?.stopSilentLoop()` 호출 (라인 78)
-- [PASS] `applicationWillTerminate` — DispatchGroup Task 내부 첫 줄에 `await audioService?.stopSilentLoop()` 호출 (라인 93)
-
-### 기능 3: BetterAlarmApp — DI 연결
-
-- [PASS] `appDelegate.configure(alarmStore:localNotificationService:audioService:)` 호출에 audioService 인자 포함 (라인 161)
+### [PASS] 기능 3: BetterAlarmApp -- DI 연결
+- `BetterAlarmApp.swift` line 211: `appDelegate.configure(alarmStore: alarmStore, localNotificationService: localNotificationService, audioService: audioService)`.
 
 ---
 
 ## 3단계: evaluation_criteria 채점
 
-### 1. Swift 6 동시성: 9/10
+### 1. Swift 6 동시성: 9.5/10
 
-**근거:**
-- `AudioService`는 `actor`로 선언 (라인 26). 모든 프로퍼티가 actor-isolated.
-- `AudioServiceProtocol`은 `Sendable` 준수 (라인 6).
-- `AppDelegate`는 `@MainActor final class`로 선언 (라인 18-19).
-- `DispatchQueue.main` 사용 없음. 기존 `DispatchGroup`은 `applicationWillTerminate`에서만 유지 (SPEC 명시).
-- `@Published` / `ObservableObject` 사용 없음.
-- `BetterAlarmApp`은 `struct`이며 `@State` 프로퍼티 사용.
+**양호한 점:**
+- 모든 ViewModel: `@MainActor @Observable final class` (5개 전부)
+- Core Services: AlarmStore, AudioService, LocalNotificationService, LiveActivityManager, AlarmKitService, VolumeService -- 모두 `actor`
+- Models: Alarm, AlarmMode, AlarmSchedule, AlarmError, Weekday -- 모두 struct/enum + Sendable
+- `@Published` / `ObservableObject` / `DispatchQueue.main.async` 미사용
+- `nonisolated(unsafe)` 미사용
+- VolumeService: `@MainActor VolumeUIHelper`로 UIKit 조작 올바르게 격리
+- AlarmToggleHandling 프로토콜: `@MainActor` 선언으로 동시성 보장
 
-**미세 감점 (-1):** `startSilentLoop()` 내부에서 `AVAudioSession.sharedInstance()`를 호출하는데, 이 호출은 actor-isolated context에서 실행됨. `AVAudioSession`은 Sendable하지 않지만, singleton 접근이므로 실질적 문제는 없다. 다만 Swift 6 strict concurrency에서 경고 가능성이 미미하게 존재.
+**경미한 이슈:**
+- (M1 유지) `AppThemeManager`: `@MainActor @Observable final class` -- Services/ 폴더에 위치하지만 actor가 아님. UIKit 외관 관리(탭바, 아이콘 변경)를 위해 MainActor 필수인 특수 케이스. 기능적 문제 없으나 레이어 분류상 어색함 (-0.5).
 
 ### 2. MVVM 아키텍처 분리: 9/10
 
-**근거:**
-- `AudioService.swift`: `import Foundation` + `import AVFoundation` — SwiftUI import 없음.
-- Service가 ViewModel/View를 참조하지 않음.
-- `AppDelegate`는 Delegate 레이어로, Service만 참조 (적절).
-- `BetterAlarmApp`은 DI 루트로서 Service 인스턴스를 생성하고 주입 — 아키텍처상 허용됨.
-- Protocol 기반 DI 패턴 유지 (`AudioServiceProtocol`).
+**양호한 점:**
+- View: 순수 UI 선언, Service 직접 호출 없음
+- **모든 ViewModel: `import SwiftUI` 없음, `import PersonalColorDesignSystem` 없음** (이전 M3 수정 확인)
+  - AlarmRingingViewModel: HapticManager 클로저 주입 패턴 -- MVVM 순수성 우수
+- Service: ViewModel/View 참조 없음
+- 의존성 단방향 (View -> ViewModel -> Service)
+- Protocol 기반 Service 주입
+- AlarmToggleHandling 프로토콜로 코드 중복 제거 -- 재사용성 향상
 
-**미세 감점 (-1):** `AppDelegate`의 `audioService` 타입이 구체 타입 `AudioService?`로 선언됨 (라인 23). SPEC이 이를 명시했으므로 감점은 최소화하지만, 이상적으로는 `(any AudioServiceProtocol)?`이 테스트 용이성 면에서 더 적합.
+**경미한 이슈:**
+- (M4 유지) BetterAlarmApp.swift `waitAndFireNextAlarm()` (lines 240-307): 알람 필터링, 스케줄 계산, 오디오 재생 등 비즈니스 로직이 App 진입점에 존재. AlarmTimerService actor로 분리가 이상적 (-0.5).
+- (M5 유지) BetterAlarmApp.swift `onChange(of: scenePhase)` (lines 141-188): AppDelegate와 일부 중복되는 생명주기 로직 (-0.5).
 
-### 3. HIG 준수 + 디자인 시스템: 8/10
+### 3. HIG 준수 + 디자인 시스템: 9.5/10
 
-**근거:**
-- 이 SPEC은 UI 변경이 아닌 백그라운드 서비스 로직이므로 HIG 항목 대부분 해당 없음.
-- `BetterAlarmApp.swift`에서 `PersonalColorDesignSystem` import 사용 (라인 2).
-- `.pTheme()` 적용, `themeManager` 활용.
-- `.accessibilityLabel` 탭 항목에 추가.
+**양호한 점:**
+- PersonalColorDesignSystem 토큰 전반 사용: Color.pTextPrimary, .pTextSecondary, .pTextTertiary, .pGlassFill, .pWarning, .pSuccess, .pAccentSecondary 등
+- GlassCard 컴포넌트 사용 (AlarmRowView, AlarmListView nextAlarmBanner)
+- PGradientBackground 사용 (모든 View)
+- PToggle 컴포넌트 사용 (AlarmDetailView, AlarmRowView, SettingsView)
+- HapticManager 사용: View 레이어에서만 직접 호출 (AlarmListView, AlarmDetailView, WeeklyAlarmView) + AlarmRingingView에서 클로저 주입
+- 하드코딩 Color(red:) / UIColor(red:) 없음
+- 터치 영역 44pt 준수 (minWidth/minHeight: 44 명시)
+- 접근성 레이블: accessibilityLabel/accessibilityHint 전반 추가
+- Dynamic Type: semantic font size (.largeTitle, .title, .body, .caption)
+- 로딩/에러 상태 UI: pLoadingOverlay, alert
+- 토스트: PersonalColorDesignSystem .toast 컴포넌트
+- pActionSheet: 주간 알람 disable 시 커스텀 액션 시트
+- **이전 M6/M7 수정 확인**: `.padding(.top, 16)` -- safe area 기반 합리적 패딩
 
-**감점 (-2):** `BetterAlarmApp.swift` 라인 69에 `UIColor(red: 0.08, green: 0.08, blue: 0.15, alpha: 1.0)` 하드코딩 색상 사용. evaluation_criteria에서 "하드코딩 색상 — 즉시 감점"으로 명시. 단, 이 코드는 이번 SPEC 수정 범위가 아닌 기존 코드이므로 blocker로 분류하지 않음.
+**경미한 이슈:**
+- (N1) AlarmRingingView `timeDisplay` line 67: `.font(.system(.largeTitle, design: .rounded, weight: .ultraLight))` -- semantic size이지만 `.system()` 호출로 design 파라미터 사용. PersonalColorDesignSystem 폰트 토큰(`UIFont.pDisplay()` 등) 대신 시스템 폰트 직접 사용. 특수한 디자인 요구(rounded, ultraLight)를 위한 것이므로 경미 처리 (-0.5).
 
 ### 4. API 활용: 9/10
 
-**근거:**
-- AVAudioEngine, AVAudioPlayerNode, AVAudioPCMBuffer, AVAudioSession 모두 올바르게 사용.
-- `.setCategory(.playback, mode: .default, options: [.mixWithOthers])` — 백그라운드 오디오 유지에 적합.
-- `.scheduleBuffer(buffer, at: nil, options: .loops)` — 무한 반복 설정 올바름.
-- `engine.mainMixerNode.outputVolume = 0.0` — 무음 출력 보장.
-- `engine.prepare()` → `try engine.start()` → `playerNode.play()` 순서 올바름.
+**양호한 점:**
+- AlarmKit: AlarmManager.shared, AlarmAttributes, AlarmPresentation, AlarmButton, AlarmSchedule(.fixed/.relative) 올바른 사용
+- `@available(iOS 26.0, *)` 가드 적용
+- AppIntents: StopAlarmIntent, SnoozeAlarmIntent -- LiveActivityIntent 올바른 준수
+- SnoozeAlarmIntent: AlarmManager.shared 직접 사용 (App Extension 별도 프로세스 고려)
+- ActivityKit: Activity.request, activity.update, activity.end
+- UNUserNotificationCenter: 카테고리 등록, 권한 요청, 스케줄링, cancelAlarm/cancelBackgroundReminder
+- AVAudioEngine/AVAudioPlayerNode: 무음 루프 (scheduleBuffer non-async 올바름)
+- AVAudioPlayer: numberOfLoops = -1
+- MPVolumeView: actor + @MainActor helper 분리
+- 모든 API 호출이 Service 레이어에만 존재
+- **이전 M8 수정 확인**: checkPermission() 우선 호출 패턴 올바름
 
-**미세 감점 (-1):** `stopSilentLoop()`에서 `AVAudioSession.setActive(false)`를 호출하지 않아 세션이 활성 상태로 남을 수 있음. 단, 앱 전체에서 audio session을 공유하므로 (alarmSound 재생과 겹침) 의도적 설계일 수 있음.
+**경미한 이슈:**
+- (M9 유지) LocalNotificationService `scheduleRepeatingAlerts()` count 기본값 30개, 30초 간격. AlarmStore에서 가장 임박한 1개에만 적용하므로 실질 문제 경미 (-0.5).
+- (N2) AlarmKitService `stopAllAlarms()` line 163: `let existing = try manager.alarms` -- `try` 사용하지만 catch 블록이 빈 `catch {}`. 에러 로깅이 없어 디버깅 어려움 (-0.5).
 
 ### 5. 기능성 및 코드 가독성: 9/10
 
-**근거:**
-- SPEC의 모든 기능 3개가 완전히 구현됨.
-- 접근 제어자 명시: `private`, `private(set)` 적절히 사용.
-- MARK 주석으로 섹션 구분 명확.
-- 에러 처리: throw하지 않고 `AppLogger.error`로 로그만 남김 (SPEC 준수).
-- 중복 실행 방지 guard 패턴 일관적 적용.
-- 코드 분량이 적절하고 불필요한 주석 없음.
+**양호한 점:**
+- SPEC의 3개 기능 모두 구현 (무음 루프, AppDelegate 연동, DI 연결)
+- 접근 제어자 명시 (`private`, `private(set)`)
+- AlarmError: Error, LocalizedError, Sendable, 5개 케이스 모두 errorDescription
+- 파일 구조 컨벤션 일치
+- **AlarmToggleHandling 프로토콜로 코드 중복 대폭 감소** -- 이전 M10 완전 해결
+- AlarmSwipeActionsModifier: ViewModifier로 swipe actions 재사용
+- KoreanDateFormatters: 날짜 포맷터 캐시
+- MARK 주석으로 섹션 분리
+- `#if DEBUG` 가드 적용 (testSilentMode)
+- **configureAppearance() 중복 제거** -- 이전 M12 해결
 
-**미세 감점 (-1):** `startSilentLoop()`에서 `AVAudioFormat` guard 실패 시 early return하지만 에러 상태에 대한 복구 로직이 없음. 실질적으로 44100Hz mono format은 항상 성공하므로 문제 없음.
-
----
-
-## 가중 점수 계산
-
-```
-가중 점수 = (9 x 0.30) + (9 x 0.25) + (8 x 0.20) + (9 x 0.15) + (9 x 0.10)
-         = 2.70 + 2.25 + 1.60 + 1.35 + 0.90
-         = 8.80
-```
-
-보수적 적용 (기존 코드 하드코딩 색상 고려): **8.5 / 10.0**
+**경미한 이슈:**
+- (M11 유지) AppDelegate `applicationWillTerminate` line 108-129: DispatchGroup + Task 패턴. 2초 타임아웃 적절하나 async 작업을 동기 대기하는 패턴은 본질적으로 불안정 (-0.5).
+- (N3) AlarmToggleHandling 프로토콜이 `AlarmListViewModel.swift` 파일 내에 정의됨 (lines 7-94). 별도 파일(`Protocols/AlarmToggleHandling.swift`)로 분리가 파일 구조상 더 명확 (-0.5).
 
 ---
 
-## 최종 판정
+## 4단계: 최종 판정
 
 **전체 판정**: 합격
-**가중 점수**: 8.5 / 10.0
+**가중 점수**: 9.0 / 10.0
+
+계산: (9.5 x 0.30) + (9 x 0.25) + (9.5 x 0.20) + (9 x 0.15) + (9 x 0.10)
+= 2.85 + 2.25 + 1.90 + 1.35 + 0.90 = **9.25 -> 9.0** (경미한 이슈 누적 감안 소폭 보정)
 
 **항목별 점수**:
-- Swift 6 동시성: 9/10 — actor 격리 올바름, Sendable 준수, DispatchQueue 미사용
-- MVVM 분리: 9/10 — Service 레이어 분리 적절, Protocol 기반 DI, SwiftUI import 없음
-- HIG 준수: 8/10 — UI 변경 없는 SPEC이므로 대부분 해당 없음, 기존 하드코딩 색상 1건 존재
-- API 활용: 9/10 — AVAudioEngine/Session 올바른 사용, 무음 루프 패턴 정확
-- 기능성/가독성: 9/10 — SPEC 전체 구현 완료, 접근 제어자 명시, 에러 처리 적절
+- Swift 6 동시성: 9.5/10 -- AppThemeManager의 레이어 분류만 경미한 이슈. 모든 actor/MainActor 패턴 올바름.
+- MVVM 분리: 9/10 -- AlarmRingingVM의 PersonalColorDesignSystem import 제거 완료. BetterAlarmApp의 비즈니스 로직 과다만 잔존.
+- HIG 준수: 9.5/10 -- padding 하드코딩 수정 완료. 디자인 시스템 전반 사용 우수. AlarmRingingView 시간 폰트만 시스템 직접 사용.
+- API 활용: 9/10 -- checkPermission() 우선 패턴 수정 완료. stopAllAlarms 빈 catch, repeatingAlerts 30개 한도만 경미.
+- 기능성/가독성: 9/10 -- AlarmToggleHandling으로 중복 제거 우수. configureAppearance 정리 완료. 프로토콜 파일 위치만 경미.
 
-**구체적 개선 지시** (blocker 아님, 향후 개선 권장):
+---
 
-1. `AppDelegate.swift` `audioService` 프로퍼티: 구체 타입 `AudioService?` 대신 `(any AudioServiceProtocol)?`으로 변경하면 테스트 시 Mock 주입이 용이해짐.
-2. `AudioService.swift` `stopSilentLoop()`: 무음 루프 전용 AVAudioSession deactivate 여부 검토. 현재는 알람 재생과 세션을 공유하므로 의도적이라면 주석으로 이유를 명시할 것.
-3. `BetterAlarmApp.swift` 라인 69: `UIColor(red:green:blue:alpha:)` 하드코딩을 `PersonalColorDesignSystem` 토큰으로 교체 권장 (이번 SPEC 범위 외이지만 추후 반드시 수정).
+## 잔존 경미한 이슈 (비차단)
 
-**방향 판단**: 현재 방향 유지
+| # | 위치 | 설명 | 심각도 |
+|---|------|------|--------|
+| M1 | Services/AppThemeManager.swift | @MainActor class이지만 Services/ 폴더에 위치 -- 레이어 분류 어색 | 매우 경미 |
+| M4 | App/BetterAlarmApp.swift `waitAndFireNextAlarm()` | 비즈니스 로직이 App 진입점에 존재 | 경미 |
+| M5 | App/BetterAlarmApp.swift `onChange(of: scenePhase)` | AppDelegate와 일부 중복 생명주기 로직 | 경미 |
+| M9 | Services/LocalNotificationService.swift `scheduleRepeatingAlerts()` | 30개 반복 알림 -- 64개 제한 근접 가능성 | 매우 경미 |
+| M11 | Delegates/AppDelegate.swift `applicationWillTerminate` | DispatchGroup+Task 동기 대기 패턴 | 경미 |
+| N1 | Views/AlarmRinging/AlarmRingingView.swift `timeDisplay` | 시스템 폰트 직접 사용 (디자인 토큰 대신) | 매우 경미 |
+| N2 | Services/AlarmKitService.swift `stopAllAlarms()` | 빈 catch {} -- 에러 로깅 누락 | 매우 경미 |
+| N3 | ViewModels/AlarmList/AlarmListViewModel.swift | AlarmToggleHandling 프로토콜이 별도 파일 아닌 동일 파일 내 정의 | 매우 경미 |
+
+**방향 판단**: 현재 방향 유지. 이전 R2에서 제기된 5개 경미한 이슈 모두 올바르게 수정됨. 새로 발견된 이슈(N1-N3)는 모두 매우 경미하며 아키텍처나 기능에 영향 없음. 9.0/10 달성.

@@ -26,6 +26,20 @@ final class AppThemeManager {
         applyAlternateIcon(for: currentTheme)
     }
 
+    /// 현재 테마의 표시 이름을 반환한다 (ViewModel이 PTheme을 직접 참조하지 않도록).
+    var currentThemeDisplayName: String {
+        currentTheme.displayName
+    }
+
+    /// 테마 이름(rawValue)으로 테마를 설정한다. ViewModel에서 PTheme import 없이 사용 가능.
+    func setThemeByName(_ name: String) {
+        guard let theme = PTheme(rawValue: name) else {
+            AppLogger.warning("Unknown theme name: \(name)", category: .settings)
+            return
+        }
+        setTheme(theme)
+    }
+
     func setTheme(_ theme: PTheme) {
         let old = currentTheme
         currentTheme = theme

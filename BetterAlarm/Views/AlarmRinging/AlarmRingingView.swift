@@ -20,7 +20,9 @@ struct AlarmRingingView: View {
             alarm: alarm,
             audioService: audioService,
             volumeService: volumeService,
-            alarmStore: alarmStore
+            alarmStore: alarmStore,
+            onStopHaptic: { HapticManager.notification(.success) },
+            onSnoozeHaptic: { HapticManager.impact() }
         ))
     }
 
@@ -62,7 +64,7 @@ struct AlarmRingingView: View {
 
     private var timeDisplay: some View {
         Text(viewModel.currentTimeString)
-            .font(.system(size: 80, weight: .ultraLight, design: .rounded))
+            .font(.system(.largeTitle, design: .rounded, weight: .ultraLight))
             .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
             .foregroundStyle(Color.pTextPrimary)
             .accessibilityLabel("현재 시각: \(viewModel.currentTimeString)")
