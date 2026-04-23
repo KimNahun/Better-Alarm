@@ -112,9 +112,17 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             await audioService?.stopSilentLoop()
             let alarms = await store.alarms
             let localAlarms = alarms.filter { $0.isEnabled && $0.alarmMode == .local }
+            // 가장 임박한 알람 찾기 (반복 알림은 이 알람에만 등록)
+            let nextAlarmID = localAlarms
+                .compactMap { alarm -> (Alarm, Date)? in
+                    guard let d = alarm.nextTriggerDate() else { return nil }
+                    return (alarm, d)
+                }
+                .min(by: { $0.1 < $1.1 })?
+                .0.id
             AppLogger.info("Re-registering \(localAlarms.count) local alarms on terminate", category: .lifecycle)
             for alarm in localAlarms {
-                try? await notificationService.scheduleAlarm(for: alarm)
+                try? await notificationService.scheduleAlarm(for: alarm, withRepeatingAlerts: alarm.id == nextAlarmID)
             }
         }
         // 최대 2초 대기 후 종료 허용

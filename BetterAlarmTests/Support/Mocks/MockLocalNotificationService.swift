@@ -31,7 +31,7 @@ final class MockLocalNotificationService: LocalNotificationServiceProtocol, @unc
         return permissionGranted
     }
 
-    func scheduleAlarm(for alarm: Alarm) async throws {
+    func scheduleAlarm(for alarm: Alarm, withRepeatingAlerts: Bool = true) async throws {
         scheduleAlarmCallCount += 1
         scheduleAlarmCalledWith.append(alarm)
         if shouldThrowOnSchedule {

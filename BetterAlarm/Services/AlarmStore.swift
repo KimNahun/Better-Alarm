@@ -143,21 +143,12 @@ actor AlarmStore {
         saveAlarms()
 
         if enabled {
-            // 전체 재스케줄 대신 해당 알람만 스케줄
-            switch updated.alarmMode {
-            case .local:
-                do {
-                    try await localNotificationService.scheduleAlarm(for: updated)
-                } catch {
-                    AppLogger.error("Failed to schedule alarm '\(updated.displayTitle)': \(error)", category: .alarm)
-                }
-            case .alarmKit:
-                if let service = alarmKitService {
-                    try? await service.scheduleAlarm(for: updated)
-                }
-            }
+            // 전체 재스케줄 (반복 알림을 가장 임박한 알람에만 붙이기 위해)
+            await scheduleNextAlarm(force: true)
         } else {
             await cancelSchedule(for: alarm)
+            // 비활성화 후 반복 알림 대상이 바뀔 수 있으므로 재스케줄
+            await scheduleNextAlarm(force: true)
         }
         await updateLiveActivity()
         AppLogger.alarmToggled(alarm.displayTitle, enabled: enabled)
@@ -302,10 +293,20 @@ actor AlarmStore {
         lastScheduledAt = Date()
 
         // local 모드 알람 스케줄
+        // UNNotification 64개 제한 → 가장 임박한 알람 1개만 반복 알림 등록, 나머지는 메인 알림만
         let enabledLocalAlarms = alarms.filter { $0.isEnabled && $0.alarmMode == .local }
+        let nextLocalAlarmID = enabledLocalAlarms
+            .compactMap { alarm -> (Alarm, Date)? in
+                guard let d = alarm.nextTriggerDate() else { return nil }
+                return (alarm, d)
+            }
+            .min(by: { $0.1 < $1.1 })?
+            .0.id
+
         for alarm in enabledLocalAlarms {
+            let isNext = alarm.id == nextLocalAlarmID
             do {
-                try await localNotificationService.scheduleAlarm(for: alarm)
+                try await localNotificationService.scheduleAlarm(for: alarm, withRepeatingAlerts: isNext)
             } catch {
                 AppLogger.error("Failed to schedule local alarm '\(alarm.displayTitle)': \(error)", category: .alarm)
             }

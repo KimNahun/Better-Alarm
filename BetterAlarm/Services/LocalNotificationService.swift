@@ -5,12 +5,19 @@ import UserNotifications
 
 protocol LocalNotificationServiceProtocol: Sendable {
     func requestPermission() async -> Bool
-    func scheduleAlarm(for alarm: Alarm) async throws
+    func scheduleAlarm(for alarm: Alarm, withRepeatingAlerts: Bool) async throws
     func scheduleSnooze(for alarm: Alarm, minutes: Int) async throws
     func cancelAlarm(for alarm: Alarm) async
     func cancelAllAlarms() async
     func scheduleBackgroundReminder(for alarm: Alarm) async
     func cancelBackgroundReminder() async
+}
+
+extension LocalNotificationServiceProtocol {
+    /// 기본값: withRepeatingAlerts = true (기존 동작 호환)
+    func scheduleAlarm(for alarm: Alarm) async throws {
+        try await scheduleAlarm(for: alarm, withRepeatingAlerts: true)
+    }
 }
 
 // MARK: - LocalNotificationService
@@ -82,8 +89,10 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
     // MARK: - Schedule
 
     /// 알람을 UNCalendarNotificationTrigger로 등록한다.
-    /// - Parameter alarm: 스케줄할 알람
-    func scheduleAlarm(for alarm: Alarm) async throws {
+    /// - Parameters:
+    ///   - alarm: 스케줄할 알람
+    ///   - withRepeatingAlerts: true이면 반복 알림도 함께 등록 (가장 임박한 알람에만 사용)
+    func scheduleAlarm(for alarm: Alarm, withRepeatingAlerts: Bool = true) async throws {
         guard alarm.isEnabled else {
             AppLogger.debug("scheduleAlarm skipped (disabled): '\(alarm.displayTitle)'", category: .alarm)
             return
@@ -126,8 +135,10 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
         do {
             try await notificationCenter.add(request)
             AppLogger.info("Notification scheduled: '\(alarm.displayTitle)' id=\(alarm.id.uuidString) at \(triggerDate)", category: .alarm)
-            // 알람 울릴 때 끄지 않으면 5초 간격 반복 알림 등록
-            await scheduleRepeatingAlerts(for: alarm)
+            // 가장 임박한 알람에만 반복 알림 등록 (UNNotification 64개 제한 절약)
+            if withRepeatingAlerts {
+                await scheduleRepeatingAlerts(for: alarm)
+            }
         } catch {
             AppLogger.error("Failed to add notification request for '\(alarm.displayTitle)': \(error)", category: .alarm)
             throw AlarmError.scheduleFailed(error.localizedDescription)
