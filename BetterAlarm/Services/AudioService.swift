@@ -24,6 +24,9 @@ extension AudioServiceProtocol {
 /// isSilentAlarm=true이면 이어폰 연결 여부를 확인하고 이어폰으로만 출력한다.
 /// Swift 6: actor로 구현.
 actor AudioService: AudioServiceProtocol {
+    // MARK: - 🔇 테스트용 무음 모드 (false로 바꾸면 원래 알람음 복원)
+    static let testSilentMode = true
+
     private var audioPlayer: AVAudioPlayer?
     private let volumeService: VolumeService
     var isAlarmPlaying: Bool { audioPlayer?.isPlaying ?? false }
@@ -86,7 +89,7 @@ actor AudioService: AudioServiceProtocol {
 
         let player = try AVAudioPlayer(contentsOf: url)
         player.numberOfLoops = loop ? -1 : 0
-        player.volume = 1.0
+        player.volume = Self.testSilentMode ? 0.0 : 1.0
         player.prepareToPlay()
         player.play()
         audioPlayer = player

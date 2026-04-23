@@ -30,7 +30,10 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
     /// 알람의 사운드 설정에 따라 UNNotificationSound를 반환한다.
     /// "default" → 번들 내 default_alarm_long.wav (30초 알람음)
     /// 커스텀 → {soundName}.mp3
-    private func notificationSound(for alarm: Alarm) -> UNNotificationSound {
+    private func notificationSound(for alarm: Alarm) -> UNNotificationSound? {
+        // 🔇 테스트용 무음 모드 — AudioService.testSilentMode와 연동
+        if AudioService.testSilentMode { return nil }
+
         if alarm.soundName == "default" {
             return UNNotificationSound(named: UNNotificationSoundName(rawValue: "default_alarm_long.wav"))
         } else {
