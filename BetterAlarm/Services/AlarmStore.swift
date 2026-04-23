@@ -187,6 +187,30 @@ actor AlarmStore {
 
     // MARK: - Snooze
 
+    /// AlarmKit SnoozeAlarmIntent가 별도 프로세스에서 저장한 snoozeDate를 앱 메모리에 동기화한다.
+    /// 앱 포그라운드 복귀 시 호출.
+    func syncSnoozeFromIntent() {
+        let defaults = UserDefaults.standard
+        guard defaults.bool(forKey: "alarmSnoozedFromIntent"),
+              let alarmIDString = defaults.string(forKey: "alarmSnoozedAlarmID") else { return }
+
+        let timestamp = defaults.double(forKey: "alarmSnoozeDateTimestamp")
+        let snoozeDate = Date(timeIntervalSince1970: timestamp)
+
+        // UserDefaults 키 소비 (중복 동기화 방지)
+        defaults.removeObject(forKey: "alarmSnoozedFromIntent")
+        defaults.removeObject(forKey: "alarmSnoozedAlarmID")
+        defaults.removeObject(forKey: "alarmSnoozeDateTimestamp")
+
+        // 알람 찾아서 snoozeDate 반영
+        if let alarmID = UUID(uuidString: alarmIDString),
+           let index = alarms.firstIndex(where: { $0.id == alarmID }) {
+            alarms[index].snoozeDate = snoozeDate
+            saveAlarms()
+            AppLogger.info("Synced snoozeDate from Intent: '\(alarms[index].displayTitle)' snooze at \(snoozeDate)", category: .alarm)
+        }
+    }
+
     /// 알람을 지정된 분 뒤에 다시 울리도록 스누즈 알림을 예약한다.
     func snoozeAlarm(_ alarm: Alarm, minutes: Int = 5) async {
         // 스누즈 상태 저장

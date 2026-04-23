@@ -170,6 +170,8 @@ struct BetterAlarmApp: App {
                         if !isPlaying {
                             await audioService.stopSilentLoop()
                         }
+                        // AlarmKit Intent에서 저장한 스누즈 상태 동기화
+                        await alarmStore.syncSnoozeFromIntent()
                         // 포그라운드 복귀 시 알람 재스케줄링 (local + alarmKit)
                         await alarmStore.scheduleNextAlarm()
                         // pending 알람 처리 (race condition 방지)

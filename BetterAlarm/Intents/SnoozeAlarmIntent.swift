@@ -67,8 +67,11 @@ struct SnoozeAlarmIntent: LiveActivityIntent {
         )
         _ = try? await AlarmManager.shared.schedule(id: newID, configuration: config)
 
-        // UserDefaults.synchronize() 제거: iOS 12+ 자동 동기화로 불필요
+        // Intent는 별도 프로세스 → AlarmStore에 직접 접근 불가
+        // UserDefaults를 브릿지로 사용하여 앱 복귀 시 snoozeDate 동기화
         UserDefaults.standard.set(true, forKey: "alarmSnoozedFromIntent")
+        UserDefaults.standard.set(alarmID, forKey: "alarmSnoozedAlarmID")
+        UserDefaults.standard.set(snoozeDate.timeIntervalSince1970, forKey: "alarmSnoozeDateTimestamp")
 
         return .result()
     }
