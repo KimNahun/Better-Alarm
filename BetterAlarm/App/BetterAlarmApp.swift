@@ -102,7 +102,7 @@ struct BetterAlarmApp: App {
                 .tabItem { Label("설정", systemImage: "gearshape") }
                 .accessibilityLabel("설정 탭")
             }
-            .tint(Color.pAccentPrimary)
+            .tint(themeManager.currentTheme.colors.accentPrimary)
             .pTheme(themeManager.currentTheme)
             .preferredColorScheme(.dark)
             .fullScreenCover(item: $ringingAlarm) { alarm in
