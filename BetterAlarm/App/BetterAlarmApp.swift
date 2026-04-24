@@ -78,31 +78,19 @@ struct BetterAlarmApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ZStack {
-                // 루트 배경색: 화면 전환 시 흰색 깜빡임 방지
-                Color(themeManager.currentTheme.colors.backgroundTop)
-                    .ignoresSafeArea()
-
             TabView {
-                // 탭 1: 알람 목록
                 NavigationStack {
                     AlarmListView(store: alarmStore)
                 }
-                .tabItem {
-                    Label("알람", systemImage: "alarm")
-                }
+                .tabItem { Label("알람", systemImage: "alarm") }
                 .accessibilityLabel("알람 목록 탭")
 
-                // 탭 2: 주간 알람
                 NavigationStack {
                     WeeklyAlarmView(store: alarmStore)
                 }
-                .tabItem {
-                    Label("주간 알람", systemImage: "calendar")
-                }
+                .tabItem { Label("주간 알람", systemImage: "calendar") }
                 .accessibilityLabel("주간 알람 탭")
 
-                // 탭 3: 설정
                 NavigationStack {
                     SettingsView(
                         liveActivityManager: liveActivityManager,
@@ -111,12 +99,10 @@ struct BetterAlarmApp: App {
                         themeManager: themeManager
                     )
                 }
-                .tabItem {
-                    Label("설정", systemImage: "gearshape")
-                }
+                .tabItem { Label("설정", systemImage: "gearshape") }
                 .accessibilityLabel("설정 탭")
             }
-            .tint(themeManager.currentTheme.colors.accentPrimary)
+            .tint(Color.pAccentPrimary)
             .pTheme(themeManager.currentTheme)
             .fullScreenCover(item: $ringingAlarm) { alarm in
                 AlarmRingingView(
@@ -234,7 +220,6 @@ struct BetterAlarmApp: App {
 
                 AppLogger.info("App launch tasks completed", category: .lifecycle)
             }
-            } // ZStack
         }
     }
 
