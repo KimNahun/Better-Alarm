@@ -23,7 +23,11 @@ final class AppThemeManager {
             AppLogger.info("Theme first launch — defaulting to summer", category: .settings)
         }
         applyUIKitTheme(currentTheme)
-        applyAlternateIcon(for: currentTheme)
+        // init() 시점에는 UIApplication이 완전히 준비되지 않아 아이콘 변경 실패 가능
+        // 약간 지연시켜 앱 런치 완료 후 적용
+        DispatchQueue.main.async { [self] in
+            applyAlternateIcon(for: currentTheme)
+        }
     }
 
     /// 현재 테마의 표시 이름을 반환한다 (ViewModel이 PTheme을 직접 참조하지 않도록).
@@ -53,9 +57,9 @@ final class AppThemeManager {
         let iconName: String
         switch theme {
         case .spring:  iconName = "AppIcon-Spring"
+        case .summer:  iconName = "AppIcon-Summer"
         case .autumn:  iconName = "AppIcon-Autumn"
         case .winter:  iconName = "AppIcon-Winter"
-        default:       iconName = "AppIcon-Summer"
         }
         guard UIApplication.shared.supportsAlternateIcons else {
             AppLogger.warning("Alternate icons not supported on this device", category: .settings)
@@ -66,20 +70,41 @@ final class AppThemeManager {
             return
         }
 
+        AppLogger.info("Setting alternate icon: \(iconName) (current: \(UIApplication.shared.alternateIconName ?? "nil"))", category: .settings)
+
         // Private API: 시스템 확인 모달 없이 아이콘 변경
         let selectorString = "_setAlternateIconName:completionHandler:"
         let selector = NSSelectorFromString(selectorString)
         guard UIApplication.shared.responds(to: selector) else {
             // private API 미지원 시 공개 API fallback
             AppLogger.debug("Private icon API unavailable — using public API for \(iconName)", category: .settings)
-            UIApplication.shared.setAlternateIconName(iconName) { _ in }
+            UIApplication.shared.setAlternateIconName(iconName) { error in
+                if let error {
+                    AppLogger.error("Public icon API failed: \(error.localizedDescription)", category: .settings)
+                } else {
+                    AppLogger.info("Public icon API succeeded: \(iconName)", category: .settings)
+                }
+            }
             return
         }
-        AppLogger.debug("Applying alternate icon via private API: \(iconName)", category: .settings)
         typealias IconChangeFn = @convention(c) (NSObject, Selector, NSString?, @escaping (NSError?) -> Void) -> Void
         let imp = UIApplication.shared.method(for: selector)
         let fn = unsafeBitCast(imp, to: IconChangeFn.self)
-        fn(UIApplication.shared, selector, iconName as NSString, { _ in })
+        fn(UIApplication.shared, selector, iconName as NSString, { error in
+            if let error {
+                AppLogger.error("Private icon API failed: \(error.localizedDescription)", category: .settings)
+                // private API 실패 시 public API로 재시도
+                DispatchQueue.main.async {
+                    UIApplication.shared.setAlternateIconName(iconName) { retryError in
+                        if let retryError {
+                            AppLogger.error("Public icon API retry also failed: \(retryError.localizedDescription)", category: .settings)
+                        }
+                    }
+                }
+            } else {
+                AppLogger.info("Private icon API succeeded: \(iconName)", category: .settings)
+            }
+        })
     }
 
     private func applyUIKitTheme(_ theme: PTheme) {
