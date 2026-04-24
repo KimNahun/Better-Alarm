@@ -48,7 +48,7 @@ struct WidgetTheme {
 
     static func palette(for themeName: String) -> WidgetTheme {
         switch themeName {
-        case "summer":
+        case "여름", "summer":
             return WidgetTheme(
                 backgroundFrom: Color(red: 0.10, green: 0.07, blue: 0.01),
                 backgroundTo:   Color(red: 0.16, green: 0.10, blue: 0.02),
@@ -56,7 +56,7 @@ struct WidgetTheme {
                 accentTo:       Color(red: 1.00, green: 0.45, blue: 0.10),
                 labelAccent:    Color(red: 1.00, green: 0.76, blue: 0.30)
             )
-        case "spring":
+        case "봄", "spring":
             return WidgetTheme(
                 backgroundFrom: Color(red: 0.04, green: 0.08, blue: 0.07),
                 backgroundTo:   Color(red: 0.07, green: 0.11, blue: 0.10),
@@ -64,7 +64,7 @@ struct WidgetTheme {
                 accentTo:       Color(red: 0.50, green: 0.88, blue: 0.65),
                 labelAccent:    Color(red: 0.92, green: 0.66, blue: 0.80)
             )
-        case "autumn":
+        case "가을", "autumn":
             return WidgetTheme(
                 backgroundFrom: Color(red: 0.12, green: 0.07, blue: 0.02),
                 backgroundTo:   Color(red: 0.18, green: 0.09, blue: 0.03),
@@ -72,7 +72,7 @@ struct WidgetTheme {
                 accentTo:       Color(red: 0.85, green: 0.25, blue: 0.10),
                 labelAccent:    Color(red: 1.00, green: 0.58, blue: 0.22)
             )
-        default: // "winter"
+        default: // "겨울" / "winter"
             return WidgetTheme(
                 backgroundFrom: Color(red: 0.08, green: 0.08, blue: 0.15),
                 backgroundTo:   Color(red: 0.12, green: 0.10, blue: 0.22),
