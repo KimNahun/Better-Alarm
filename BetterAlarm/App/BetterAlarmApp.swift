@@ -104,6 +104,7 @@ struct BetterAlarmApp: App {
             }
             .tint(Color.pAccentPrimary)
             .pTheme(themeManager.currentTheme)
+            .preferredColorScheme(.dark)
             .fullScreenCover(item: $ringingAlarm) { alarm in
                 AlarmRingingView(
                     alarm: alarm,
