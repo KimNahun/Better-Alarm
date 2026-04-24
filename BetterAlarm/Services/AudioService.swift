@@ -59,10 +59,16 @@ actor AudioService: AudioServiceProtocol {
             }
         }
 
-        // AVAudioSession 설정 — .playback 카테고리 (무음 모드에서도 스피커로 재생)
-        // 주의: .defaultToSpeaker는 .playAndRecord 전용이므로 .playback에서 사용 금지
+        // AVAudioSession 설정
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playback, mode: .default, options: [.duckOthers])
+        if isSilent {
+            // 조용한 알람: .playback → iOS 기본 라우팅으로 이어폰 출력
+            try session.setCategory(.playback, mode: .default, options: [.duckOthers])
+        } else {
+            // 일반 알람: 이어폰 연결돼도 스피커로 강제 출력
+            try session.setCategory(.playAndRecord, mode: .default, options: [.duckOthers, .defaultToSpeaker])
+            try session.overrideOutputAudioPort(.speaker)
+        }
         try session.setActive(true, options: .notifyOthersOnDeactivation)
 
         // 볼륨 자동 조절
