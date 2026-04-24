@@ -83,11 +83,7 @@ final class AppThemeManager {
     }
 
     private func applyUIKitTheme(_ theme: PTheme) {
-        let bgColor = UIColor(theme.colors.backgroundTop)
-        let tabBarAppearance = UITabBarAppearance()
-        tabBarAppearance.configureWithOpaqueBackground()
-        tabBarAppearance.backgroundColor = bgColor
-        UITabBar.appearance().standardAppearance = tabBarAppearance
-        UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+        // 탭바: SwiftUI 기본 렌더링에 위임 (.tint()만 사용)
+        // UITabBarAppearance 조작은 SwiftUI 탭 전환 애니메이션을 방해하므로 제거
     }
 }

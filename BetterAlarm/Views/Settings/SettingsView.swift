@@ -218,8 +218,7 @@ struct SettingsView: View {
             message: viewModel.themeToastMessage,
             type: .success
         )
-        .toolbarBackground(Color.pTabBarBackground, for: .tabBar)
-        .toolbarBackground(.visible, for: .tabBar)
+        // toolbarBackground 제거: SwiftUI 기본 탭바 렌더링에 위임
         .task {
             await viewModel.loadSettings()
             liveActivityToggle = viewModel.isLiveActivityEnabled

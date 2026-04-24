@@ -85,26 +85,32 @@ struct BetterAlarmApp: App {
 
             TabView {
                 // 탭 1: 알람 목록
-                AlarmListView(store: alarmStore)
-                    .tabItem {
-                        Label("알람", systemImage: "alarm")
-                    }
-                    .accessibilityLabel("알람 목록 탭")
+                NavigationStack {
+                    AlarmListView(store: alarmStore)
+                }
+                .tabItem {
+                    Label("알람", systemImage: "alarm")
+                }
+                .accessibilityLabel("알람 목록 탭")
 
                 // 탭 2: 주간 알람
-                WeeklyAlarmView(store: alarmStore)
-                    .tabItem {
-                        Label("주간 알람", systemImage: "calendar")
-                    }
-                    .accessibilityLabel("주간 알람 탭")
+                NavigationStack {
+                    WeeklyAlarmView(store: alarmStore)
+                }
+                .tabItem {
+                    Label("주간 알람", systemImage: "calendar")
+                }
+                .accessibilityLabel("주간 알람 탭")
 
                 // 탭 3: 설정
-                SettingsView(
-                    liveActivityManager: liveActivityManager,
-                    alarmStore: alarmStore,
-                    alarmKitService: alarmKitService,
-                    themeManager: themeManager
-                )
+                NavigationStack {
+                    SettingsView(
+                        liveActivityManager: liveActivityManager,
+                        alarmStore: alarmStore,
+                        alarmKitService: alarmKitService,
+                        themeManager: themeManager
+                    )
+                }
                 .tabItem {
                     Label("설정", systemImage: "gearshape")
                 }
