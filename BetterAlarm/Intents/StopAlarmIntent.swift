@@ -8,10 +8,10 @@ import AlarmKit
 /// 잠금화면 Live Activity 버튼에서 알람을 정지하는 AppIntent.
 @available(iOS 26.0, *)
 struct StopAlarmIntent: LiveActivityIntent {
-    static var title: LocalizedStringResource = "알람 정지"
-    static var description = IntentDescription("알람을 정지합니다")
+    static var title: LocalizedStringResource = "intent_stop_title"
+    static var description = IntentDescription("intent_stop_description")
 
-    @Parameter(title: "알람 ID")
+    @Parameter(title: "intent_alarmid_param")
     var alarmID: String
 
     init() {

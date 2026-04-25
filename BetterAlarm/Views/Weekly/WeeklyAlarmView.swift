@@ -25,7 +25,7 @@ struct WeeklyAlarmView: View {
             VStack(spacing: 0) {
                 // 고정 헤더
                 HStack {
-                    Text("주간 알람")
+                    Text("weekly_title")
                         .font(.largeTitle.weight(.bold))
                         .foregroundStyle(Color.pTextPrimary)
                     Spacer()
@@ -68,12 +68,12 @@ struct WeeklyAlarmView: View {
                 get: { viewModel.pendingDisableAlarm != nil },
                 set: { if !$0 { viewModel.cancelDisable() } }
             ),
-            title: "이 주간 알람을 어떻게 처리할까요?",
+            title: String(localized: "weekly_disable_action_title"),
             items: viewModel.pendingDisableAlarm.map { alarm in [
-                PActionSheetItem(title: "이번만 스킵", icon: "forward.fill") {
+                PActionSheetItem(title: String(localized: "weekly_disable_action_skip_once"), icon: "forward.fill") {
                     Task { await viewModel.skipOnceAndDisable(alarm) }
                 },
-                PActionSheetItem(title: "완전히 끄기", icon: "bell.slash.fill", role: .destructive) {
+                PActionSheetItem(title: String(localized: "weekly_disable_action_disable_full"), icon: "bell.slash.fill", role: .destructive) {
                     Task { await viewModel.confirmDisable(alarm) }
                 }
             ]} ?? []
@@ -147,17 +147,18 @@ struct WeeklyAlarmView: View {
                 .font(.largeTitle)
                 .foregroundStyle(Color.pTextTertiary)
 
-            Text("주간 반복 알람이 없습니다")
+            Text("weekly_empty_title")
                 .font(.title3.weight(.medium))
                 .foregroundStyle(Color.pTextSecondary)
 
-            Text("알람 탭에서 주간 반복 알람을 추가하세요")
+            Text("weekly_empty_subtitle")
                 .font(.body)
                 .foregroundStyle(Color.pTextTertiary)
+                .multilineTextAlignment(.center)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("주간 반복 알람이 없습니다. 알람 탭에서 주간 반복 알람을 추가하세요.")
+        .accessibilityLabel(Text("weekly_empty_a11y"))
     }
 }

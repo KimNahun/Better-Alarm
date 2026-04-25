@@ -79,12 +79,12 @@ actor AlarmKitService: AlarmKitServiceProtocol {
         let alert = AlarmPresentation.Alert(
             title: LocalizedStringResource(stringLiteral: alarm.displayTitle),
             stopButton: AlarmButton(
-                text: "정지",
+                text: LocalizedStringResource("alarmkit_button_stop"),
                 textColor: .white,
                 systemImageName: "stop.fill"
             ),
             secondaryButton: AlarmButton(
-                text: "스누즈",
+                text: LocalizedStringResource("alarmkit_button_snooze"),
                 textColor: .white,
                 systemImageName: "moon.zzz.fill"
             ),
@@ -103,11 +103,11 @@ actor AlarmKitService: AlarmKitServiceProtocol {
         case .once:
             guard let triggerDate = alarm.nextTriggerDate() else {
                 AppLogger.error("AlarmKit: failed to compute trigger date for '\(alarm.displayTitle)'", category: .alarmKit)
-                throw AlarmError.scheduleFailed("다음 발생 시각 계산 실패")
+                throw AlarmError.scheduleFailed(String(localized: "error_compute_trigger_failed"))
             }
             guard triggerDate.timeIntervalSinceNow > 0 else {
                 AppLogger.error("AlarmKit: trigger date is in the past for '\(alarm.displayTitle)'", category: .alarmKit)
-                throw AlarmError.scheduleFailed("과거 시각으로는 알람을 설정할 수 없습니다.")
+                throw AlarmError.scheduleFailed(String(localized: "error_past_time"))
             }
             AppLogger.info("AlarmKit schedule .once → \(triggerDate)", category: .alarmKit)
             schedule = .fixed(triggerDate)
@@ -127,11 +127,11 @@ actor AlarmKitService: AlarmKitServiceProtocol {
             components.second = 0
             guard let triggerDate = Calendar.current.date(from: components) else {
                 AppLogger.error("AlarmKit: date component conversion failed for '\(alarm.displayTitle)'", category: .alarmKit)
-                throw AlarmError.scheduleFailed("날짜 변환 실패")
+                throw AlarmError.scheduleFailed(String(localized: "error_date_conversion_failed"))
             }
             guard triggerDate.timeIntervalSinceNow > 0 else {
                 AppLogger.error("AlarmKit: specificDate is in the past for '\(alarm.displayTitle)'", category: .alarmKit)
-                throw AlarmError.scheduleFailed("과거 날짜로는 알람을 설정할 수 없습니다.")
+                throw AlarmError.scheduleFailed(String(localized: "error_past_date"))
             }
             AppLogger.info("AlarmKit schedule .specificDate → \(triggerDate)", category: .alarmKit)
             schedule = .fixed(triggerDate)
@@ -182,9 +182,9 @@ actor AlarmKitService: AlarmKitServiceProtocol {
         let snoozeDate = Date().addingTimeInterval(5 * 60)
 
         let alert = AlarmPresentation.Alert(
-            title: LocalizedStringResource(stringLiteral: "스누즈 알람"),
-            stopButton: AlarmButton(text: "정지", textColor: .white, systemImageName: "stop.fill"),
-            secondaryButton: AlarmButton(text: "스누즈", textColor: .white, systemImageName: "moon.zzz.fill"),
+            title: LocalizedStringResource("alarmkit_alert_snooze_title"),
+            stopButton: AlarmButton(text: LocalizedStringResource("alarmkit_button_stop"), textColor: .white, systemImageName: "stop.fill"),
+            secondaryButton: AlarmButton(text: LocalizedStringResource("alarmkit_button_snooze"), textColor: .white, systemImageName: "moon.zzz.fill"),
             secondaryButtonBehavior: .custom
         )
         let presentation = AlarmPresentation(alert: alert)

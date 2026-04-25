@@ -11,8 +11,8 @@ enum AlarmMode: String, Codable, Sendable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .alarmKit: return "AlarmKit (앱 꺼진 상태에서도 울림)"
-        case .local: return "로컬 알림"
+        case .alarmKit: return String(localized: "alarmmode_alarmkit_display")
+        case .local: return String(localized: "alarmmode_local_display")
         }
     }
 }

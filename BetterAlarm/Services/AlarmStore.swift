@@ -274,21 +274,17 @@ actor AlarmStore {
     var nextAlarmDisplayString: String? {
         guard let alarm = nextAlarm, let date = alarm.nextTriggerDate() else { return nil }
 
+        let timeStr = date.formatted(date: .omitted, time: .shortened)
         let calendar = Calendar.current
-        let hour = calendar.component(.hour, from: date)
-        let minute = calendar.component(.minute, from: date)
-        let period = hour < 12 ? "오전" : "오후"
-        let displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour)
 
-        let datePrefix: String
         if calendar.isDateInToday(date) {
-            datePrefix = "오늘"
+            return String(format: NSLocalizedString("next_alarm_format_today", comment: ""), timeStr)
         } else if calendar.isDateInTomorrow(date) {
-            datePrefix = "내일"
+            return String(format: NSLocalizedString("next_alarm_format_tomorrow", comment: ""), timeStr)
         } else {
-            datePrefix = KoreanDateFormatters.monthDayWeekday.string(from: date)
+            let dateStr = date.formatted(.dateTime.month().day().weekday(.abbreviated))
+            return String(format: NSLocalizedString("next_alarm_format_date", comment: ""), dateStr, timeStr)
         }
-        return String(format: "%@ %@ %d시 %02d분", datePrefix, period, displayHour, minute)
     }
 
     var hasEnabledLocalAlarms: Bool {

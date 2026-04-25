@@ -33,7 +33,7 @@ extension AlarmToggleHandling {
         defer { togglingAlarmID = nil }
         await alarmToggleStore.toggleAlarm(alarm, enabled: enabled)
         await refreshState()
-        showToastMessage(enabled ? "알람이 켜졌습니다" : "알람이 꺼졌습니다")
+        showToastMessage(enabled ? String(localized: "toast_alarm_enabled") : String(localized: "toast_alarm_disabled"))
     }
 
     /// 이번만 스킵 (isEnabled는 유지)
@@ -42,7 +42,7 @@ extension AlarmToggleHandling {
         await alarmToggleStore.skipOnceAlarm(alarm)
         pendingDisableAlarm = nil
         await refreshState()
-        showToastMessage("다음 1회 건너뜁니다")
+        showToastMessage(String(localized: "toast_skip_next_once"))
     }
 
     /// 완전히 끄기
@@ -62,21 +62,21 @@ extension AlarmToggleHandling {
     func deleteAlarm(_ alarm: Alarm) async {
         await alarmToggleStore.deleteAlarm(alarm)
         await refreshState()
-        showToastMessage("알람이 삭제되었습니다")
+        showToastMessage(String(localized: "toast_alarm_deleted"))
     }
 
     /// 다음 1회 건너뛰기
     func skipOnceAlarm(_ alarm: Alarm) async {
         await alarmToggleStore.skipOnceAlarm(alarm)
         await refreshState()
-        showToastMessage("다음 1회 건너뜁니다")
+        showToastMessage(String(localized: "toast_skip_next_once"))
     }
 
     /// 건너뛰기 취소
     func clearSkip(_ alarm: Alarm) async {
         await alarmToggleStore.clearSkipOnceAlarm(alarm)
         await refreshState()
-        showToastMessage("건너뛰기가 취소되었습니다")
+        showToastMessage(String(localized: "toast_skip_cleared"))
     }
 
     func dismissToast() {
@@ -132,11 +132,11 @@ final class AlarmListViewModel: AlarmToggleHandling {
     }
 
     func showSaveToast(isEditing: Bool) {
-        showToastMessage(isEditing ? "알람이 수정되었습니다" : "알람이 저장되었습니다")
+        showToastMessage(isEditing ? String(localized: "toast_alarm_updated") : String(localized: "toast_alarm_saved"))
     }
 
     func showDeleteToast() {
-        showToastMessage("알람이 삭제되었습니다")
+        showToastMessage(String(localized: "toast_alarm_deleted"))
     }
 
     // MARK: - AlarmToggleHandling

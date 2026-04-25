@@ -82,14 +82,14 @@ struct BetterAlarmApp: App {
                 NavigationStack {
                     AlarmListView(store: alarmStore)
                 }
-                .tabItem { Label("알람", systemImage: "alarm") }
-                .accessibilityLabel("알람 목록 탭")
+                .tabItem { Label("tab_alarm_title", systemImage: "alarm") }
+                .accessibilityLabel(Text("tab_alarm_a11y"))
 
                 NavigationStack {
                     WeeklyAlarmView(store: alarmStore)
                 }
-                .tabItem { Label("주간 알람", systemImage: "calendar") }
-                .accessibilityLabel("주간 알람 탭")
+                .tabItem { Label("tab_weekly_title", systemImage: "calendar") }
+                .accessibilityLabel(Text("tab_weekly_a11y"))
 
                 NavigationStack {
                     SettingsView(
@@ -99,8 +99,8 @@ struct BetterAlarmApp: App {
                         themeManager: themeManager
                     )
                 }
-                .tabItem { Label("설정", systemImage: "gearshape") }
-                .accessibilityLabel("설정 탭")
+                .tabItem { Label("tab_settings_title", systemImage: "gearshape") }
+                .accessibilityLabel(Text("tab_settings_a11y"))
             }
             .tint(themeManager.currentTheme.colors.accentPrimary)
             .pTheme(themeManager.currentTheme)

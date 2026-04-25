@@ -14,13 +14,13 @@ enum Weekday: Int, Codable, CaseIterable, Hashable, Sendable {
 
     var shortName: String {
         switch self {
-        case .sunday:    return "일"
-        case .monday:    return "월"
-        case .tuesday:   return "화"
-        case .wednesday: return "수"
-        case .thursday:  return "목"
-        case .friday:    return "금"
-        case .saturday:  return "토"
+        case .sunday:    return String(localized: "weekday_short_sun")
+        case .monday:    return String(localized: "weekday_short_mon")
+        case .tuesday:   return String(localized: "weekday_short_tue")
+        case .wednesday: return String(localized: "weekday_short_wed")
+        case .thursday:  return String(localized: "weekday_short_thu")
+        case .friday:    return String(localized: "weekday_short_fri")
+        case .saturday:  return String(localized: "weekday_short_sat")
         }
     }
 

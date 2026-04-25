@@ -171,8 +171,8 @@ actor LiveActivityManager {
             AppLogger.debug("No next trigger date, returning empty state", category: .liveActivity)
             return AlarmActivityAttributes.ContentState(
                 nextAlarmTime: "--:--",
-                nextAlarmDate: "설정된 알람 없음",
-                alarmTitle: "알람을 추가해주세요",
+                nextAlarmDate: String(localized: "live_activity_no_alarm_date"),
+                alarmTitle: String(localized: "live_activity_no_alarm_title"),
                 isSkipped: false,
                 isEmpty: true,
                 themeName: themeName
@@ -182,8 +182,8 @@ actor LiveActivityManager {
         let calendar = Calendar.current
         let hour = calendar.component(.hour, from: nextDate)
         let minute = calendar.component(.minute, from: nextDate)
-        let timeString = KoreanDateFormatters.timeDisplayString(hour: hour, minute: minute)
-        let dateString = KoreanDateFormatters.relativeDateString(for: nextDate)
+        let timeString = LocalizedDateFormatters.timeDisplayString(hour: hour, minute: minute)
+        let dateString = LocalizedDateFormatters.relativeDateString(for: nextDate)
 
         AppLogger.debug("Created content state: \(timeString) \(dateString) theme=\(themeName)", category: .liveActivity)
 

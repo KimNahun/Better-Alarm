@@ -8,11 +8,11 @@ import AlarmKit
 /// 잠금화면 Live Activity 버튼에서 알람을 스누즈(5분 후 재알람)하는 AppIntent.
 @available(iOS 26.0, *)
 struct SnoozeAlarmIntent: LiveActivityIntent {
-    static var title: LocalizedStringResource = "스누즈"
-    static var description = IntentDescription("알람을 스누즈합니다")
+    static var title: LocalizedStringResource = "intent_snooze_title"
+    static var description = IntentDescription("intent_snooze_description")
     static var openAppWhenRun = false
 
-    @Parameter(title: "알람 ID")
+    @Parameter(title: "intent_alarmid_param")
     var alarmID: String
 
     init() {
@@ -39,14 +39,14 @@ struct SnoozeAlarmIntent: LiveActivityIntent {
         let snoozeDate = Date().addingTimeInterval(5 * 60)
 
         let alert = AlarmPresentation.Alert(
-            title: LocalizedStringResource(stringLiteral: "스누즈 알람"),
+            title: LocalizedStringResource("alarmkit_alert_snooze_title"),
             stopButton: AlarmButton(
-                text: "정지",
+                text: LocalizedStringResource("alarmkit_button_stop"),
                 textColor: .white,
                 systemImageName: "stop.fill"
             ),
             secondaryButton: AlarmButton(
-                text: "스누즈",
+                text: LocalizedStringResource("alarmkit_button_snooze"),
                 textColor: .white,
                 systemImageName: "moon.zzz.fill"
             ),

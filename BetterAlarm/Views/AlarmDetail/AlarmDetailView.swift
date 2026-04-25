@@ -30,7 +30,7 @@ struct AlarmDetailView: View {
                     Section {
                         timePicker
                     } header: {
-                        Text("시간")
+                        Text("alarm_detail_section_time")
                             .font(.caption)
                             .foregroundStyle(Color.pTextTertiary)
                     }
@@ -39,13 +39,13 @@ struct AlarmDetailView: View {
                     // MARK: 기본 설정
                     Section {
                         // 제목
-                        TextField("알람 제목", text: $vm.title)
+                        TextField("alarm_detail_title_placeholder", text: $vm.title)
                             .foregroundStyle(Color.pTextPrimary)
 
                         // 반복 스케줄
                         scheduleSection
                     } header: {
-                        Text("기본 설정")
+                        Text("alarm_detail_section_basic")
                             .font(.caption)
                             .foregroundStyle(Color.pTextTertiary)
                     }
@@ -55,13 +55,13 @@ struct AlarmDetailView: View {
                     Section {
                         alarmModeToggle
                     } header: {
-                        Text("알람 모드")
+                        Text("alarm_detail_section_mode")
                             .font(.caption)
                             .foregroundStyle(Color.pTextTertiary)
                     } footer: {
                         Text(viewModel.alarmMode == .alarmKit
-                             ? "앱이 꺼진 상태에서도 알람이 울립니다. (iOS 26 이상 필요)"
-                             : "앱이 백그라운드 또는 포그라운드 상태에서 알람이 울립니다.")
+                             ? "alarm_detail_alarmkit_footer_on"
+                             : "alarm_detail_alarmkit_footer_off")
                             .font(.caption)
                             .foregroundStyle(Color.pTextTertiary)
                     }
@@ -71,7 +71,7 @@ struct AlarmDetailView: View {
                     Section {
                         silentAlarmToggle
                     } header: {
-                        Text("소리 출력")
+                        Text("alarm_detail_section_sound_output")
                             .font(.caption)
                             .foregroundStyle(Color.pTextTertiary)
                     } footer: {
@@ -80,11 +80,11 @@ struct AlarmDetailView: View {
                                 .font(.caption)
                                 .foregroundStyle(Color.pWarning)
                         } else if viewModel.alarmMode == .alarmKit {
-                            Text("AlarmKit 모드에서는 조용한 알람을 지원하지 않습니다.")
+                            Text("alarm_detail_silent_footer_alarmkit")
                                 .font(.caption)
                                 .foregroundStyle(Color.pTextTertiary)
                         } else {
-                            Text("이어폰 연결 시 이어폰으로만 소리가 출력됩니다.")
+                            Text("alarm_detail_silent_footer_default")
                                 .font(.caption)
                                 .foregroundStyle(Color.pTextTertiary)
                         }
@@ -94,14 +94,16 @@ struct AlarmDetailView: View {
                     // MARK: 사운드
                     Section {
                         HStack {
-                            Text("사운드")
+                            Text("alarm_detail_section_sound")
                                 .foregroundStyle(Color.pTextPrimary)
                             Spacer()
-                            Text(viewModel.soundName == "default" ? "기본" : viewModel.soundName)
+                            Text(viewModel.soundName == "default"
+                                 ? String(localized: "alarm_detail_sound_default")
+                                 : viewModel.soundName)
                                 .foregroundStyle(Color.pTextSecondary)
                         }
                     } header: {
-                        Text("사운드")
+                        Text("alarm_detail_section_sound")
                             .font(.caption)
                             .foregroundStyle(Color.pTextTertiary)
                     }
@@ -119,7 +121,7 @@ struct AlarmDetailView: View {
                             } label: {
                                 HStack {
                                     Spacer()
-                                            Text("알람 삭제")
+                                    Text("alarm_detail_delete_button")
                                         .font(.body.weight(.medium))
                                         .foregroundStyle(Color.pWarning)
                                     Spacer()
@@ -138,12 +140,12 @@ struct AlarmDetailView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
                 .toolbar {
                     ToolbarItem(placement: .principal) {
-                        Text(viewModel.isEditing ? "알람 편집" : "새 알람")
+                        Text(viewModel.isEditing ? "alarm_detail_title_edit" : "alarm_detail_title_new")
                             .font(.headline.weight(.semibold))
                             .foregroundStyle(Color.pTextPrimary)
                     }
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("취소") {
+                        Button("alarm_detail_cancel_button") {
                             dismiss()
                         }
                         .foregroundStyle(Color.pTextSecondary)
@@ -160,7 +162,7 @@ struct AlarmDetailView: View {
                                 }
                             }
                         } label: {
-                            Text("저장")
+                            Text("alarm_detail_save_button")
                         }
                         .font(.body.weight(.semibold))
                         .foregroundStyle(theme.accentPrimary)
@@ -171,7 +173,9 @@ struct AlarmDetailView: View {
         }
         .pLoadingOverlay(
             isLoading: Binding(get: { viewModel.isSaving || viewModel.isDeleting }, set: { _ in }),
-            message: viewModel.isSaving ? "저장 중..." : "삭제 중..."
+            message: viewModel.isSaving
+                ? String(localized: "alarm_detail_saving")
+                : String(localized: "alarm_detail_deleting")
         )
         .toast(
             isPresented: Binding(
@@ -182,11 +186,11 @@ struct AlarmDetailView: View {
             type: .warning
         )
         // 저장 에러 표시
-        .alert("저장 실패", isPresented: Binding(
+        .alert(Text("alarm_detail_save_error_title"), isPresented: Binding(
             get: { viewModel.saveError != nil },
             set: { if !$0 { viewModel.clearSaveError() } }
         )) {
-            Button("확인", role: .cancel) {}
+            Button("alarm_detail_ok_button", role: .cancel) {}
         } message: {
             if let error = viewModel.saveError {
                 Text(error)
@@ -201,37 +205,37 @@ struct AlarmDetailView: View {
         @Bindable var vm = viewModel
         HStack(spacing: 0) {
             Spacer(minLength: 0)
-            // 오전/오후 선택
-            Picker("오전/오후", selection: $vm.isPM) {
-                Text("오전").tag(false)
-                Text("오후").tag(true)
+            // AM/PM 선택 (로케일 자동 반영)
+            Picker("alarm_detail_picker_period_a11y", selection: $vm.isPM) {
+                Text("alarm_detail_period_am").tag(false)
+                Text("alarm_detail_period_pm").tag(true)
             }
             .pickerStyle(.wheel)
             .frame(width: 70)
             .clipped()
-            .accessibilityLabel("오전 오후 선택")
+            .accessibilityLabel(Text("alarm_detail_picker_period_a11y"))
 
             // 시 선택 (1~12)
-            Picker("시", selection: $vm.displayHour) {
+            Picker("alarm_detail_picker_hour_a11y", selection: $vm.displayHour) {
                 ForEach(1...12, id: \.self) { h in
-                    Text("\(h)시").tag(h)
+                    Text(String(format: NSLocalizedString("alarm_detail_hour_unit_format", comment: ""), h)).tag(h)
                 }
             }
             .pickerStyle(.wheel)
             .frame(width: 80)
             .clipped()
-            .accessibilityLabel("시 선택")
+            .accessibilityLabel(Text("alarm_detail_picker_hour_a11y"))
 
             // 분 선택
-            Picker("분", selection: $vm.minute) {
+            Picker("alarm_detail_picker_minute_a11y", selection: $vm.minute) {
                 ForEach(0..<60, id: \.self) { m in
-                    Text(String(format: "%02d분", m)).tag(m)
+                    Text(String(format: NSLocalizedString("alarm_detail_minute_unit_format", comment: ""), m)).tag(m)
                 }
             }
             .pickerStyle(.wheel)
             .frame(width: 80)
             .clipped()
-            .accessibilityLabel("분 선택")
+            .accessibilityLabel(Text("alarm_detail_picker_minute_a11y"))
 
             Spacer(minLength: 0)
         }
@@ -245,14 +249,14 @@ struct AlarmDetailView: View {
     @ViewBuilder
     private var scheduleSection: some View {
         @Bindable var vm = viewModel
-        Picker("반복", selection: $vm.scheduleType) {
+        Picker("alarm_detail_repeat_a11y", selection: $vm.scheduleType) {
             ForEach(AlarmDetailViewModel.ScheduleType.allCases, id: \.self) { type in
-                Text(type.rawValue).tag(type)
+                Text(type.displayName).tag(type)
             }
         }
         .pickerStyle(.segmented)
         .colorScheme(.dark)
-        .accessibilityLabel("알람 반복 유형 선택")
+        .accessibilityLabel(Text("alarm_detail_repeat_a11y"))
         .onChange(of: viewModel.scheduleType) { _, _ in
             viewModel.handleScheduleTypeChange()
         }
@@ -263,7 +267,7 @@ struct AlarmDetailView: View {
 
         if viewModel.scheduleType == .specificDate {
             DatePicker(
-                "날짜",
+                "alarm_detail_date_label",
                 selection: $vm.specificDate,
                 in: Date()...,
                 displayedComponents: .date
@@ -271,7 +275,7 @@ struct AlarmDetailView: View {
             .datePickerStyle(.compact)
             .colorScheme(.dark)
             .foregroundStyle(Color.pTextPrimary)
-            .accessibilityLabel("특정 날짜 선택")
+            .accessibilityLabel(Text("alarm_detail_date_a11y"))
         }
     }
 
@@ -297,7 +301,9 @@ struct AlarmDetailView: View {
                         )
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("\(day.shortName) \(isSelected ? "선택됨" : "선택 안됨")")
+                .accessibilityLabel(Text(isSelected
+                    ? "alarm_detail_weekday_a11y_selected_format \(day.shortName)"
+                    : "alarm_detail_weekday_a11y_unselected_format \(day.shortName)"))
                 .accessibilityAddTraits(isSelected ? .isSelected : [])
             }
         }
@@ -305,29 +311,39 @@ struct AlarmDetailView: View {
     }
 
     // MARK: - AlarmMode Toggle
+    // UI 잘림 보강: 영어 "Ring even when app is closed"(28자)가 한 줄 안 들어갈 수 있으므로
+    // HStack + lineLimit(2) fallback 패턴 적용 (SPEC §7.2B)
 
     private var alarmModeToggle: some View {
-        PToggle("앱이 꺼진 상태에서도 알람 받기", isOn: Binding(
-            get: { viewModel.alarmMode == .alarmKit },
-            set: { viewModel.toggleAlarmMode(wantsAlarmKit: $0) }
-        ))
-        .accessibilityLabel("앱이 꺼진 상태에서도 알람 받기")
-        .accessibilityHint("iOS 26 이상에서만 사용할 수 있습니다")
+        HStack {
+            Text("alarm_detail_alarmkit_toggle_label")
+                .font(.body)
+                .foregroundStyle(Color.pTextPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.9)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Toggle("", isOn: Binding(
+                get: { viewModel.alarmMode == .alarmKit },
+                set: { viewModel.toggleAlarmMode(wantsAlarmKit: $0) }
+            ))
+            .labelsHidden()
+        }
+        .accessibilityLabel(Text("alarm_detail_alarmkit_toggle_label"))
+        .accessibilityHint(Text("alarm_detail_alarmkit_toggle_a11y_hint"))
     }
 
     // MARK: - Silent Alarm Toggle
 
     private var silentAlarmToggle: some View {
-        PToggle("조용한 알람", isOn: Binding(
+        PToggle("alarm_detail_silent_toggle_label", isOn: Binding(
             get: { viewModel.isSilentAlarm },
             set: { enabled in Task { await viewModel.validateSilentAlarm(enabled: enabled) } }
         ), icon: "headphones")
         .disabled(viewModel.alarmMode == .alarmKit)
-        .accessibilityLabel("조용한 알람")
-        .accessibilityHint(
-            viewModel.alarmMode == .alarmKit
-                ? "AlarmKit 모드에서는 사용할 수 없습니다"
-                : "이어폰 연결 시 이어폰으로만 소리가 출력됩니다"
-        )
+        .accessibilityLabel(Text("alarm_detail_silent_toggle_label"))
+        .accessibilityHint(viewModel.alarmMode == .alarmKit
+            ? Text("alarm_detail_silent_a11y_hint_alarmkit")
+            : Text("alarm_detail_silent_a11y_hint_default"))
     }
 }

@@ -30,7 +30,7 @@ struct SettingsView: View {
             VStack(spacing: 0) {
                 // 고정 헤더
                 HStack {
-                    Text("설정")
+                    Text("settings_title")
                         .font(.largeTitle.weight(.bold))
                         .foregroundStyle(Color.pTextPrimary)
                     Spacer()
@@ -66,7 +66,7 @@ struct SettingsView: View {
                             }
                             .padding(.vertical, 4)
                         } header: {
-                            Text("테마")
+                            Text("settings_section_theme")
                                 .font(.caption)
                                 .foregroundStyle(Color.pTextTertiary)
                         }
@@ -77,14 +77,16 @@ struct SettingsView: View {
                     Section {
                         // 알림 권한 행
                         HStack {
-                            Text("알림 권한")
+                            Text("settings_notification_permission")
                                 .font(.body)
                                 .foregroundStyle(Color.pTextPrimary)
                             Spacer()
                             Text(viewModel.notificationAuthStatus)
                                 .font(.body)
-                                .foregroundStyle(viewModel.notificationAuthStatus == "허용됨" ? Color.pSuccess : Color.pWarning)
-                            Button("설정 열기") {
+                                .foregroundStyle(viewModel.notificationAuthStatus == String(localized: "settings_permission_authorized") ? Color.pSuccess : Color.pWarning)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.85)
+                            Button("settings_open_app_settings") {
                                 openAppSettings()
                             }
                             .font(.caption)
@@ -93,19 +95,21 @@ struct SettingsView: View {
                         }
                         .frame(minHeight: 44)
                         .accessibilityElement(children: .combine)
-                        .accessibilityLabel("알림 권한: \(viewModel.notificationAuthStatus)")
+                        .accessibilityLabel(Text("settings_notification_permission_a11y_format \(viewModel.notificationAuthStatus)"))
 
                         // AlarmKit 권한 행
                         HStack {
-                            Text("AlarmKit 권한")
+                            Text("settings_alarmkit_permission")
                                 .font(.body)
                                 .foregroundStyle(Color.pTextPrimary)
                             Spacer()
                             Text(viewModel.alarmKitAuthStatus)
                                 .font(.body)
-                                .foregroundStyle(viewModel.alarmKitAuthStatus == "허용됨" ? Color.pSuccess : Color.pTextSecondary)
-                            if viewModel.alarmKitAuthStatus != "iOS 26 이상 필요" {
-                                Button("설정 열기") {
+                                .foregroundStyle(viewModel.alarmKitAuthStatus == String(localized: "settings_permission_authorized") ? Color.pSuccess : Color.pTextSecondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.85)
+                            if viewModel.alarmKitAuthStatus != String(localized: "settings_requires_ios26") {
+                                Button("settings_open_app_settings") {
                                     openAppSettings()
                                 }
                                 .font(.caption)
@@ -115,9 +119,9 @@ struct SettingsView: View {
                         }
                         .frame(minHeight: 44)
                         .accessibilityElement(children: .combine)
-                        .accessibilityLabel("AlarmKit 권한: \(viewModel.alarmKitAuthStatus)")
+                        .accessibilityLabel(Text("settings_alarmkit_permission_a11y_format \(viewModel.alarmKitAuthStatus)"))
                     } header: {
-                        Text("권한")
+                        Text("settings_section_permission")
                             .font(.caption)
                             .foregroundStyle(Color.pTextTertiary)
                     }
@@ -125,9 +129,9 @@ struct SettingsView: View {
 
                     // MARK: 잠금화면 위젯 섹션 (토글 + 권한 통합)
                     Section {
-                        PToggle("잠금화면 위젯", isOn: $liveActivityToggle, icon: "lock.iphone")
-                            .accessibilityLabel("잠금화면 위젯")
-                            .accessibilityHint("Live Activity를 통해 잠금화면에 다음 알람 정보를 표시합니다")
+                        PToggle("settings_lock_widget_label", isOn: $liveActivityToggle, icon: "lock.iphone")
+                            .accessibilityLabel(Text("settings_lock_widget_label"))
+                            .accessibilityHint(Text("settings_lock_widget_a11y_hint"))
                             .frame(minHeight: 44)
                             .onChange(of: liveActivityToggle) { _, newValue in
                                 Task {
@@ -135,29 +139,30 @@ struct SettingsView: View {
                                 }
                             }
 
-                        // 잠금화면 위젯 권한 행
-                        HStack {
-                            Text("잠금화면 위젯 권한")
+                        // 잠금화면 위젯 권한 행 — VStack 분리 (영어 라벨 잘림 방지, SPEC §7.2D)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("settings_lock_widget_permission")
                                 .font(.body)
                                 .foregroundStyle(Color.pTextPrimary)
-                            Spacer()
-                            Text(viewModel.lockScreenWidgetStatus)
-                                .font(.body)
-                                .foregroundStyle(viewModel.lockScreenWidgetStatus == "허용됨" ? Color.pSuccess : Color.pTextSecondary)
-                            if viewModel.lockScreenWidgetStatus != "iOS 17 이상 필요" {
-                                Button("설정 열기") {
-                                    openAppSettings()
+                            HStack {
+                                Text(viewModel.lockScreenWidgetStatus)
+                                    .font(.caption)
+                                    .foregroundStyle(viewModel.lockScreenWidgetStatus == String(localized: "settings_permission_authorized") ? Color.pSuccess : Color.pTextSecondary)
+                                Spacer()
+                                if viewModel.lockScreenWidgetStatus != String(localized: "settings_requires_ios17") {
+                                    Button("settings_open_app_settings") {
+                                        openAppSettings()
+                                    }
+                                    .font(.caption)
+                                    .foregroundStyle(theme.accentPrimary)
                                 }
-                                .font(.caption)
-                                .foregroundStyle(theme.accentPrimary)
-                                .padding(.leading, 8)
                             }
                         }
                         .frame(minHeight: 44)
                         .accessibilityElement(children: .combine)
-                        .accessibilityLabel("잠금화면 위젯 권한: \(viewModel.lockScreenWidgetStatus)")
+                        .accessibilityLabel(Text("settings_lock_widget_permission_a11y_format \(viewModel.lockScreenWidgetStatus)"))
                     } header: {
-                        Text("잠금화면 위젯")
+                        Text("settings_section_lock_widget")
                             .font(.caption)
                             .foregroundStyle(Color.pTextTertiary)
                     }
@@ -165,9 +170,11 @@ struct SettingsView: View {
 
                     // MARK: 피드백/문의 섹션
                     Section {
-                        Link(destination: URL(string: "mailto:rlaskgns0212@naver.com?subject=BetterAlarm%20피드백")!) {
+                        let subject = String(localized: "settings_feedback_email_subject")
+                            .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "BetterAlarm%20Feedback"
+                        Link(destination: URL(string: "mailto:rlaskgns0212@naver.com?subject=\(subject)")!) {
                             HStack {
-                                Text("피드백 보내기")
+                                Text("settings_feedback_button")
                                     .font(.body)
                                     .foregroundStyle(Color.pTextPrimary)
                                 Spacer()
@@ -176,10 +183,10 @@ struct SettingsView: View {
                             }
                         }
                         .frame(minHeight: 44)
-                        .accessibilityLabel("피드백 보내기")
-                        .accessibilityHint("이메일로 피드백을 보냅니다")
+                        .accessibilityLabel(Text("settings_feedback_button"))
+                        .accessibilityHint(Text("settings_feedback_a11y_hint"))
                     } header: {
-                        Text("피드백/문의")
+                        Text("settings_section_feedback")
                             .font(.caption)
                             .foregroundStyle(Color.pTextTertiary)
                     }
@@ -188,7 +195,7 @@ struct SettingsView: View {
                     // MARK: 앱 정보 섹션
                     Section {
                         HStack {
-                            Text("버전")
+                            Text("settings_version_label")
                                 .font(.body)
                                 .foregroundStyle(Color.pTextPrimary)
                             Spacer()
@@ -198,9 +205,9 @@ struct SettingsView: View {
                         }
                         .frame(minHeight: 44)
                         .accessibilityElement(children: .combine)
-                        .accessibilityLabel("앱 버전 \(viewModel.appVersion), 빌드 \(viewModel.buildNumber)")
+                        .accessibilityLabel(Text("settings_version_a11y_format \(viewModel.appVersion) \(viewModel.buildNumber)"))
                     } header: {
-                        Text("앱 정보")
+                        Text("settings_section_app_info")
                             .font(.caption)
                             .foregroundStyle(Color.pTextTertiary)
                     }
@@ -228,7 +235,7 @@ struct SettingsView: View {
         }
         .pLoadingOverlay(
             isLoading: Binding(get: { viewModel.isLoading }, set: { _ in }),
-            message: "권한 확인 중..."
+            message: String(localized: "settings_loading_message")
         )
     }
 

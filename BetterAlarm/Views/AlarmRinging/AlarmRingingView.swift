@@ -67,7 +67,7 @@ struct AlarmRingingView: View {
             .font(.system(.largeTitle, design: .rounded, weight: .ultraLight))
             .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
             .foregroundStyle(Color.pTextPrimary)
-            .accessibilityLabel("현재 시각: \(viewModel.currentTimeString)")
+            .accessibilityLabel(Text("alarm_ringing_current_time_a11y \(viewModel.currentTimeString)"))
             .accessibilityAddTraits(.updatesFrequently)
     }
 
@@ -78,7 +78,7 @@ struct AlarmRingingView: View {
             .lineLimit(2)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 8)
-            .accessibilityLabel("알람 이름: \(viewModel.alarm.displayTitle)")
+            .accessibilityLabel(Text("alarm_ringing_alarm_title_a11y \(viewModel.alarm.displayTitle)"))
     }
 
     private var buttonArea: some View {
@@ -90,34 +90,34 @@ struct AlarmRingingView: View {
                     dismiss()
                 }
             } label: {
-                Text("정지")
+                Text("alarm_ringing_stop_button")
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(.white)
                     .frame(width: 120, height: 120)
                     .background(theme.accentPrimary)
                     .clipShape(Circle())
             }
-            .accessibilityLabel("알람 정지")
-            .accessibilityHint("알람을 끕니다")
+            .accessibilityLabel(Text("alarm_ringing_stop_a11y"))
+            .accessibilityHint(Text("alarm_ringing_stop_a11y_hint"))
 
-            // 스누즈 버튼 (작은 캡슐형 아웃라인)
+            // 스누즈 버튼 (작은 캡슐형 아웃라인) — minWidth 200으로 상향 (SPEC §7.2F)
             Button {
                 Task {
                     await viewModel.snoozeAlarm()
                     dismiss()
                 }
             } label: {
-                Text("스누즈 (5분)")
+                Text("alarm_ringing_snooze_button")
                     .font(.body.weight(.medium))
                     .foregroundStyle(theme.accentSecondary)
-                    .frame(minWidth: 160, minHeight: 48)
+                    .frame(minWidth: 200, minHeight: 48)
                     .overlay(
                         Capsule()
                             .stroke(theme.accentSecondary, lineWidth: 1.5)
                     )
             }
-            .accessibilityLabel("스누즈")
-            .accessibilityHint("5분 후 다시 알람이 울립니다")
+            .accessibilityLabel(Text("alarm_ringing_snooze_a11y"))
+            .accessibilityHint(Text("alarm_ringing_snooze_a11y_hint"))
         }
     }
 }

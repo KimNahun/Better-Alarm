@@ -22,9 +22,9 @@ final class SettingsViewModel {
     private(set) var showThemeToast: Bool = false
     private(set) var themeToastMessage: String = ""
 
-    private(set) var alarmKitAuthStatus: String = "확인 중..."
-    private(set) var notificationAuthStatus: String = "확인 중..."
-    private(set) var lockScreenWidgetStatus: String = "확인 중..."
+    private(set) var alarmKitAuthStatus: String = String(localized: "settings_permission_loading")
+    private(set) var notificationAuthStatus: String = String(localized: "settings_permission_loading")
+    private(set) var lockScreenWidgetStatus: String = String(localized: "settings_permission_loading")
     private(set) var appVersion: String = ""
     private(set) var buildNumber: String = ""
     private(set) var isLoading: Bool = false
@@ -74,7 +74,7 @@ final class SettingsViewModel {
     func selectThemeByName(_ themeName: String) {
         themeManager?.setThemeByName(themeName)
         let displayName = themeManager?.currentThemeDisplayName ?? themeName
-        themeToastMessage = "\(displayName) 테마로 변경되었습니다"
+        themeToastMessage = String(format: NSLocalizedString("settings_theme_changed_format", comment: ""), displayName)
         showThemeToast = true
     }
 
@@ -100,13 +100,13 @@ final class SettingsViewModel {
         let notificationSettings = await UNUserNotificationCenter.current().notificationSettings()
         switch notificationSettings.authorizationStatus {
         case .authorized, .provisional, .ephemeral:
-            notificationAuthStatus = "허용됨"
+            notificationAuthStatus = String(localized: "settings_permission_authorized")
         case .denied:
-            notificationAuthStatus = "허용 안 됨"
+            notificationAuthStatus = String(localized: "settings_permission_denied")
         case .notDetermined:
-            notificationAuthStatus = "미설정"
+            notificationAuthStatus = String(localized: "settings_permission_not_determined")
         @unknown default:
-            notificationAuthStatus = "알 수 없음"
+            notificationAuthStatus = String(localized: "settings_permission_unknown")
         }
         AppLogger.info("Notification permission status: \(notificationAuthStatus)", category: .permission)
 
@@ -116,9 +116,11 @@ final class SettingsViewModel {
         // Lock Screen Widget (ActivityKit) 실제 권한 상태 확인
         if #available(iOS 17.0, *) {
             let info = ActivityAuthorizationInfo()
-            lockScreenWidgetStatus = info.areActivitiesEnabled ? "허용됨" : "허용 안 됨"
+            lockScreenWidgetStatus = info.areActivitiesEnabled
+                ? String(localized: "settings_permission_authorized")
+                : String(localized: "settings_permission_denied")
         } else {
-            lockScreenWidgetStatus = "iOS 17 이상 필요"
+            lockScreenWidgetStatus = String(localized: "settings_requires_ios17")
         }
         AppLogger.info("Lock Screen Widget status: \(lockScreenWidgetStatus)", category: .permission)
         AppLogger.info("AlarmKit status: \(alarmKitAuthStatus)", category: .permission)
@@ -144,9 +146,11 @@ final class SettingsViewModel {
     private func loadAlarmKitAuthStatus() async {
         if let service = alarmKitService {
             let authorized = await service.checkPermission()
-            alarmKitAuthStatus = authorized ? "허용됨" : "허용 안 됨"
+            alarmKitAuthStatus = authorized
+                ? String(localized: "settings_permission_authorized")
+                : String(localized: "settings_permission_denied")
         } else {
-            alarmKitAuthStatus = "iOS 26 이상 필요"
+            alarmKitAuthStatus = String(localized: "settings_requires_ios26")
         }
     }
 

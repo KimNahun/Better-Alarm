@@ -1,0 +1,1161 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "tab_alarm_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Alarms" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람" } }
+      }
+    },
+    "tab_weekly_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Weekly" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "주간" } }
+      }
+    },
+    "tab_settings_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "설정" } }
+      }
+    },
+    "tab_alarm_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Alarms tab" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람 목록 탭" } }
+      }
+    },
+    "tab_weekly_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Weekly alarms tab" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "주간 알람 탭" } }
+      }
+    },
+    "tab_settings_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings tab" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "설정 탭" } }
+      }
+    },
+    "alarm_list_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Alarms" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람" } }
+      }
+    },
+    "alarm_list_next_alarm_label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Next alarm" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 알람" } }
+      }
+    },
+    "alarm_list_next_alarm_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Next alarm: %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 알람: %@" } }
+      }
+    },
+    "alarm_list_empty_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No alarms set" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "설정된 알람이 없습니다" } }
+      }
+    },
+    "alarm_list_empty_subtitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tap + to add your first alarm" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "+ 버튼을 눌러 첫 알람을 추가하세요" } }
+      }
+    },
+    "alarm_list_empty_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No alarms set. Tap + to add your first alarm." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "설정된 알람이 없습니다. + 버튼을 눌러 첫 알람을 추가하세요." } }
+      }
+    },
+    "alarm_list_add_button_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add new alarm" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 알람 추가" } }
+      }
+    },
+    "alarm_detail_title_new" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "New Alarm" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 알람" } }
+      }
+    },
+    "alarm_detail_title_edit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Edit Alarm" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람 편집" } }
+      }
+    },
+    "alarm_detail_section_time" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Time" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시간" } }
+      }
+    },
+    "alarm_detail_section_basic" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "General" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기본 설정" } }
+      }
+    },
+    "alarm_detail_section_mode" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Alarm Mode" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람 모드" } }
+      }
+    },
+    "alarm_detail_section_sound_output" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sound Output" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "소리 출력" } }
+      }
+    },
+    "alarm_detail_section_sound" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sound" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사운드" } }
+      }
+    },
+    "alarm_detail_title_placeholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Alarm name" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람 제목" } }
+      }
+    },
+    "alarm_detail_repeat_label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Repeat" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "반복" } }
+      }
+    },
+    "alarm_detail_date_label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Date" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "날짜" } }
+      }
+    },
+    "alarm_detail_date_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select specific date" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "특정 날짜 선택" } }
+      }
+    },
+    "alarm_detail_save_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Save" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "저장" } }
+      }
+    },
+    "alarm_detail_cancel_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "취소" } }
+      }
+    },
+    "alarm_detail_delete_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete Alarm" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람 삭제" } }
+      }
+    },
+    "alarm_detail_saving" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Saving…" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "저장 중..." } }
+      }
+    },
+    "alarm_detail_deleting" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Deleting…" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "삭제 중..." } }
+      }
+    },
+    "alarm_detail_save_error_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Save Failed" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "저장 실패" } }
+      }
+    },
+    "alarm_detail_ok_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "OK" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "확인" } }
+      }
+    },
+    "alarm_detail_sound_default" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Default" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기본" } }
+      }
+    },
+    "alarm_detail_period_am" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "AM" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오전" } }
+      }
+    },
+    "alarm_detail_period_pm" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "PM" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오후" } }
+      }
+    },
+    "alarm_detail_picker_period_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select AM or PM" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오전 오후 선택" } }
+      }
+    },
+    "alarm_detail_picker_hour_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select hour" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시 선택" } }
+      }
+    },
+    "alarm_detail_picker_minute_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select minute" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "분 선택" } }
+      }
+    },
+    "alarm_detail_hour_unit_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%d" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%d시" } }
+      }
+    },
+    "alarm_detail_minute_unit_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%02d" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%02d분" } }
+      }
+    },
+    "alarm_detail_alarmkit_toggle_label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ring even when app is closed" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "앱이 꺼진 상태에서도 알람 받기" } }
+      }
+    },
+    "alarm_detail_alarmkit_toggle_a11y_hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Requires iOS 26 or later" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "iOS 26 이상에서만 사용할 수 있습니다" } }
+      }
+    },
+    "alarm_detail_alarmkit_footer_on" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rings even when the app is closed. (Requires iOS 26 or later)" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "앱이 꺼진 상태에서도 알람이 울립니다. (iOS 26 이상 필요)" } }
+      }
+    },
+    "alarm_detail_alarmkit_footer_off" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rings while the app is in the background or foreground." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "앱이 백그라운드 또는 포그라운드 상태에서 알람이 울립니다." } }
+      }
+    },
+    "alarm_detail_silent_toggle_label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Silent Alarm" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "조용한 알람" } }
+      }
+    },
+    "alarm_detail_silent_footer_alarmkit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Silent alarms are not available in AlarmKit mode." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "AlarmKit 모드에서는 조용한 알람을 지원하지 않습니다." } }
+      }
+    },
+    "alarm_detail_silent_footer_default" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Plays only through connected headphones." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이어폰 연결 시 이어폰으로만 소리가 출력됩니다." } }
+      }
+    },
+    "alarm_detail_silent_a11y_hint_alarmkit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Not available in AlarmKit mode" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "AlarmKit 모드에서는 사용할 수 없습니다" } }
+      }
+    },
+    "alarm_detail_silent_a11y_hint_default" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Plays only through connected headphones" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이어폰 연결 시 이어폰으로만 소리가 출력됩니다" } }
+      }
+    },
+    "alarm_detail_earphone_warning" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No headphones connected. Please connect headphones before the alarm rings." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이어폰이 연결되어 있지 않습니다. 알람 시각에 이어폰을 연결해주세요." } }
+      }
+    },
+    "alarm_detail_weekday_a11y_selected_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ selected" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 선택됨" } }
+      }
+    },
+    "alarm_detail_weekday_a11y_unselected_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ not selected" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 선택 안됨" } }
+      }
+    },
+    "alarm_detail_repeat_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose repeat option" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람 반복 유형 선택" } }
+      }
+    },
+    "alarm_detail_schedule_once" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Once" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "1회" } }
+      }
+    },
+    "alarm_detail_schedule_weekly" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Weekly" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "주간 반복" } }
+      }
+    },
+    "alarm_detail_schedule_specific_date" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Specific Date" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "특정 날짜" } }
+      }
+    },
+    "alarm_detail_specific_date_unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Specific-date alarms require iOS 26 or later." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "특정 날짜 알람은 iOS 26 이상에서만 지원됩니다." } }
+      }
+    },
+    "alarm_row_skipping_next" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Skipping next" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 1회 건너뜀" } }
+      }
+    },
+    "alarm_row_snoozed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Snoozed" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스누즈 중" } }
+      }
+    },
+    "alarm_row_alarmkit_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "AlarmKit mode" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "AlarmKit 모드" } }
+      }
+    },
+    "alarm_row_silent_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Silent alarm" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "조용한 알람" } }
+      }
+    },
+    "alarm_row_time_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Alarm time: %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람 시각: %@" } }
+      }
+    },
+    "alarm_row_toggle_a11y_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$@ alarm %2$@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%1$@ 알람 %2$@" } }
+      }
+    },
+    "alarm_row_toggle_disable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "disable" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "비활성화" } }
+      }
+    },
+    "alarm_row_toggle_enable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "enable" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "활성화" } }
+      }
+    },
+    "alarm_row_swipe_clear_skip" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel Skip" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "건너뛰기 취소" } }
+      }
+    },
+    "alarm_row_swipe_skip_once" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Skip Once" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "1회 건너뛰기" } }
+      }
+    },
+    "alarm_ringing_stop_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stop" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "정지" } }
+      }
+    },
+    "alarm_ringing_snooze_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Snooze (5 min)" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스누즈 (5분)" } }
+      }
+    },
+    "alarm_ringing_current_time_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Current time: %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "현재 시각: %@" } }
+      }
+    },
+    "alarm_ringing_alarm_title_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Alarm name: %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람 이름: %@" } }
+      }
+    },
+    "alarm_ringing_stop_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stop alarm" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람 정지" } }
+      }
+    },
+    "alarm_ringing_stop_a11y_hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Turns off the alarm" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람을 끕니다" } }
+      }
+    },
+    "alarm_ringing_snooze_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Snooze" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스누즈" } }
+      }
+    },
+    "alarm_ringing_snooze_a11y_hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rings again in 5 minutes" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "5분 후 다시 알람이 울립니다" } }
+      }
+    },
+    "weekly_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Weekly Alarms" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "주간 알람" } }
+      }
+    },
+    "weekly_empty_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No weekly alarms" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "주간 반복 알람이 없습니다" } }
+      }
+    },
+    "weekly_empty_subtitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add a weekly alarm from the Alarms tab" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람 탭에서 주간 반복 알람을 추가하세요" } }
+      }
+    },
+    "weekly_empty_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No weekly alarms. Add one from the Alarms tab." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "주간 반복 알람이 없습니다. 알람 탭에서 주간 반복 알람을 추가하세요." } }
+      }
+    },
+    "weekly_disable_action_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "What would you like to do with this alarm?" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 주간 알람을 어떻게 처리할까요?" } }
+      }
+    },
+    "weekly_disable_action_skip_once" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Skip Once" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번만 스킵" } }
+      }
+    },
+    "weekly_disable_action_disable_full" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Turn Off" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "완전히 끄기" } }
+      }
+    },
+    "settings_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "설정" } }
+      }
+    },
+    "settings_section_theme" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Theme" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "테마" } }
+      }
+    },
+    "settings_section_permission" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Permissions" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "권한" } }
+      }
+    },
+    "settings_section_lock_widget" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Lock Screen Widget" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "잠금화면 위젯" } }
+      }
+    },
+    "settings_section_feedback" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Feedback" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "피드백/문의" } }
+      }
+    },
+    "settings_section_app_info" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "About" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "앱 정보" } }
+      }
+    },
+    "settings_notification_permission" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Notifications" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알림 권한" } }
+      }
+    },
+    "settings_alarmkit_permission" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "AlarmKit" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "AlarmKit 권한" } }
+      }
+    },
+    "settings_lock_widget_label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Lock Screen Widget" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "잠금화면 위젯" } }
+      }
+    },
+    "settings_lock_widget_permission" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Widget permission" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "잠금화면 위젯 권한" } }
+      }
+    },
+    "settings_lock_widget_a11y_hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Shows next alarm info on the Lock Screen via Live Activity" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Live Activity를 통해 잠금화면에 다음 알람 정보를 표시합니다" } }
+      }
+    },
+    "settings_open_app_settings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open Settings" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "설정 열기" } }
+      }
+    },
+    "settings_feedback_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Send Feedback" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "피드백 보내기" } }
+      }
+    },
+    "settings_feedback_a11y_hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sends feedback by email" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이메일로 피드백을 보냅니다" } }
+      }
+    },
+    "settings_feedback_email_subject" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "BetterAlarm Feedback" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "BetterAlarm 피드백" } }
+      }
+    },
+    "settings_version_label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Version" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "버전" } }
+      }
+    },
+    "settings_version_a11y_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "App version %1$@, build %2$@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "앱 버전 %1$@, 빌드 %2$@" } }
+      }
+    },
+    "settings_loading_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Checking permissions…" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "권한 확인 중..." } }
+      }
+    },
+    "settings_permission_authorized" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Allowed" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "허용됨" } }
+      }
+    },
+    "settings_permission_denied" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Not allowed" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "허용 안 됨" } }
+      }
+    },
+    "settings_permission_not_determined" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Not set" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "미설정" } }
+      }
+    },
+    "settings_permission_unknown" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unknown" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알 수 없음" } }
+      }
+    },
+    "settings_permission_loading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Checking…" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "확인 중..." } }
+      }
+    },
+    "settings_requires_ios17" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Requires iOS 17+" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "iOS 17 이상 필요" } }
+      }
+    },
+    "settings_requires_ios26" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Requires iOS 26+" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "iOS 26 이상 필요" } }
+      }
+    },
+    "settings_theme_changed_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Switched to %@ theme" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 테마로 변경되었습니다" } }
+      }
+    },
+    "settings_notification_permission_a11y_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Notification permission: %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알림 권한: %@" } }
+      }
+    },
+    "settings_alarmkit_permission_a11y_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "AlarmKit permission: %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "AlarmKit 권한: %@" } }
+      }
+    },
+    "settings_lock_widget_permission_a11y_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Lock Screen Widget permission: %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "잠금화면 위젯 권한: %@" } }
+      }
+    },
+    "toast_alarm_enabled" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Alarm turned on" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람이 켜졌습니다" } }
+      }
+    },
+    "toast_alarm_disabled" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Alarm turned off" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람이 꺼졌습니다" } }
+      }
+    },
+    "toast_alarm_saved" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Alarm saved" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람이 저장되었습니다" } }
+      }
+    },
+    "toast_alarm_updated" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Alarm updated" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람이 수정되었습니다" } }
+      }
+    },
+    "toast_alarm_deleted" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Alarm deleted" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람이 삭제되었습니다" } }
+      }
+    },
+    "toast_skip_next_once" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Skipping next occurrence" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 1회 건너뜁니다" } }
+      }
+    },
+    "toast_skip_cleared" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Skip cancelled" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "건너뛰기가 취소되었습니다" } }
+      }
+    },
+    "toast_alarmkit_unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This feature requires iOS 26 or later." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 기능은 iOS 26 이상에서만 사용할 수 있습니다." } }
+      }
+    },
+    "error_not_authorized" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Notification permission is required. Please enable it in Settings." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람을 사용하려면 알림 권한이 필요합니다. 설정에서 권한을 허용해주세요." } }
+      }
+    },
+    "error_schedule_failed_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Failed to schedule alarm: %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람 등록에 실패했습니다: %@" } }
+      }
+    },
+    "error_sound_not_found_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sound file not found: %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사운드 파일을 찾을 수 없습니다: %@" } }
+      }
+    },
+    "error_earphone_not_connected" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Please connect headphones to use Silent Alarm." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "조용한 알람을 사용하려면 이어폰을 연결해주세요." } }
+      }
+    },
+    "error_alarmkit_unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This feature requires iOS 26 or later." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 기능은 iOS 26 이상에서만 사용할 수 있습니다." } }
+      }
+    },
+    "error_next_trigger_unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unable to compute next trigger time." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 발생 시각을 계산할 수 없습니다." } }
+      }
+    },
+    "error_past_time" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cannot schedule an alarm in the past." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "과거 시각으로는 알람을 설정할 수 없습니다." } }
+      }
+    },
+    "error_past_date" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cannot schedule an alarm on a past date." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "과거 날짜로는 알람을 설정할 수 없습니다." } }
+      }
+    },
+    "error_date_conversion_failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Date conversion failed" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "날짜 변환 실패" } }
+      }
+    },
+    "error_compute_trigger_failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Failed to compute next trigger time" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 발생 시각 계산 실패" } }
+      }
+    },
+    "notif_alarm_body_default" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your alarm is ringing." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람이 울립니다." } }
+      }
+    },
+    "notif_alarm_body_repeating" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your alarm is still ringing. Open the app to turn it off." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람이 울리고 있습니다. 앱을 열어 알람을 끄세요." } }
+      }
+    },
+    "notif_alarm_body_snooze" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Snooze alarm is ringing." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스누즈 알람이 울립니다." } }
+      }
+    },
+    "notif_background_reminder_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Alarm scheduled for %@." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람이 설정되어 있습니다. 알람 시각: %@" } }
+      }
+    },
+    "notif_action_stop" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stop" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "정지" } }
+      }
+    },
+    "notif_action_snooze_5min" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Snooze (5 min)" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스누즈 (5분)" } }
+      }
+    },
+    "live_activity_no_alarm_date" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No alarm set" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "설정된 알람 없음" } }
+      }
+    },
+    "live_activity_no_alarm_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add an alarm" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람을 추가해주세요" } }
+      }
+    },
+    "live_activity_relative_today" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Today" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오늘" } }
+      }
+    },
+    "live_activity_relative_tomorrow" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tomorrow" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "내일" } }
+      }
+    },
+    "intent_stop_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stop Alarm" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람 정지" } }
+      }
+    },
+    "intent_stop_description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stops the alarm." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람을 정지합니다" } }
+      }
+    },
+    "intent_snooze_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Snooze" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스누즈" } }
+      }
+    },
+    "intent_snooze_description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Snoozes the alarm." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람을 스누즈합니다" } }
+      }
+    },
+    "intent_alarmid_param" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Alarm ID" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람 ID" } }
+      }
+    },
+    "alarmkit_alert_snooze_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Snooze Alarm" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스누즈 알람" } }
+      }
+    },
+    "alarmkit_button_stop" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stop" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "정지" } }
+      }
+    },
+    "alarmkit_button_snooze" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Snooze" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스누즈" } }
+      }
+    },
+    "weekday_short_sun" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sun" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "일" } }
+      }
+    },
+    "weekday_short_mon" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mon" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "월" } }
+      }
+    },
+    "weekday_short_tue" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tue" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "화" } }
+      }
+    },
+    "weekday_short_wed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Wed" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "수" } }
+      }
+    },
+    "weekday_short_thu" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Thu" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "목" } }
+      }
+    },
+    "weekday_short_fri" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Fri" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "금" } }
+      }
+    },
+    "weekday_short_sat" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sat" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "토" } }
+      }
+    },
+    "repeat_once" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Once" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "1회" } }
+      }
+    },
+    "repeat_every_day" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Every day" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "매일" } }
+      }
+    },
+    "repeat_weekend" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Weekends" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "주말" } }
+      }
+    },
+    "repeat_weekdays" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Weekdays" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "주중" } }
+      }
+    },
+    "next_alarm_format_today" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Today %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오늘 %@" } }
+      }
+    },
+    "next_alarm_format_tomorrow" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tomorrow %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "내일 %@" } }
+      }
+    },
+    "next_alarm_format_date" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$@ %2$@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%1$@ %2$@" } }
+      }
+    },
+    "alarmmode_alarmkit_display" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "AlarmKit (rings even when closed)" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "AlarmKit (앱 꺼진 상태에서도 울림)" } }
+      }
+    },
+    "alarmmode_local_display" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Local Notification" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로컬 알림" } }
+      }
+    },
+    "common_loading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Loading…" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로딩 중..." } }
+      }
+    },
+    "common_alarm_default_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Alarm" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람" } }
+      }
+    },
+    "NSAlarmKitUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This app needs permission to schedule alarms." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알람을 설정하기 위해 권한이 필요합니다." } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

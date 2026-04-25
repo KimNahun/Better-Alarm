@@ -18,15 +18,15 @@ enum AlarmError: Error, LocalizedError, Sendable {
     var errorDescription: String? {
         switch self {
         case .notAuthorized:
-            return "알람을 사용하려면 알림 권한이 필요합니다. 설정에서 권한을 허용해주세요."
+            return String(localized: "error_not_authorized")
         case .scheduleFailed(let reason):
-            return "알람 등록에 실패했습니다: \(reason)"
+            return String(format: NSLocalizedString("error_schedule_failed_format", comment: ""), reason)
         case .soundNotFound(let name):
-            return "사운드 파일을 찾을 수 없습니다: \(name)"
+            return String(format: NSLocalizedString("error_sound_not_found_format", comment: ""), name)
         case .earphoneNotConnected:
-            return "조용한 알람을 사용하려면 이어폰을 연결해주세요."
+            return String(localized: "error_earphone_not_connected")
         case .alarmKitUnavailable:
-            return "이 기능은 iOS 26 이상에서만 사용할 수 있습니다."
+            return String(localized: "error_alarmkit_unavailable")
         }
     }
 }

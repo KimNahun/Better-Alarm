@@ -1,42 +1,34 @@
 import Foundation
 
-// MARK: - Korean Date Formatting
+// MARK: - Localized Date Formatting
+// (旧 KoreanDateFormatters — 로케일 인지형으로 교체. 이름은 호환성 유지를 위해 typealias 제공.)
 
-/// 한국어 날짜 포맷터 캐시. DateFormatter 재생성 방지.
-enum KoreanDateFormatters {
-    static let monthDay: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "ko_KR")
-        f.dateFormat = "M월 d일"
-        return f
-    }()
-
-    static let monthDayWeekday: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "ko_KR")
-        f.dateFormat = "M월 d일 (E)"
-        return f
-    }()
-
-    /// "오전/오후 X시 XX분" 형식의 시간 문자열 생성
+/// 로케일 인지형 날짜 포맷터. Locale.current를 자동 반영.
+enum LocalizedDateFormatters {
+    /// "오전 7:00" (ko) / "7:00 AM" (en) — Date.formatted 사용으로 로케일 자동 반영
     static func timeDisplayString(hour: Int, minute: Int) -> String {
-        let period = hour < 12 ? "오전" : "오후"
-        let displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour)
-        return String(format: "%@ %d:%02d", period, displayHour, minute)
+        var components = DateComponents()
+        components.hour = hour
+        components.minute = minute
+        let date = Calendar.current.date(from: components) ?? Date()
+        return date.formatted(date: .omitted, time: .shortened)
     }
 
-    /// 날짜를 "오늘" / "내일" / "M월 d일" 형식으로 변환
+    /// 날짜를 "오늘" / "내일" / 로케일 인지형 날짜 문자열로 변환
     static func relativeDateString(for date: Date) -> String {
         let calendar = Calendar.current
         if calendar.isDateInToday(date) {
-            return "오늘"
+            return String(localized: "live_activity_relative_today")
         } else if calendar.isDateInTomorrow(date) {
-            return "내일"
+            return String(localized: "live_activity_relative_tomorrow")
         } else {
-            return monthDay.string(from: date)
+            return date.formatted(.dateTime.month().day().weekday(.abbreviated))
         }
     }
 }
+
+/// 하위 호환성 typealias — 기존 호출부 변경 최소화
+typealias KoreanDateFormatters = LocalizedDateFormatters
 
 // MARK: - Alarm Model
 
@@ -109,29 +101,29 @@ struct Alarm: Codable, Identifiable, Equatable, Sendable {
         KoreanDateFormatters.timeDisplayString(hour: hour, minute: minute)
     }
 
-    /// 제목이 없으면 "알람"으로 대체
+    /// 제목이 없으면 로케일 인지형 "Alarm"/"알람"으로 대체
     var displayTitle: String {
-        title.isEmpty ? "알람" : title
+        title.isEmpty ? String(localized: "common_alarm_default_title") : title
     }
 
-    /// 건너뛰기 상태 표시 없이 반복 설명 문자열 반환
+    /// 건너뛰기 상태 표시 없이 반복 설명 문자열 반환 (로케일 인지형)
     var repeatDescriptionWithoutSkip: String {
         switch schedule {
         case .once:
-            return "1회"
+            return String(localized: "repeat_once")
         case .weekly(let days):
             if days.count == 7 {
-                return "매일"
+                return String(localized: "repeat_every_day")
             } else if days == Set([Weekday.saturday, .sunday]) {
-                return "주말"
+                return String(localized: "repeat_weekend")
             } else if days == Set([Weekday.monday, .tuesday, .wednesday, .thursday, .friday]) {
-                return "주중"
+                return String(localized: "repeat_weekdays")
             } else {
                 let sorted = days.sorted { $0.rawValue < $1.rawValue }
                 return sorted.map { $0.shortName }.joined(separator: ", ")
             }
         case .specificDate(let date):
-            return KoreanDateFormatters.monthDay.string(from: date)
+            return date.formatted(.dateTime.month().day())
         }
     }
 

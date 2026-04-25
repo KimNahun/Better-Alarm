@@ -26,7 +26,7 @@ struct AlarmRowView: View {
                         Text(alarm.timeString)
                             .font(.title2.weight(.semibold))
                             .foregroundStyle(Color.pTextPrimary)
-                            .accessibilityLabel("알람 시각: \(alarm.timeString)")
+                            .accessibilityLabel(Text("alarm_row_time_a11y \(alarm.timeString)"))
 
                         Text(alarm.displayTitle)
                             .font(.body)
@@ -40,37 +40,39 @@ struct AlarmRowView: View {
                                 .foregroundStyle(Color.pTextSecondary)
 
                             if alarm.isSkippingNext {
-                                Text("다음 1회 건너뜀")
+                                Text("alarm_row_skipping_next")
                                     .font(.caption)
                                     .foregroundStyle(Color.pWarning)
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
                                     .background(Color.pWarning.opacity(0.15))
                                     .clipShape(Capsule())
+                                    .minimumScaleFactor(0.85)
                             }
 
                             if alarm.alarmMode == .alarmKit {
                                 Image(systemName: "bell.and.waves.left.and.right.fill")
                                     .font(.caption)
                                     .foregroundStyle(theme.accentPrimary)
-                                    .accessibilityLabel("AlarmKit 모드")
+                                    .accessibilityLabel(Text("alarm_row_alarmkit_a11y"))
                             }
 
                             if alarm.isSnoozed {
-                                Text("스누즈 중")
+                                Text("alarm_row_snoozed")
                                     .font(.caption)
                                     .foregroundStyle(theme.accentSecondary)
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
                                     .background(theme.accentSecondary.opacity(0.15))
                                     .clipShape(Capsule())
+                                    .minimumScaleFactor(0.85)
                             }
 
                             if alarm.isSilentAlarm {
                                 Image(systemName: "headphones")
                                     .font(.caption)
                                     .foregroundStyle(theme.accentSecondary)
-                                    .accessibilityLabel("조용한 알람")
+                                    .accessibilityLabel(Text("alarm_row_silent_a11y"))
                             }
                         }
                     }
@@ -86,7 +88,7 @@ struct AlarmRowView: View {
                         set: { onToggle($0) }
                     ))
                     .labelsHidden()
-                    .accessibilityLabel("\(alarm.displayTitle) 알람 \(alarm.isEnabled ? "비활성화" : "활성화")")
+                    .accessibilityLabel(Text("alarm_row_toggle_a11y_format \(alarm.displayTitle) \(alarm.isEnabled ? String(localized: "alarm_row_toggle_disable") : String(localized: "alarm_row_toggle_enable"))"))
                     .frame(minWidth: 44, minHeight: 44)
                 }
                 .padding(.vertical, 12)
@@ -124,7 +126,7 @@ struct AlarmSwipeActionsModifier: ViewModifier {
                         Button {
                             onClearSkip()
                         } label: {
-                            Label("건너뛰기 취소", systemImage: "arrow.uturn.backward")
+                            Label("alarm_row_swipe_clear_skip", systemImage: "arrow.uturn.backward")
                         }
                         .tint(Color.pWarning)
                     } else {
@@ -132,7 +134,7 @@ struct AlarmSwipeActionsModifier: ViewModifier {
                             onSkip()
                             HapticManager.impact(.medium)
                         } label: {
-                            Label("1회 건너뛰기", systemImage: "forward.fill")
+                            Label("alarm_row_swipe_skip_once", systemImage: "forward.fill")
                         }
                         .tint(Color.pAccentSecondary)
                     }

@@ -96,12 +96,12 @@ struct AlarmListView: View {
                 get: { viewModel.pendingDisableAlarm != nil },
                 set: { if !$0 { viewModel.cancelDisable() } }
             ),
-            title: "이 주간 알람을 어떻게 처리할까요?",
+            title: String(localized: "weekly_disable_action_title"),
             items: viewModel.pendingDisableAlarm.map { alarm in [
-                PActionSheetItem(title: "이번만 스킵", icon: "forward.fill") {
+                PActionSheetItem(title: String(localized: "weekly_disable_action_skip_once"), icon: "forward.fill") {
                     Task { await viewModel.skipOnceAndDisable(alarm) }
                 },
-                PActionSheetItem(title: "완전히 끄기", icon: "bell.slash.fill", role: .destructive) {
+                PActionSheetItem(title: String(localized: "weekly_disable_action_disable_full"), icon: "bell.slash.fill", role: .destructive) {
                     Task { await viewModel.confirmDisable(alarm) }
                 }
             ]} ?? []
@@ -112,7 +112,7 @@ struct AlarmListView: View {
 
     private var header: some View {
         HStack {
-            Text("알람")
+            Text("alarm_list_title")
                 .font(.largeTitle.weight(.bold))
                 .foregroundStyle(Color.pTextPrimary)
             Spacer()
@@ -126,7 +126,7 @@ struct AlarmListView: View {
                     .foregroundStyle(theme.accentPrimary)
                     .frame(minWidth: 44, minHeight: 44)
             }
-            .accessibilityLabel("새 알람 추가")
+            .accessibilityLabel(Text("alarm_list_add_button_a11y"))
         }
         .padding(.horizontal, 16)
         .padding(.top, 16)
@@ -140,7 +140,7 @@ struct AlarmListView: View {
             GlassCard {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("다음 알람")
+                        Text("alarm_list_next_alarm_label")
                             .font(.caption)
                             .foregroundStyle(Color.pTextTertiary)
                         Text(display)
@@ -158,7 +158,7 @@ struct AlarmListView: View {
             .padding(.top, 8)
             .padding(.bottom, 4)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("다음 알람: \(display)")
+            .accessibilityLabel(Text("alarm_list_next_alarm_a11y \(display)"))
         }
     }
 
@@ -171,17 +171,18 @@ struct AlarmListView: View {
                 .font(.largeTitle)
                 .foregroundStyle(Color.pTextTertiary)
 
-            Text("설정된 알람이 없습니다")
+            Text("alarm_list_empty_title")
                 .font(.title3.weight(.medium))
                 .foregroundStyle(Color.pTextSecondary)
 
-            Text("+ 버튼을 눌러 첫 알람을 추가하세요")
+            Text("alarm_list_empty_subtitle")
                 .font(.body)
                 .foregroundStyle(Color.pTextTertiary)
+                .multilineTextAlignment(.center)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("설정된 알람이 없습니다. + 버튼을 눌러 첫 알람을 추가하세요.")
+        .accessibilityLabel(Text("alarm_list_empty_a11y"))
     }
 }

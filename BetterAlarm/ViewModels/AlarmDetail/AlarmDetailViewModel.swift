@@ -42,9 +42,18 @@ final class AlarmDetailViewModel {
     // MARK: - Mode
 
     enum ScheduleType: String, CaseIterable, Sendable {
-        case once = "1회"
-        case weekly = "주간 반복"
-        case specificDate = "특정 날짜"
+        case once = "once"
+        case weekly = "weekly"
+        case specificDate = "specificDate"
+
+        /// 로케일 인지형 표시 이름 (UI에서 사용)
+        var displayName: String {
+            switch self {
+            case .once:         return String(localized: "alarm_detail_schedule_once")
+            case .weekly:       return String(localized: "alarm_detail_schedule_weekly")
+            case .specificDate: return String(localized: "alarm_detail_schedule_specific_date")
+            }
+        }
     }
 
     // MARK: - Dependencies
@@ -111,7 +120,7 @@ final class AlarmDetailViewModel {
             } else {
                 alarmMode = .local
                 toastMessage = AlarmError.alarmKitUnavailable.errorDescription
-                    ?? "이 기능은 iOS 26 이상에서만 사용할 수 있습니다."
+                    ?? String(localized: "toast_alarmkit_unavailable")
                 showAlarmKitUnavailableToast = true
                 AppLogger.warning("AlarmKit requested but iOS < 26 — showing unavailable toast", category: .ui)
             }
@@ -137,7 +146,7 @@ final class AlarmDetailViewModel {
                 AppLogger.info("ScheduleType .specificDate → forcing .alarmKit mode", category: .ui)
             } else {
                 scheduleType = .once
-                toastMessage = "특정 날짜 알람은 iOS 26 이상에서만 지원됩니다."
+                toastMessage = String(localized: "alarm_detail_specific_date_unavailable")
                 showAlarmKitUnavailableToast = true
                 AppLogger.warning("ScheduleType .specificDate unavailable on iOS < 26 — reverting to .once", category: .ui)
             }
@@ -172,7 +181,7 @@ final class AlarmDetailViewModel {
             earphoneWarning = nil
             AppLogger.info("Silent alarm enabled — earphone connected", category: .ui)
         } else {
-            earphoneWarning = "이어폰이 연결되어 있지 않습니다. 알람 시각에 이어폰을 연결해주세요."
+            earphoneWarning = String(localized: "alarm_detail_earphone_warning")
             AppLogger.warning("Silent alarm enabled but earphone not connected", category: .ui)
         }
     }
@@ -222,7 +231,7 @@ final class AlarmDetailViewModel {
                 alarmMode: alarmMode,
                 isSilentAlarm: isSilentAlarm
             )
-            actionToastMessage = "알람이 수정되었습니다"
+            actionToastMessage = String(localized: "toast_alarm_updated")
         } else {
             AppLogger.info("Saving new alarm: '\(title.isEmpty ? "(no title)" : title)' \(hour):\(String(format: "%02d", minute)) schedule=\(scheduleType.rawValue) mode=\(alarmMode) silent=\(isSilentAlarm)", category: .alarm)
             await store.createAlarm(
@@ -234,7 +243,7 @@ final class AlarmDetailViewModel {
                 alarmMode: alarmMode,
                 isSilentAlarm: isSilentAlarm
             )
-            actionToastMessage = "알람이 저장되었습니다"
+            actionToastMessage = String(localized: "toast_alarm_saved")
         }
         showActionToast = true
     }

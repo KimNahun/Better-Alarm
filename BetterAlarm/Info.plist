@@ -2,10 +2,17 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ko</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>NSAlarmKitUsageDescription</key>
-	<string>알람을 설정하기 위해 권한이 필요합니다.</string>
+	<string>This app needs permission to schedule alarms.</string>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>AlarmActivityAttributes</string>

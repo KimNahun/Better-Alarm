@@ -54,12 +54,12 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
     func registerAlarmCategory() {
         let stopAction = UNNotificationAction(
             identifier: "STOP_ACTION",
-            title: "정지",
+            title: String(localized: "notif_action_stop"),
             options: [.destructive, .authenticationRequired]
         )
         let snoozeAction = UNNotificationAction(
             identifier: "SNOOZE_ACTION",
-            title: "스누즈 (5분)",
+            title: String(localized: "notif_action_snooze_5min"),
             options: []
         )
         let category = UNNotificationCategory(
@@ -109,12 +109,12 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
 
         guard let triggerDate = alarm.nextTriggerDate() else {
             AppLogger.error("scheduleAlarm failed — cannot compute trigger date: '\(alarm.displayTitle)'", category: .alarm)
-            throw AlarmError.scheduleFailed("다음 발생 시각을 계산할 수 없습니다.")
+            throw AlarmError.scheduleFailed(String(localized: "error_next_trigger_unavailable"))
         }
 
         let content = UNMutableNotificationContent()
         content.title = alarm.displayTitle
-        content.body = "알람이 울립니다."
+        content.body = String(localized: "notif_alarm_body_default")
         content.sound = notificationSound(for: alarm)
         content.userInfo = ["alarmID": alarm.id.uuidString]
         content.categoryIdentifier = Self.alarmCategoryIdentifier
@@ -168,7 +168,7 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
         AppLogger.info("Background reminder scheduled for '\(alarm.displayTitle)' at \(alarm.timeString)", category: .alarm)
         let content = UNMutableNotificationContent()
         content.title = alarm.displayTitle
-        content.body = "알람이 설정되어 있습니다. 알람 시각: \(alarm.timeString)"
+        content.body = String(format: NSLocalizedString("notif_background_reminder_format", comment: ""), alarm.timeString)
         content.sound = .default
 
         // 즉시 발송 (1초 후)
@@ -199,7 +199,7 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
 
         let content = UNMutableNotificationContent()
         content.title = alarm.displayTitle
-        content.body = "알람이 울리고 있습니다. 앱을 열어 알람을 끄세요."
+        content.body = String(localized: "notif_alarm_body_repeating")
         content.sound = notificationSound(for: alarm)
         content.userInfo = ["alarmID": alarm.id.uuidString]
         content.categoryIdentifier = Self.alarmCategoryIdentifier
@@ -243,7 +243,7 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
 
         let content = UNMutableNotificationContent()
         content.title = alarm.displayTitle
-        content.body = "스누즈 알람이 울립니다."
+        content.body = String(localized: "notif_alarm_body_snooze")
         content.sound = notificationSound(for: alarm)
         content.userInfo = ["alarmID": alarm.id.uuidString, "isSnooze": true]
         content.categoryIdentifier = Self.alarmCategoryIdentifier
