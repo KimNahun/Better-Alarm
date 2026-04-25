@@ -1,0 +1,380 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -project /Users/kimnahun/Desktop/Side-Project/BetterAlarm/BetterAlarm.xcodeproj -scheme BetterAlarm -destination id=1F84322D-9700-4D94-BD98-8B5B2AAA350E
+
+2026-04-25 19:04:40.894 xcodebuild[93807:2549569]  DVTDeviceOperation: Encountered a build number "" that is incompatible with DVTBuildVersion.
+2026-04-25 19:04:40.919 xcodebuild[93807:2549433] [MT] DVTDeviceOperation: Encountered a build number "" that is incompatible with DVTBuildVersion.
+Resolve Package Graph
+
+
+Resolved source packages:
+  PersonalColorDesignSystem: https://github.com/KimNahun/PersonalColorDesignSystem @ main (e112400)
+
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (5 targets)
+    Target 'BetterAlarmTests' in project 'BetterAlarm'
+        ➜ Explicit dependency on target 'BetterAlarm' in project 'BetterAlarm'
+    Target 'BetterAlarm' in project 'BetterAlarm'
+        ➜ Explicit dependency on target 'BetterAlarmWidgetExtension' in project 'BetterAlarm'
+        ➜ Explicit dependency on target 'PersonalColorDesignSystem' in project 'PersonalColorDesignSystem'
+    Target 'PersonalColorDesignSystem' in project 'PersonalColorDesignSystem'
+        ➜ Explicit dependency on target 'PersonalColorDesignSystem' in project 'PersonalColorDesignSystem'
+    Target 'PersonalColorDesignSystem' in project 'PersonalColorDesignSystem' (no dependencies)
+    Target 'BetterAlarmWidgetExtension' in project 'BetterAlarm' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.1.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/kimnahun/Desktop/Side-Project/BetterAlarm/BetterAlarm/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/xcstringstool compile --dry-run --output-directory /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Intermediates.noindex/BetterAlarm.build/Debug-iphonesimulator/BetterAlarm.build /Users/kimnahun/Desktop/Side-Project/BetterAlarm/BetterAlarm/Resources/Localizable.xcstrings
+
+Build description signature: 669cd16afcef1c1bf6733be6e44fda1b
+Build description path: /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Intermediates.noindex/XCBuildData/669cd16afcef1c1bf6733be6e44fda1b.xcbuilddata
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.1.sdk /Users/kimnahun/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.1-23B77-90cf18a4295e390e64c810bc6bd7acbc.sdkstatcache
+    cd /Users/kimnahun/Desktop/Side-Project/BetterAlarm/BetterAlarm.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.1.sdk -o /Users/kimnahun/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.1-23B77-90cf18a4295e390e64c810bc6bd7acbc.sdkstatcache
+
+CompileXCStrings /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Intermediates.noindex/BetterAlarm.build/Debug-iphonesimulator/BetterAlarm.build/ /Users/kimnahun/Desktop/Side-Project/BetterAlarm/BetterAlarm/Resources/Localizable.xcstrings (in target 'BetterAlarm' from project 'BetterAlarm')
+    cd /Users/kimnahun/Desktop/Side-Project/BetterAlarm
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcstringstool compile --output-directory /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Intermediates.noindex/BetterAlarm.build/Debug-iphonesimulator/BetterAlarm.build /Users/kimnahun/Desktop/Side-Project/BetterAlarm/BetterAlarm/Resources/Localizable.xcstrings
+
+ProcessInfoPlistFile /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarmWidgetExtension.appex/Info.plist /Users/kimnahun/Desktop/Side-Project/BetterAlarm/BetterAlarmWidget/Info.plist (in target 'BetterAlarmWidgetExtension' from project 'BetterAlarm')
+    cd /Users/kimnahun/Desktop/Side-Project/BetterAlarm
+    builtin-infoPlistUtility /Users/kimnahun/Desktop/Side-Project/BetterAlarm/BetterAlarmWidget/Info.plist -producttype com.apple.product-type.app-extension -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Intermediates.noindex/BetterAlarm.build/Debug-iphonesimulator/BetterAlarmWidgetExtension.build/assetcatalog_generated_info.plist -o /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarmWidgetExtension.appex/Info.plist
+
+CopyStringsFile /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/ko.lproj/Localizable.strings /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Intermediates.noindex/BetterAlarm.build/Debug-iphonesimulator/BetterAlarm.build/ko.lproj/Localizable.strings (in target 'BetterAlarm' from project 'BetterAlarm')
+    cd /Users/kimnahun/Desktop/Side-Project/BetterAlarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename Localizable.strings --outdir /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/ko.lproj -- /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Intermediates.noindex/BetterAlarm.build/Debug-iphonesimulator/BetterAlarm.build/ko.lproj/Localizable.strings
+/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Intermediates.noindex/BetterAlarm.build/Debug-iphonesimulator/BetterAlarm.build/ko.lproj/Localizable.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'BetterAlarm' from project 'BetterAlarm')
+
+CopyStringsFile /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/en.lproj/Localizable.strings /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Intermediates.noindex/BetterAlarm.build/Debug-iphonesimulator/BetterAlarm.build/en.lproj/Localizable.strings (in target 'BetterAlarm' from project 'BetterAlarm')
+    cd /Users/kimnahun/Desktop/Side-Project/BetterAlarm
+    builtin-copyStrings --validate --outputencoding binary --outfilename Localizable.strings --outdir /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/en.lproj -- /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Intermediates.noindex/BetterAlarm.build/Debug-iphonesimulator/BetterAlarm.build/en.lproj/Localizable.strings
+/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Intermediates.noindex/BetterAlarm.build/Debug-iphonesimulator/BetterAlarm.build/en.lproj/Localizable.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'BetterAlarm' from project 'BetterAlarm')
+
+ProcessInfoPlistFile /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/Info.plist /Users/kimnahun/Desktop/Side-Project/BetterAlarm/BetterAlarm/Info.plist (in target 'BetterAlarm' from project 'BetterAlarm')
+    cd /Users/kimnahun/Desktop/Side-Project/BetterAlarm
+    builtin-infoPlistUtility /Users/kimnahun/Desktop/Side-Project/BetterAlarm/BetterAlarm/Info.plist -producttype com.apple.product-type.application -genpkginfo /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Intermediates.noindex/BetterAlarm.build/Debug-iphonesimulator/BetterAlarm.build/assetcatalog_generated_info.plist -scanforprivacyfile /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/PlugIns/BetterAlarmWidgetExtension.appex -o /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/Info.plist
+
+ProcessInfoPlistFile /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/PlugIns/BetterAlarmTests.xctest/Info.plist /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Intermediates.noindex/BetterAlarm.build/Debug-iphonesimulator/BetterAlarmTests.build/empty-BetterAlarmTests.plist (in target 'BetterAlarmTests' from project 'BetterAlarm')
+    cd /Users/kimnahun/Desktop/Side-Project/BetterAlarm
+    builtin-infoPlistUtility /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Intermediates.noindex/BetterAlarm.build/Debug-iphonesimulator/BetterAlarmTests.build/empty-BetterAlarmTests.plist -producttype com.apple.product-type.bundle.unit-test -expandbuildsettings -format binary -platform iphonesimulator -o /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/PlugIns/BetterAlarmTests.xctest/Info.plist
+
+CopySwiftLibs /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/PlugIns/BetterAlarmTests.xctest (in target 'BetterAlarmTests' from project 'BetterAlarm')
+    cd /Users/kimnahun/Desktop/Side-Project/BetterAlarm
+    builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/PlugIns/BetterAlarmTests.xctest/BetterAlarmTests --scan-folder /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/PlugIns/BetterAlarmTests.xctest/Frameworks --scan-folder /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/PlugIns/BetterAlarmTests.xctest/PlugIns --scan-folder /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/PlugIns/BetterAlarmTests.xctest/SystemExtensions --scan-folder /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/PlugIns/BetterAlarmTests.xctest/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/PlugIns/BetterAlarmTests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Intermediates.noindex/BetterAlarm.build/Debug-iphonesimulator/BetterAlarmTests.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+
+CodeSign /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/BetterAlarm.debug.dylib (in target 'BetterAlarm' from project 'BetterAlarm')
+    cd /Users/kimnahun/Desktop/Side-Project/BetterAlarm
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/BetterAlarm.debug.dylib
+/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/BetterAlarm.debug.dylib: replacing existing signature
+
+CodeSign /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/__preview.dylib (in target 'BetterAlarm' from project 'BetterAlarm')
+    cd /Users/kimnahun/Desktop/Side-Project/BetterAlarm
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/__preview.dylib
+/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/__preview.dylib: replacing existing signature
+
+CodeSign /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app (in target 'BetterAlarm' from project 'BetterAlarm')
+    cd /Users/kimnahun/Desktop/Side-Project/BetterAlarm
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --entitlements /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Intermediates.noindex/BetterAlarm.build/Debug-iphonesimulator/BetterAlarm.build/BetterAlarm.app.xcent --timestamp\=none --generate-entitlement-der /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app
+/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app: replacing existing signature
+
+Validate /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app (in target 'BetterAlarm' from project 'BetterAlarm')
+    cd /Users/kimnahun/Desktop/Side-Project/BetterAlarm
+    builtin-validationUtility /Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app -shallow-bundle -infoplist-subpath Info.plist
+
+Testing started
+Test suite 'BugE10_WeeklySnoozeStateTests' started on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)'
+Test case 'BugE10_WeeklySnoozeStateTests.test_bugE10_weeklyAlarmCompletion_clearsSnoozeDate()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.037 seconds)
+Test case 'BugE10_WeeklySnoozeStateTests.test_bugE10_weeklyAlarmCompletion_remainsEnabled()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.010 seconds)
+Test case 'BugE10_WeeklySnoozeStateTests.test_bugE10_weeklyAlarmCompletion_withoutSnooze_snoozeDateRemainsNil()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.008 seconds)
+Test suite 'SettingsViewModelTests' started on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)'
+Test case 'SettingsViewModelTests.test_bugE11_settingsViewModelInit_noCrash()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.009 seconds)
+Test case 'SettingsViewModelTests.test_init_appVersionAndBuildNumberLoaded()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.002 seconds)
+Test case 'SettingsViewModelTests.test_init_defaultState()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.002 seconds)
+Test case 'SettingsViewModelTests.test_loadSettings_completedLoading_isLoadingFalse()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (5.884 seconds)
+Test case 'SettingsViewModelTests.test_loadSettings_noAlarmKitService_showsiOS26Required()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.008 seconds)
+Test case 'SettingsViewModelTests.test_loadSettings_withAlarmKitAuthorized_showsAuthorized()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.044 seconds)
+Test case 'SettingsViewModelTests.test_loadSettings_withAlarmKitDenied_showsDenied()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.009 seconds)
+Test case 'SettingsViewModelTests.test_setLiveActivityEnabled_false_updatesState()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.003 seconds)
+Test case 'SettingsViewModelTests.test_setLiveActivityEnabled_true_updatesState()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.025 seconds)
+Test case 'SettingsViewModelTests.test_themeManager_injected_retained()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.010 seconds)
+Test case 'SettingsViewModelTests.test_themeManager_notInjected_isNil()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.002 seconds)
+Test suite 'BugE7_AlarmKitDeleteCancellationTests' started on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)'
+Test case 'BugE7_AlarmKitDeleteCancellationTests.test_bugE7_deleteAlarmKitAlarm_callsStopAll()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (1.847 seconds)
+Test case 'BugE7_AlarmKitDeleteCancellationTests.test_bugE7_deleteFirstAlarmKit_cancelIsNotLimitedToCurrentID()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.010 seconds)
+Test case 'BugE7_AlarmKitDeleteCancellationTests.test_deleteLocalAlarm_doesNotCallAlarmKitCancel()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.008 seconds)
+Test suite 'AlarmRingingViewModelTests' started on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)'
+Test case 'AlarmRingingViewModelTests.test_alarm_displayTitle_matchesFixture()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.006 seconds)
+Test case 'AlarmRingingViewModelTests.test_alarm_isSilentAlarm_propagated()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.002 seconds)
+Test case 'AlarmRingingViewModelTests.test_bugE16_cleanupThenDeinit_noCrash()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.002 seconds)
+Test case 'AlarmRingingViewModelTests.test_bugE16_deinit_noCrash()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.002 seconds)
+Test case 'AlarmRingingViewModelTests.test_cleanup_calledTwice_noCrash()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.002 seconds)
+Test case 'AlarmRingingViewModelTests.test_cleanup_noCrash()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.015 seconds)
+Test case 'AlarmRingingViewModelTests.test_currentTimeString_notEmptyAfterInit()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.002 seconds)
+Test case 'AlarmRingingViewModelTests.test_init_differentAlarms_distinctIds()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.002 seconds)
+Test case 'AlarmRingingViewModelTests.test_init_setsAlarmAndInitialState()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.002 seconds)
+Test case 'AlarmRingingViewModelTests.test_snoozeAlarm_structuralValidation()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.002 seconds)
+Test case 'AlarmRingingViewModelTests.test_stopAlarm_callsHandleAlarmCompleted()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.005 seconds)
+Test suite 'AlarmLifecycleTests' started on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)'
+Test case 'AlarmLifecycleTests.test_onceAlarmLifecycle_createRingComplete()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.011 seconds)
+Test case 'AlarmLifecycleTests.test_scheduleNextAlarm_alarmKitMode_usesAlarmKitService()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.032 seconds)
+Test case 'AlarmLifecycleTests.test_scheduleNextAlarm_localMode_usesLocalService()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.006 seconds)
+Test case 'AlarmLifecycleTests.test_scheduleNextAlarm_twoAlarmKitAlarms_schedulesMostImminent()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.007 seconds)
+Test case 'AlarmLifecycleTests.test_skipFlow_fullCycle()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (1.301 seconds)
+Test case 'AlarmLifecycleTests.test_snoozeFlow_fullCycle()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.009 seconds)
+Test case 'AlarmLifecycleTests.test_weeklyAlarmLifecycle_staysEnabledAfterCompletion()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.012 seconds)
+Test suite 'BugE20_ButtonLoadingStateTests' started on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)'
+Test case 'BugE20_ButtonLoadingStateTests.test_bugE20_deleteAlarm_doesNotLeaveLoadingStuck()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.019 seconds)
+Test case 'BugE20_ButtonLoadingStateTests.test_bugE20_initialState_isLoadingFalse()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.002 seconds)
+Test case 'BugE20_ButtonLoadingStateTests.test_bugE20_loadAlarms_completesWithIsLoadingFalse()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.003 seconds)
+Test case 'BugE20_ButtonLoadingStateTests.test_bugE20_loadAlarms_withAlarms_isLoadingFalse()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.010 seconds)
+Test case 'BugE20_ButtonLoadingStateTests.test_bugE20_loadAlarmsTwice_isLoadingFalse()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.003 seconds)
+Test case 'BugE20_ButtonLoadingStateTests.test_bugE20_toggleAlarm_doesNotLeaveLoadingStuck()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.013 seconds)
+Test suite 'BugE19_DisabledOnceAlarmActivationTests' started on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)'
+Test case 'BugE19_DisabledOnceAlarmActivationTests.test_bugE19_disabledOnceAlarm_requestToggleOn_alarmBecomesEnabled()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.118 seconds)
+Test case 'BugE19_DisabledOnceAlarmActivationTests.test_bugE19_disabledOnceAlarm_requestToggleOn_noPendingDialog()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.002 seconds)
+Test case 'BugE19_DisabledOnceAlarmActivationTests.test_bugE19_disabledSpecificDateAlarm_requestToggleOn_noPendingDialog()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.002 seconds)
+Test case 'BugE19_DisabledOnceAlarmActivationTests.test_bugE19_enabledOnceAlarm_requestToggleOff_immediateDisable()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.002 seconds)
+Test case 'BugE19_DisabledOnceAlarmActivationTests.test_bugE19_weeklyAlarm_requestToggleOff_stillShowsDialog()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.024 seconds)
+Test suite 'BugE14_SelectedAlarmStateTests' started on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)'
+Test case 'BugE14_SelectedAlarmStateTests.test_bugE14_detailViewModelInit_withValidAlarm_succeeds()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.009 seconds)
+Test case 'BugE14_SelectedAlarmStateTests.test_bugE14_editingAlarmNil_isEditingFalse()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.002 seconds)
+Test case 'BugE14_SelectedAlarmStateTests.test_bugE14_editingAlarmNonNil_isEditingTrue()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.007 seconds)
+Test case 'BugE14_SelectedAlarmStateTests.test_bugE14_onDismissHandlerAdded_documentationTest()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.002 seconds)
+Test case 'BugE14_SelectedAlarmStateTests.test_bugE14_saveEditedAlarm_showsEditToast()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.003 seconds)
+Test case 'BugE14_SelectedAlarmStateTests.test_bugE14_saveNewAlarm_showsSaveToast()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.003 seconds)
+Test case 'BugE14_SelectedAlarmStateTests.test_bugE14_wasEditing_capturedAtSheetOpen()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.006 seconds)
+Test suite 'BugE16_TimerTaskLeakTests' started on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)'
+Test case 'BugE16_TimerTaskLeakTests.test_bugE16_cleanup_cancelsTimerTask()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.003 seconds)
+Test case 'BugE16_TimerTaskLeakTests.test_bugE16_stopAlarm_callsCleanup()' passed on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)' (0.003 seconds)
+Test suite 'LocalNotificationServiceTests' started on 'Clone 1 of iPhone 17 Pro Max - BetterAlarm (94630)'
+Test suite 'AlarmStoreSnoozeSkipTests' started on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)'
+Test case 'AlarmStoreSnoozeSkipTests.test_clearSkipOnceAlarm_removesSkippedDate()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.050 seconds)
+Test case 'AlarmStoreSnoozeSkipTests.test_handleAlarmCompleted_nonExistentID_doesNotCrash()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'AlarmStoreSnoozeSkipTests.test_handleAlarmCompleted_onceAlarm_disables()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.011 seconds)
+Test case 'AlarmStoreSnoozeSkipTests.test_handleAlarmCompleted_specificDateAlarm_disables()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.039 seconds)
+Test case 'AlarmStoreSnoozeSkipTests.test_handleAlarmCompleted_weeklyAlarm_clearsSnoozeDate()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.016 seconds)
+Test case 'AlarmStoreSnoozeSkipTests.test_handleAlarmCompleted_weeklyAlarm_staysEnabled()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.011 seconds)
+Test case 'AlarmStoreSnoozeSkipTests.test_skipOnceAlarm_disabledAlarm_ignored()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.009 seconds)
+Test case 'AlarmStoreSnoozeSkipTests.test_skipOnceAlarm_setsSkippedDate()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.015 seconds)
+Test case 'AlarmStoreSnoozeSkipTests.test_snoozeAlarm_cancelsExistingNotificationFirst()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.009 seconds)
+Test case 'AlarmStoreSnoozeSkipTests.test_snoozeAlarm_schedulesSnoozeNotification()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.007 seconds)
+Test case 'AlarmStoreSnoozeSkipTests.test_snoozeAlarm_setsSnoozeDate()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.009 seconds)
+Test suite 'BugE9_LiveActivityRaceTests' started on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)'
+Test case 'BugE9_LiveActivityRaceTests.test_bugE9_concurrentUpdateCalls_noCrash()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'BugE9_LiveActivityRaceTests.test_bugE9_nextAlarm_returnsNearestEnabled()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.041 seconds)
+Test case 'BugE9_LiveActivityRaceTests.test_bugE9_nextAlarmDisplayString_noAlarm_isNil()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'BugE9_LiveActivityRaceTests.test_bugE9_nextAlarmDisplayString_withAlarm_isNotNil()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.011 seconds)
+Test case 'BugE9_LiveActivityRaceTests.test_bugE9_noAlarms_endActivityPathReachable()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.003 seconds)
+Test case 'BugE9_LiveActivityRaceTests.test_bugE9_updateActivity_toctouDefenseIsPresent()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test suite 'WeeklyAlarmViewModelTests' started on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)'
+Test case 'WeeklyAlarmViewModelTests.test_dismissToast_hidesToast()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.125 seconds)
+Test case 'WeeklyAlarmViewModelTests.test_filteredAlarms_noSelectedDay_returnsAll()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.013 seconds)
+Test case 'WeeklyAlarmViewModelTests.test_filteredAlarms_onceAlarm_notIncluded()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.009 seconds)
+Test case 'WeeklyAlarmViewModelTests.test_filteredAlarms_selectedDayWithNoAlarms_returnsEmpty()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.009 seconds)
+Test case 'WeeklyAlarmViewModelTests.test_filteredAlarms_selectedMonday_returnsOnlyMonday()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.010 seconds)
+Test case 'WeeklyAlarmViewModelTests.test_showToast_afterToggle_displayed()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.112 seconds)
+Test case 'WeeklyAlarmViewModelTests.test_showToast_calledTwice_secondMessageShown()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.174 seconds)
+Test suite 'AlarmListViewModelTests' started on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)'
+Test case 'AlarmListViewModelTests.test_cancelDisable_clearsPendingAlarm()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.003 seconds)
+Test case 'AlarmListViewModelTests.test_deleteAlarm_removesFromViewModel()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.013 seconds)
+Test case 'AlarmListViewModelTests.test_deleteAlarm_showsToast()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.112 seconds)
+Test case 'AlarmListViewModelTests.test_dismissToast_hidesAndClearsMessage()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.104 seconds)
+Test case 'AlarmListViewModelTests.test_loadAlarms_empty_showsEmptyList()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.003 seconds)
+Test case 'AlarmListViewModelTests.test_loadAlarms_populatesAlarmsList()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.011 seconds)
+Test case 'AlarmListViewModelTests.test_nextAlarmDisplayString_noAlarms_returnsNil()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.003 seconds)
+Test case 'AlarmListViewModelTests.test_requestToggle_onceAlarmOff_doesNotSetPending()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.003 seconds)
+Test case 'AlarmListViewModelTests.test_requestToggle_weeklyAlarmOff_setsPendingDisableAlarm()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'AlarmListViewModelTests.test_showToastMessage_calledTwiceRapidly_secondMessageDisplayed()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.104 seconds)
+Test case 'AlarmListViewModelTests.test_showToastMessage_sameMessageTwice_toastRefreshes()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.160 seconds)
+Test suite 'AlarmStoreCRUDTests' started on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)'
+Test case 'AlarmStoreCRUDTests.test_createAlarm_addsToAlarmsList()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.010 seconds)
+Test case 'AlarmStoreCRUDTests.test_createAlarm_eachHasUniqueID()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.010 seconds)
+Test case 'AlarmStoreCRUDTests.test_createAlarm_localMode_callsScheduleOnce()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.006 seconds)
+Test case 'AlarmStoreCRUDTests.test_createAlarm_sortedByTime()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.038 seconds)
+Test case 'AlarmStoreCRUDTests.test_deleteAlarm_callsCancelNotification()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.009 seconds)
+Test case 'AlarmStoreCRUDTests.test_deleteAlarm_nonExistentID_doesNotCrash()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.008 seconds)
+Test case 'AlarmStoreCRUDTests.test_deleteAlarm_removesFromList()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.009 seconds)
+Test case 'AlarmStoreCRUDTests.test_loadAlarms_corruptedJSON_returnsEmpty()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.044 seconds)
+Test case 'AlarmStoreCRUDTests.test_loadAlarms_noSavedData_returnsEmpty()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.003 seconds)
+Test case 'AlarmStoreCRUDTests.test_toggleAlarm_disabledToEnabled_reschedules()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.010 seconds)
+Test case 'AlarmStoreCRUDTests.test_toggleAlarm_enabledToDisabled_cancelsSchedule()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.030 seconds)
+Test case 'AlarmStoreCRUDTests.test_toggleAlarm_enableToTrue_clearsSkippedDate()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.017 seconds)
+Test case 'AlarmStoreCRUDTests.test_updateAlarm_changesFields()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.089 seconds)
+Test case 'AlarmStoreCRUDTests.test_updateAlarm_nonExistentID_isIgnored()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test suite 'AlarmNextTriggerDateTests' started on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)'
+Test case 'AlarmNextTriggerDateTests.test_onceAlarm_disabled_returnsNil()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'AlarmNextTriggerDateTests.test_onceAlarm_exactlyNow_returnsTomorrow()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'AlarmNextTriggerDateTests.test_onceAlarm_futureTime_returnsToday()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test case 'AlarmNextTriggerDateTests.test_onceAlarm_pastTime_returnsTomorrow()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test case 'AlarmNextTriggerDateTests.test_onceAlarm_withSkippedDateMatchingResult_skipsByOneDay()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test case 'AlarmNextTriggerDateTests.test_specificDateAlarm_futureDate_returnsThatDate()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test case 'AlarmNextTriggerDateTests.test_specificDateAlarm_pastDate_returnsNil()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.003 seconds)
+Test case 'AlarmNextTriggerDateTests.test_weeklyAlarm_allDays_returnsToday()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'AlarmNextTriggerDateTests.test_weeklyAlarm_emptyWeekdays_returnsNil()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test case 'AlarmNextTriggerDateTests.test_weeklyAlarm_multipleWeekdays_returnsNearestFuture()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test case 'AlarmNextTriggerDateTests.test_weeklyAlarm_saturdayApproaching_friday2359_returnsSaturday()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'AlarmNextTriggerDateTests.test_weeklyAlarm_todayIsMatchingDay_futureTime_returnsToday()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'AlarmNextTriggerDateTests.test_weeklyAlarm_todayIsMatchingDay_pastTime_returnsNextWeek()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'AlarmNextTriggerDateTests.test_weeklyAlarm_withSkippedDate_skipsAndReturnsNextOccurrence()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.040 seconds)
+Test suite 'AlarmPropertiesTests' started on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)'
+Test case 'AlarmPropertiesTests.test_displayTitle_emptyTitle_returnsDefault()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'AlarmPropertiesTests.test_displayTitle_nonEmpty_returnsTitle()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test case 'AlarmPropertiesTests.test_displayTitle_whitespaceOnly_returnsWhitespace()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test case 'AlarmPropertiesTests.test_isSkippingNext_futureskippedDate_returnsTrue()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'AlarmPropertiesTests.test_isSkippingNext_noSkippedDate_returnsFalse()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test case 'AlarmPropertiesTests.test_isSkippingNext_pastSkippedDate_returnsFalse()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test case 'AlarmPropertiesTests.test_isSnoozed_futureSnoozeDate_returnsTrue()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test case 'AlarmPropertiesTests.test_isSnoozed_noSnoozeDate_returnsFalse()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'AlarmPropertiesTests.test_isSnoozed_pastSnoozeDate_returnsFalse()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test case 'AlarmPropertiesTests.test_isWeeklyAlarm_once_returnsFalse()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test case 'AlarmPropertiesTests.test_isWeeklyAlarm_specificDate_returnsFalse()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test case 'AlarmPropertiesTests.test_isWeeklyAlarm_weekly_returnsTrue()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test case 'AlarmPropertiesTests.test_timeString_13pm_returnsCorrectFormat()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'AlarmPropertiesTests.test_timeString_7_30am_returnsCorrectFormat()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test case 'AlarmPropertiesTests.test_timeString_midnight_returnsKoreanFormat()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test case 'AlarmPropertiesTests.test_timeString_noon_returnsKoreanFormat()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test suite 'BugE6_ToastRaceConditionTests' started on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)'
+Test case 'BugE6_ToastRaceConditionTests.test_bugE6_deleteAlarm_thenDeleteAgain_toastShowsEachTime()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.022 seconds)
+Test case 'BugE6_ToastRaceConditionTests.test_bugE6_differentMessagesTwice_lastMessageDisplayed()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.003 seconds)
+Test case 'BugE6_ToastRaceConditionTests.test_bugE6_dismissToast_clearsState()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.003 seconds)
+Test case 'BugE6_ToastRaceConditionTests.test_bugE6_sameMessageTwice_toastRefreshes()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'BugE6_ToastRaceConditionTests.test_bugE6_showToastMessage_immediateFalseBeforeYield()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test suite 'BugE12_SnoozePermissionTests' started on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)'
+Test case 'BugE12_SnoozePermissionTests.test_bugE12_permissionCheckIsAddedToScheduleSnooze()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'BugE12_SnoozePermissionTests.test_bugE12_snoozeWithoutPermission_snoozeNotScheduled()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.022 seconds)
+Test case 'BugE12_SnoozePermissionTests.test_bugE12_snoozeWithPermission_schedulesSuccessfully()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.010 seconds)
+Test suite 'BugE17_SnoozeCancelAlarmTests' started on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)'
+Test case 'BugE17_SnoozeCancelAlarmTests.test_bugE17_snoozeAlarm_cancelBeforeSchedule()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.009 seconds)
+Test case 'BugE17_SnoozeCancelAlarmTests.test_bugE17_snoozeAlarm_schedulesSnooze()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.033 seconds)
+Test case 'BugE17_SnoozeCancelAlarmTests.test_bugE17_snoozeAlarm_scheduleThrows_cancelAlarmStillCalled()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.020 seconds)
+Test case 'BugE17_SnoozeCancelAlarmTests.test_bugE17_snoozeAlarm_setsSnoozeDate()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.008 seconds)
+Test suite 'WeekdayTests' started on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)'
+Test case 'WeekdayTests.test_weekday_allCases_count7()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'WeekdayTests.test_weekday_initFromInvalidRawValue_returnsNil()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'WeekdayTests.test_weekday_initFromRawValue_success()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'WeekdayTests.test_weekday_rawValues_1through7()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.001 seconds)
+Test case 'WeekdayTests.test_weekday_shortNames_notEmpty()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.011 seconds)
+Test suite 'AlarmDetailViewModelTests' started on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)'
+Test case 'AlarmDetailViewModelTests.test_hour_11am_isPM_false_displayHour11()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.003 seconds)
+Test case 'AlarmDetailViewModelTests.test_hour_11pm_isPM_true_displayHour11()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'AlarmDetailViewModelTests.test_hour_1pm_isPM_true_displayHour1()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.015 seconds)
+Test case 'AlarmDetailViewModelTests.test_hour_existingAlarm_7am_initialState()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'AlarmDetailViewModelTests.test_hour_existingAlarm_midnight_initialState()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'AlarmDetailViewModelTests.test_hour_existingAlarm_noon_initialState()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.023 seconds)
+Test case 'AlarmDetailViewModelTests.test_hour_midnight_isPM_false_displayHour12()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'AlarmDetailViewModelTests.test_hour_noon_isPM_true_displayHour12()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.004 seconds)
+Test case 'AlarmDetailViewModelTests.test_isEditing_newAlarm_returnsFalse()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'AlarmDetailViewModelTests.test_isEditing_withExistingAlarm_returnsTrue()' passed on 'Clone 3 of iPhone 17 Pro Max - BetterAlarm (96552)' (0.002 seconds)
+Test case 'AlarmDetailViewModelTests.test_save_editingAlarm_up2026-04-25 19:29:44.244 xcodebuild[93807:2568882]  iOSSimulator: D6547352-4F81-447A-BCCD-A2A3EE2771E3: Failed to launch app with identifier: com.nahun.BetterAlarm and options: {
+    "activate_suspended" = 0;
+    arguments =     (
+    );
+    environment =     {
+        "APP_DISTRIBUTOR_ID_OVERRIDE" = "com.apple.AppStore";
+        "CA_ASSERT_MAIN_THREAD_TRANSACTIONS" = 0;
+        "CA_DEBUG_TRANSACTIONS" = 0;
+        "DYLD_FRAMEWORK_PATH" = "/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator:/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/PackageFrameworks:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks";
+        "DYLD_INSERT_LIBRARIES" = "/usr/lib/libRPAC.dylib:/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/Frameworks/libXCTestBundleInject.dylib:/Library/Developer/CoreSimulator/Volumes/iOS_23B86/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.1.simruntime/Contents/Resources/RuntimeRoot/usr/lib/libMainThreadChecker.dylib:/usr/lib/libRPAC.dylib";
+        "DYLD_LIBRARY_PATH" = "/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib";
+        "LLVM_PROFILE_FILE" = "/var/folders/8c/z6vw5npn7ps7f04007mx2rdh0000gn/T/com.nahun.BetterAlarm/18960ACE-6103-4284-A7E2-A8D8FA7391AE-93807-000002914AC7A757/ED364E0E-61C9-4978-A94B-BA0C3FB29F1B-%p%c.profraw";
+        NSApplicationQuitWithoutSuddenTermination = YES;
+        NSUnbufferedIO = YES;
+        "OS_ACTIVITY_DT_MODE" = YES;
+        "PERFC_ENABLE_EXTENDED_DIAGNOSTIC_FORMAT" = 1;
+        "PERFC_ENABLE_PROFILE_MODE" = 1;
+        "PERFC_RESET_INSERT_LIBRARIES" = 1;
+        "PERFC_SUPPRESS_SYSTEM_REPORTS" = 1;
+        "RUN_DESTINATION_DEVICE_NAME" = "Clone 4 of iPhone 17 Pro Max";
+        "RUN_DESTINATION_DEVICE_PLATFORM_IDENTIFIER" = "com.apple.platform.iphonesimulator";
+        "RUN_DESTINATION_DEVICE_UDID" = "D6547352-4F81-447A-BCCD-A2A3EE2771E3";
+        "SQLITE_ENABLE_THREAD_ASSERTIONS" = 1;
+        TERM = dumb;
+        XCInjectBundleInto = unused;
+        "XCODE_SCHEME_NAME" = BetterAlarm;
+        "XCODE_TEST_PLAN_NAME" = BetterAlarm;
+        XCTestBundleInjectPath = "/usr/lib/libRPAC.dylib:/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/Frameworks/libXCTestBundleInject.dylib:/Library/Developer/CoreSimulator/Volumes/iOS_23B86/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.1.simruntime/Contents/Resources/RuntimeRoot/usr/lib/libMainThreadChecker.dylib:/usr/lib/libRPAC.dylib";
+        XCTestBundlePath = "PlugIns/BetterAlarmTests.xctest";
+        XCTestConfigurationFilePath = "";
+        XCTestSessionIdentifier = "0F1D3E4E-750F-4F20-AA22-C724EB23D2BD";
+        "__XCODE_BUILT_PRODUCTS_DIR_PATHS" = "/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator";
+        "__XPC_DYLD_FRAMEWORK_PATH" = "/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator";
+        "__XPC_DYLD_LIBRARY_PATH" = "/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator";
+        "__XPC_LLVM_PROFILE_FILE" = "/var/folders/8c/z6vw5npn7ps7f04007mx2rdh0000gn/T/com.nahun.BetterAlarm/18960ACE-6103-4284-A7E2-A8D8FA7391AE-93807-000002914AC7A757/ED364E0E-61C9-4978-A94B-BA0C3FB29F1B-%p%c.profraw";
+    };
+    stderr = "/dev/ttys009";
+    stdout = "/dev/ttys009";
+    "terminate_running_process" = 1;
+    "wait_for_debugger" = 1;
+} (error = Error Domain=FBSOpenApplicationServiceErrorDomain Code=1 "Simulator device failed to launch com.nahun.BetterAlarm." UserInfo={NSLocalizedDescription=Simulator device failed to launch com.nahun.BetterAlarm., NSUnderlyingError=0xb61c2c180 {Error Domain=FBSOpenApplicationServiceErrorDomain Code=1 "The request to open "com.nahun.BetterAlarm" failed." UserInfo={BSErrorCodeDescription=RequestDenied, NSLocalizedDescription=The request to open "com.nahun.BetterAlarm" failed., NSUnderlyingError=0xb61c2c240 {Error Domain=FBProcessExit Code=64 "The process failed to launch." UserInfo={NSUnderlyingError=0xb61c2c090 {Error Domain=RBSRequestErrorDomain Code=5 "Launch failed." UserInfo=0xb64c5c600 (not displayed)}, BSErrorCodeDescription=launch-failed, NSLocalizedFailureReason=The process failed to launch.}}, FBSOpenApplicationRequestID=0xed5f, NSLocalizedFailureReason=The request was denied by service delegate (SBMainWorkspace).}}, NSLocalizedFailureReason=The request was denied by service delegate (SBMainWorkspace)., FBSOpenApplicationRequestID=0xed5f, SimCallingSelector=launchApplicationWithID:options:pid:error:, BSErrorCodeDescription=RequestDenied})
+2026-04-25 19:30:49.541 xcodebuild[93807:2575521]  iOSSimulator: BC439410-B504-4AF6-8DEF-5FF326796B7B: Failed to launch app with identifier: com.nahun.BetterAlarm and options: {
+    "activate_suspended" = 0;
+    arguments =     (
+    );
+    environment =     {
+        "APP_DISTRIBUTOR_ID_OVERRIDE" = "com.apple.AppStore";
+        "CA_ASSERT_MAIN_THREAD_TRANSACTIONS" = 0;
+        "CA_DEBUG_TRANSACTIONS" = 0;
+        "DYLD_FRAMEWORK_PATH" = "/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator:/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/PackageFrameworks:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks";
+        "DYLD_INSERT_LIBRARIES" = "/usr/lib/libRPAC.dylib:/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/Frameworks/libXCTestBundleInject.dylib:/Library/Developer/CoreSimulator/Volumes/iOS_23B86/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.1.simruntime/Contents/Resources/RuntimeRoot/usr/lib/libMainThreadChecker.dylib:/usr/lib/libRPAC.dylib";
+        "DYLD_LIBRARY_PATH" = "/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib";
+        "LLVM_PROFILE_FILE" = "/var/folders/8c/z6vw5npn7ps7f04007mx2rdh0000gn/T/com.nahun.BetterAlarm/5113D611-392D-4286-A4BF-718FCDE16812-93807-0000029132BEC76C/4D4FC75A-8D92-4942-8087-9A132CFE7ECB-%p%c.profraw";
+        NSApplicationQuitWithoutSuddenTermination = YES;
+        NSUnbufferedIO = YES;
+        "OS_ACTIVITY_DT_MODE" = YES;
+        "PERFC_ENABLE_EXTENDED_DIAGNOSTIC_FORMAT" = 1;
+        "PERFC_ENABLE_PROFILE_MODE" = 1;
+        "PERFC_RESET_INSERT_LIBRARIES" = 1;
+        "PERFC_SUPPRESS_SYSTEM_REPORTS" = 1;
+        "RUN_DESTINATION_DEVICE_NAME" = "Clone 2 of iPhone 17 Pro Max";
+        "RUN_DESTINATION_DEVICE_PLATFORM_IDENTIFIER" = "com.apple.platform.iphonesimulator";
+        "RUN_DESTINATION_DEVICE_UDID" = "BC439410-B504-4AF6-8DEF-5FF326796B7B";
+        "SQLITE_ENABLE_THREAD_ASSERTIONS" = 1;
+        TERM = dumb;
+        XCInjectBundleInto = unused;
+        "XCODE_SCHEME_NAME" = BetterAlarm;
+        "XCODE_TEST_PLAN_NAME" = BetterAlarm;
+        XCTestBundleInjectPath = "/usr/lib/libRPAC.dylib:/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator/BetterAlarm.app/Frameworks/libXCTestBundleInject.dylib:/Library/Developer/CoreSimulator/Volumes/iOS_23B86/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.1.simruntime/Contents/Resources/RuntimeRoot/usr/lib/libMainThreadChecker.dylib:/usr/lib/libRPAC.dylib";
+        XCTestBundlePath = "PlugIns/BetterAlarmTests.xctest";
+        XCTestConfigurationFilePath = "";
+        XCTestSessionIdentifier = "DD8049DC-A273-4713-A5A2-955A97E0960A";
+        "__XCODE_BUILT_PRODUCTS_DIR_PATHS" = "/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator";
+        "__XPC_DYLD_FRAMEWORK_PATH" = "/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator";
+        "__XPC_DYLD_LIBRARY_PATH" = "/Users/kimnahun/Library/Developer/Xcode/DerivedData/BetterAlarm-hhrcevkebqnnwxcipsqsrrtbfjmh/Build/Products/Debug-iphonesimulator";
+        "__XPC_LLVM_PROFILE_FILE" = "/var/folders/8c/z6vw5npn7ps7f04007mx2rdh0000gn/T/com.nahun.BetterAlarm/5113D611-392D-4286-A4BF-718FCDE16812-93807-0000029132BEC76C/4D4FC75A-8D92-4942-8087-9A132CFE7ECB-%p%c.profraw";
+    };
+    stderr = "/dev/ttys007";
+    stdout = "/dev/ttys007";
+    "terminate_running_process" = 1;
+    "wait_for_debugger" = 1;
+} (error = Error Domain=FBSOpenApplicationServiceErrorDomain Code=1 "Simulator device failed to launch com.nahun.BetterAlarm." UserInfo={NSLocalizedDescription=Simulator device failed to launch com.nahun.BetterAlarm., NSUnderlyingError=0xb62bf33f0 {Error Domain=FBSOpenApplicationServiceErrorDomain Code=1 "The request to open "com.nahun.BetterAlarm" failed." UserInfo={BSErrorCodeDescription=RequestDenied, NSLocalizedDescription=The request to open "com.nahun.BetterAlarm" failed., NSUnderlyingError=0xb62bf17d0 {Error Domain=FBProcessExit Code=64 "The process failed to launch." UserInfo={NSUnderlyingError=0xb62bf3090 {Error Domain=RBSRequestErrorDomain Code=5 "Launch failed." UserInfo=0xb62020740 (not displayed)}, BSErrorCodeDescription=launch-failed, NSLocalizedFailureReason=The process failed to launch.}}, FBSOpenApplicationRequestID=0x38aa, NSLocalizedFailureReason=The request was denied by service delegate (SBMainWorkspace).}}, NSLocalizedFailureReason=The request was denied by service delegate (SBMainWorkspace)., FBSOpenApplicationRequestID=0x38aa, SimCallingSelector=launchApplicationWithID:options:pid:error:, BSErrorCodeDescription=RequestDenied})
