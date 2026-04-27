@@ -46,39 +46,41 @@ struct WidgetTheme {
     let accentTo: Color
     let labelAccent: Color
 
+    /// PTheme.colors 값과 정확히 일치하도록 매핑.
+    /// backgroundFrom/To = backgroundTop/Bottom, accentFrom/To = accentPrimary/Secondary
     static func palette(for themeName: String) -> WidgetTheme {
         switch themeName {
-        case "여름", "summer":
-            return WidgetTheme(
-                backgroundFrom: Color(red: 0.10, green: 0.07, blue: 0.01),
-                backgroundTo:   Color(red: 0.16, green: 0.10, blue: 0.02),
-                accentFrom:     Color(red: 1.00, green: 0.72, blue: 0.15),
-                accentTo:       Color(red: 1.00, green: 0.45, blue: 0.10),
-                labelAccent:    Color(red: 1.00, green: 0.76, blue: 0.30)
-            )
         case "봄", "spring":
             return WidgetTheme(
-                backgroundFrom: Color(red: 0.04, green: 0.08, blue: 0.07),
-                backgroundTo:   Color(red: 0.07, green: 0.11, blue: 0.10),
-                accentFrom:     Color(red: 0.95, green: 0.60, blue: 0.75),
-                accentTo:       Color(red: 0.50, green: 0.88, blue: 0.65),
-                labelAccent:    Color(red: 0.92, green: 0.66, blue: 0.80)
+                backgroundFrom: Color(red: 0.10, green: 0.07, blue: 0.06),
+                backgroundTo:   Color(red: 0.13, green: 0.09, blue: 0.07),
+                accentFrom:     Color(red: 1.00, green: 0.45, blue: 0.35),
+                accentTo:       Color(red: 1.00, green: 0.70, blue: 0.45),
+                labelAccent:    Color(red: 1.00, green: 0.45, blue: 0.35)
+            )
+        case "여름", "summer":
+            return WidgetTheme(
+                backgroundFrom: Color(red: 0.08, green: 0.08, blue: 0.15),
+                backgroundTo:   Color(red: 0.10, green: 0.12, blue: 0.20),
+                accentFrom:     Color(red: 0.70, green: 0.50, blue: 1.00),
+                accentTo:       Color(red: 1.00, green: 0.60, blue: 0.70),
+                labelAccent:    Color(red: 0.70, green: 0.50, blue: 1.00)
             )
         case "가을", "autumn":
             return WidgetTheme(
-                backgroundFrom: Color(red: 0.12, green: 0.07, blue: 0.02),
-                backgroundTo:   Color(red: 0.18, green: 0.09, blue: 0.03),
-                accentFrom:     Color(red: 1.00, green: 0.52, blue: 0.15),
-                accentTo:       Color(red: 0.85, green: 0.25, blue: 0.10),
-                labelAccent:    Color(red: 1.00, green: 0.58, blue: 0.22)
+                backgroundFrom: Color(red: 0.10, green: 0.08, blue: 0.02),
+                backgroundTo:   Color(red: 0.14, green: 0.10, blue: 0.02),
+                accentFrom:     Color(red: 0.98, green: 0.72, blue: 0.08),
+                accentTo:       Color(red: 1.00, green: 0.90, blue: 0.25),
+                labelAccent:    Color(red: 0.98, green: 0.72, blue: 0.08)
             )
         default: // "겨울" / "winter"
             return WidgetTheme(
-                backgroundFrom: Color(red: 0.08, green: 0.08, blue: 0.15),
-                backgroundTo:   Color(red: 0.12, green: 0.10, blue: 0.22),
-                accentFrom:     Color(red: 0.70, green: 0.50, blue: 1.00),
-                accentTo:       Color(red: 1.00, green: 0.60, blue: 0.70),
-                labelAccent:    Color(red: 0.75, green: 0.55, blue: 1.00)
+                backgroundFrom: Color(red: 0.03, green: 0.07, blue: 0.14),
+                backgroundTo:   Color(red: 0.03, green: 0.09, blue: 0.18),
+                accentFrom:     Color(red: 0.20, green: 0.72, blue: 1.00),
+                accentTo:       Color(red: 0.20, green: 0.92, blue: 0.80),
+                labelAccent:    Color(red: 0.20, green: 0.72, blue: 1.00)
             )
         }
     }
