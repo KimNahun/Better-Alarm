@@ -129,7 +129,7 @@ struct SettingsView: View {
 
                     // MARK: 잠금화면 위젯 섹션 (토글 + 권한 통합)
                     Section {
-                        PToggle("settings_lock_widget_label", isOn: $liveActivityToggle, icon: "lock.iphone")
+                        PToggle(String(localized: "settings_lock_widget_label"), isOn: $liveActivityToggle, icon: "lock.iphone")
                             .accessibilityLabel(Text("settings_lock_widget_label"))
                             .accessibilityHint(Text("settings_lock_widget_a11y_hint"))
                             .frame(minHeight: 44)

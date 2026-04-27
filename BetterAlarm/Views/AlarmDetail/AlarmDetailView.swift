@@ -336,7 +336,7 @@ struct AlarmDetailView: View {
     // MARK: - Silent Alarm Toggle
 
     private var silentAlarmToggle: some View {
-        PToggle("alarm_detail_silent_toggle_label", isOn: Binding(
+        PToggle(String(localized: "alarm_detail_silent_toggle_label"), isOn: Binding(
             get: { viewModel.isSilentAlarm },
             set: { enabled in Task { await viewModel.validateSilentAlarm(enabled: enabled) } }
         ), icon: "headphones")
