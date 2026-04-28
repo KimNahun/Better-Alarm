@@ -226,11 +226,29 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
     // MARK: - Background Reminder (기능 6)
 
     /// 앱이 백그라운드/종료될 때 "알람이 설정되어 있습니다" 즉시 알림 1건 등록.
+    /// 본문에는 다음 알람의 날짜(M월 d일/M월 d일 (요일))와 시각을 함께 포함.
     func scheduleBackgroundReminder(for alarm: Alarm) async {
-        AppLogger.info("Background reminder scheduled for '\(alarm.displayTitle)' at \(alarm.timeString)", category: .alarm)
+        let triggerDate = alarm.effectiveNextTriggerDate() ?? Date()
+        let timeStr = triggerDate.formatted(date: .omitted, time: .shortened)
+
+        let calendar = Calendar.current
+        let dateTimeStr: String
+        if calendar.isDateInToday(triggerDate) {
+            // "오늘 오전 8:00"
+            dateTimeStr = String(format: NSLocalizedString("next_alarm_format_today", comment: ""), timeStr)
+        } else if calendar.isDateInTomorrow(triggerDate) {
+            // "내일 오전 8:00"
+            dateTimeStr = String(format: NSLocalizedString("next_alarm_format_tomorrow", comment: ""), timeStr)
+        } else {
+            // "5월 1일 (목) 오전 8:00"
+            let dateStr = triggerDate.formatted(.dateTime.month().day().weekday(.abbreviated))
+            dateTimeStr = String(format: NSLocalizedString("next_alarm_format_date", comment: ""), dateStr, timeStr)
+        }
+
+        AppLogger.info("Background reminder scheduled for '\(alarm.displayTitle)' at \(dateTimeStr)", category: .alarm)
         let content = UNMutableNotificationContent()
         content.title = alarm.displayTitle
-        content.body = String(format: NSLocalizedString("notif_background_reminder_format", comment: ""), alarm.timeString)
+        content.body = String(format: NSLocalizedString("notif_background_reminder_format", comment: ""), dateTimeStr)
         content.sound = .default
 
         // 즉시 발송 (1초 후)
