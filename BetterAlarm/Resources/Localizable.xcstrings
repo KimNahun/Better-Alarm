@@ -2299,40 +2299,6 @@
         }
       }
     },
-    "settings_section_theme" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Theme"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "테마"
-          }
-        }
-      }
-    },
-    "settings_theme_changed_format" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Switched to %@ theme"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ 테마로 변경되었습니다"
-          }
-        }
-      }
-    },
     "settings_title" : {
       "extractionState" : "manual",
       "localizations" : {

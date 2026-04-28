@@ -18,10 +18,6 @@ final class SettingsViewModel {
 
     private(set) var isLiveActivityEnabled: Bool = true
 
-    // MARK: - Toast State
-    private(set) var showThemeToast: Bool = false
-    private(set) var themeToastMessage: String = ""
-
     private(set) var alarmKitAuthStatus: String = String(localized: "settings_permission_loading")
     private(set) var notificationAuthStatus: String = String(localized: "settings_permission_loading")
     private(set) var lockScreenWidgetStatus: String = String(localized: "settings_permission_loading")
@@ -66,21 +62,6 @@ final class SettingsViewModel {
 
         // 권한 상태 확인
         await refreshPermissions()
-    }
-
-    // MARK: - Theme
-
-    /// 테마 이름(rawValue)으로 테마를 변경한다. PTheme을 직접 참조하지 않고 AppThemeManager를 경유.
-    func selectThemeByName(_ themeName: String) {
-        themeManager?.setThemeByName(themeName)
-        let displayName = themeManager?.currentThemeDisplayName ?? themeName
-        themeToastMessage = String(format: NSLocalizedString("settings_theme_changed_format", comment: ""), displayName)
-        showThemeToast = true
-    }
-
-    func dismissThemeToast() {
-        showThemeToast = false
-        themeToastMessage = ""
     }
 
     // MARK: - Live Activity Setting

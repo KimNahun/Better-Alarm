@@ -21,7 +21,7 @@ struct AlarmActivityAttributes: ActivityAttributes {
             alarmTitle: String,
             isSkipped: Bool,
             isEmpty: Bool = false,
-            themeName: String = "winter"
+            themeName: String = "summer"
         ) {
             self.nextAlarmTime = nextAlarmTime
             self.nextAlarmDate = nextAlarmDate
@@ -46,43 +46,17 @@ struct WidgetTheme {
     let accentTo: Color
     let labelAccent: Color
 
-    /// PTheme.colors 값과 정확히 일치하도록 매핑.
-    /// backgroundFrom/To = backgroundTop/Bottom, accentFrom/To = accentPrimary/Secondary
+    /// 색상 선택 기능 제거 — 항상 Summer 팔레트를 반환한다.
+    /// 매개변수는 호환을 위해 유지하지만 무시된다.
     static func palette(for themeName: String) -> WidgetTheme {
-        switch themeName {
-        case "봄", "spring":
-            return WidgetTheme(
-                backgroundFrom: Color(red: 0.10, green: 0.07, blue: 0.06),
-                backgroundTo:   Color(red: 0.13, green: 0.09, blue: 0.07),
-                accentFrom:     Color(red: 1.00, green: 0.45, blue: 0.35),
-                accentTo:       Color(red: 1.00, green: 0.70, blue: 0.45),
-                labelAccent:    Color(red: 1.00, green: 0.45, blue: 0.35)
-            )
-        case "여름", "summer":
-            return WidgetTheme(
-                backgroundFrom: Color(red: 0.08, green: 0.08, blue: 0.15),
-                backgroundTo:   Color(red: 0.10, green: 0.12, blue: 0.20),
-                accentFrom:     Color(red: 0.70, green: 0.50, blue: 1.00),
-                accentTo:       Color(red: 1.00, green: 0.60, blue: 0.70),
-                labelAccent:    Color(red: 0.70, green: 0.50, blue: 1.00)
-            )
-        case "가을", "autumn":
-            return WidgetTheme(
-                backgroundFrom: Color(red: 0.10, green: 0.08, blue: 0.02),
-                backgroundTo:   Color(red: 0.14, green: 0.10, blue: 0.02),
-                accentFrom:     Color(red: 0.98, green: 0.72, blue: 0.08),
-                accentTo:       Color(red: 1.00, green: 0.90, blue: 0.25),
-                labelAccent:    Color(red: 0.98, green: 0.72, blue: 0.08)
-            )
-        default: // "겨울" / "winter"
-            return WidgetTheme(
-                backgroundFrom: Color(red: 0.03, green: 0.07, blue: 0.14),
-                backgroundTo:   Color(red: 0.03, green: 0.09, blue: 0.18),
-                accentFrom:     Color(red: 0.20, green: 0.72, blue: 1.00),
-                accentTo:       Color(red: 0.20, green: 0.92, blue: 0.80),
-                labelAccent:    Color(red: 0.20, green: 0.72, blue: 1.00)
-            )
-        }
+        // Summer 고정 팔레트 (PTheme.summer.colors와 일치)
+        return WidgetTheme(
+            backgroundFrom: Color(red: 0.08, green: 0.08, blue: 0.15),
+            backgroundTo:   Color(red: 0.10, green: 0.12, blue: 0.20),
+            accentFrom:     Color(red: 0.70, green: 0.50, blue: 1.00),
+            accentTo:       Color(red: 1.00, green: 0.60, blue: 0.70),
+            labelAccent:    Color(red: 0.70, green: 0.50, blue: 1.00)
+        )
     }
 }
 

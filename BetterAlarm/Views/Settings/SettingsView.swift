@@ -39,40 +39,6 @@ struct SettingsView: View {
                 .padding(.top, 16)
 
                 Form {
-                    // MARK: 테마 섹션
-                    if let themeManager = viewModel.themeManager {
-                        Section {
-                            HStack(spacing: 12) {
-                                ForEach(PTheme.allCases) { theme in
-                                    Button {
-                                        viewModel.selectThemeByName(theme.rawValue)
-                                    } label: {
-                                        VStack(spacing: 4) {
-                                            Circle()
-                                                .fill(theme.colors.accentPrimary)
-                                                .frame(width: 36, height: 36)
-                                                .overlay(
-                                                    Circle()
-                                                        .stroke(themeManager.currentTheme == theme ? Color.pTextPrimary : Color.clear, lineWidth: 2)
-                                                )
-                                            Text(theme.displayName)
-                                                .font(.caption2)
-                                                .foregroundStyle(Color.pTextSecondary)
-                                        }
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                                Spacer()
-                            }
-                            .padding(.vertical, 4)
-                        } header: {
-                            Text("settings_section_theme")
-                                .font(.caption)
-                                .foregroundStyle(Color.pTextTertiary)
-                        }
-                        .listRowBackground(Color.pGlassFill)
-                    }
-
                     // MARK: 알림 권한 섹션
                     Section {
                         // 알림 권한 행
@@ -217,14 +183,6 @@ struct SettingsView: View {
                 .background(Color.clear)
             }
         }
-        .toast(
-            isPresented: Binding(
-                get: { viewModel.showThemeToast },
-                set: { if !$0 { viewModel.dismissThemeToast() } }
-            ),
-            message: viewModel.themeToastMessage,
-            type: .success
-        )
         // toolbarBackground 제거: SwiftUI 기본 탭바 렌더링에 위임
         .task {
             await viewModel.loadSettings()

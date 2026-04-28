@@ -122,17 +122,6 @@ struct BetterAlarmApp: App {
                     NotificationCenter.default.post(name: .alarmCompleted, object: nil)
                 }
             }
-            .onChange(of: themeManager.currentTheme) { _, _ in
-                // 테마 변경 시 예약된 알림 + Live Activity + 위젯 모두 즉시 동기화
-                Task {
-                    await alarmStore.scheduleNextAlarm(force: true)
-                    if #available(iOS 17.0, *) {
-                        let nextAlarm = await alarmStore.nextAlarm
-                        await liveActivityManager?.updateActivity(nextAlarm: nextAlarm)
-                    }
-                    WidgetCenter.shared.reloadAllTimelines()
-                }
-            }
             .onChange(of: scenePhase) { _, newPhase in
                 Task {
                     switch newPhase {

@@ -22,7 +22,7 @@ struct AlarmActivityAttributes: ActivityAttributes {
             alarmTitle: String,
             isSkipped: Bool,
             isEmpty: Bool = false,
-            themeName: String = "winter"
+            themeName: String = "summer"
         ) {
             self.nextAlarmTime = nextAlarmTime
             self.nextAlarmDate = nextAlarmDate
@@ -165,7 +165,8 @@ actor LiveActivityManager {
 
     /// 알람 데이터에서 Live Activity ContentState를 생성한다.
     private func createContentState(for alarm: Alarm) -> AlarmActivityAttributes.ContentState {
-        let themeName = UserDefaults.standard.string(forKey: "selectedTheme") ?? "winter"
+        // 색상 선택 기능 제거 — Summer 테마로 고정
+        let themeName = "summer"
 
         guard let nextDate = alarm.nextTriggerDate() else {
             AppLogger.debug("No next trigger date, returning empty state", category: .liveActivity)
