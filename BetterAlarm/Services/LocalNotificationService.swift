@@ -37,7 +37,7 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
     /// 알람이 울릴 때 발송되는 푸시 알림 총 횟수 (메인 1회 + 반복 4회 = 5회).
     private let alarmRepeatCount = 5
     /// 반복 알림 사이의 간격(초).
-    private let alarmRepeatInterval: TimeInterval = 30
+    private let alarmRepeatInterval: TimeInterval = 10
 
     /// 알람 알림에 사용하는 identifier 공통 prefix.
     /// - 형식: `alarm.<alarmId>.<index>` (index: 0...alarmRepeatCount-1)
@@ -113,7 +113,7 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
     ///
     /// 알람 시각이 되면 정확히 `alarmRepeatCount`회(기본 5회)의 푸시 알림이 발송된다.
     /// - 1번째 알림: 알람 시각 정각 (offset 0초)
-    /// - 2~5번째 알림: 알람 시각 + (i × `alarmRepeatInterval`)초 (기본 30초 간격)
+    /// - 2~5번째 알림: 알람 시각 + (i × `alarmRepeatInterval`)초 (기본 10초 간격)
     ///
     /// - Parameters:
     ///   - alarm: 스케줄할 알람
