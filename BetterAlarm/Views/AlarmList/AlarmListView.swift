@@ -134,31 +134,61 @@ struct AlarmListView: View {
 
     // MARK: - Next Alarm Banner
 
-    @ViewBuilder
     private var nextAlarmBanner: some View {
-        if let display = viewModel.nextAlarmDisplayString {
-            GlassCard {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("alarm_list_next_alarm_label")
-                            .font(.caption)
-                            .foregroundStyle(Color.pTextTertiary)
-                        Text(display)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.pTextPrimary)
-                    }
-                    Spacer()
-                    Image(systemName: "alarm.fill")
-                        .font(.title3)
-                        .foregroundStyle(theme.accentPrimary)
+        // R8-5: nextAlarmDisplayString이 nil이어도 GlassCard wrapper와 padding은 동일하게 유지.
+        // display 변수만 분기하고 헤더 높이를 일정하게 보존한다.
+        let display = viewModel.nextAlarmDisplayString
+        return GlassCard {
+            HStack {
+                if let display {
+                    scheduledBannerContent(display: display)
+                } else {
+                    unscheduledBannerContent
                 }
-                .padding(16)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 4)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(Text("alarm_list_next_alarm_a11y \(display)"))
+            .padding(16)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            display.map { Text("alarm_list_next_alarm_a11y \($0)") }
+                ?? Text("alarm_list_no_alarm_a11y")
+        )
+    }
+
+    private func scheduledBannerContent(display: String) -> some View {
+        Group {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("alarm_list_next_alarm_label")
+                    .font(.caption)
+                    .foregroundStyle(Color.pTextTertiary)
+                Text(display)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.pTextPrimary)
+            }
+            Spacer()
+            Image(systemName: "alarm.fill")
+                .font(.title3)
+                .foregroundStyle(theme.accentPrimary)
+        }
+    }
+
+    private var unscheduledBannerContent: some View {
+        Group {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("alarm_list_no_alarm_label")
+                    .font(.caption)
+                    .foregroundStyle(Color.pTextTertiary)
+                Text("alarm_list_no_alarm_message")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.pTextTertiary)
+            }
+            Spacer()
+            Image(systemName: "alarm")
+                .font(.title3)
+                .foregroundStyle(Color.pTextTertiary)
         }
     }
 

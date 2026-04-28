@@ -876,6 +876,57 @@
         }
       }
     },
+    "alarm_list_no_alarm_a11y" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No alarm scheduled"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "알람이 설정되지 않았습니다"
+          }
+        }
+      }
+    },
+    "alarm_list_no_alarm_label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not Scheduled"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "예약 안 됨"
+          }
+        }
+      }
+    },
+    "alarm_list_no_alarm_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No alarm scheduled"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "알람이 설정되지 않았습니다"
+          }
+        }
+      }
+    },
     "alarm_list_title" : {
       "extractionState" : "manual",
       "localizations" : {
