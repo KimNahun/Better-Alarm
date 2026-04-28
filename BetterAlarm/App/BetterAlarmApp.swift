@@ -118,7 +118,11 @@ struct BetterAlarmApp: App {
             .onChange(of: ringingAlarm) { _, newValue in
                 if newValue == nil {
                     // 알람이 dismiss됨 → 즉시 목록 갱신
-                    Task { await alarmStore.loadAlarms() }
+                    Task {
+                        await alarmStore.loadAlarms()
+                        // R8-3: 알람 발화 → 정지/스누즈 처리 후 다음 가장 가까운 알람으로 갱신
+                        await alarmStore.syncLiveActivity()
+                    }
                     NotificationCenter.default.post(name: .alarmCompleted, object: nil)
                 }
             }
@@ -155,6 +159,8 @@ struct BetterAlarmApp: App {
                         await alarmStore.syncSnoozeFromIntent()
                         // 포그라운드 복귀 시 알람 재스케줄링 (local + alarmKit)
                         await alarmStore.scheduleNextAlarm()
+                        // R8-3: 시간 경과로 가장 가까운 알람이 바뀌었을 수 있으므로 Live Activity 동기화
+                        await alarmStore.syncLiveActivity()
                         // pending 알람 처리 (race condition 방지)
                         if let pendingID = appDelegate.consumePendingAlarmID() {
                             let alarms = await alarmStore.alarms
@@ -199,11 +205,8 @@ struct BetterAlarmApp: App {
                 await alarmStore.loadAlarms()
                 await alarmStore.scheduleNextAlarm()
 
-                // Live Activity 초기화
-                if #available(iOS 17.0, *) {
-                    let nextAlarm = await alarmStore.nextAlarm
-                    await liveActivityManager?.updateActivity(nextAlarm: nextAlarm)
-                }
+                // R8-3: Live Activity 초기화는 AlarmStore 단일 진입점을 통해 수행
+                await alarmStore.syncLiveActivity()
 
                 // 알림 카테고리 등록 (정지/스누즈 액션)
                 await localNotificationService.registerAlarmCategory()
@@ -278,6 +281,12 @@ struct BetterAlarmApp: App {
 
         AppLogger.info("Alarm timer fired: '\(currentAlarm.displayTitle)'", category: .alarm)
         ringingAlarm = currentAlarm
+
+        // R8-3: 알람 발화 직후 다음 가장 가까운 알람으로 Live Activity 갱신.
+        // 발화한 알람의 nextTriggerDate는 다음 주기/완료 후 업데이트되며,
+        // .once 알람이라면 isEnabled가 false로 바뀌기 전이라도 nextAlarm 계산에 영향이 없다.
+        // 안전하게 한 번 더 동기화한다.
+        await alarmStore.syncLiveActivity()
 
         // 백그라운드에서는 AlarmRingingView가 표시되지 않으므로 직접 소리 재생
         // 포그라운드에서도 즉시 소리 시작 (View 렌더링 대기 없이)

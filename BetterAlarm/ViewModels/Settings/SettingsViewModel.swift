@@ -114,8 +114,8 @@ final class SettingsViewModel {
         if #available(iOS 17.0, *), let manager = liveActivityManager {
             await manager.setLiveActivityEnabled(enabled)
             if enabled {
-                let nextAlarm = await alarmStore.nextAlarm
-                await manager.updateActivity(nextAlarm: nextAlarm)
+                // R8-3: AlarmStore의 단일 진입점을 통해 가장 가까운 알람으로 동기화
+                await alarmStore.syncLiveActivity()
             } else {
                 await manager.endActivity()
             }

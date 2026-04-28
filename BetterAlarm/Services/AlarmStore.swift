@@ -88,7 +88,7 @@ actor AlarmStore {
         sortAlarms()
         saveAlarms()
         await scheduleNextAlarm(force: true)
-        await updateLiveActivity()
+        await syncLiveActivity()
         AppLogger.alarmCreated(alarm.displayTitle)
     }
 
@@ -117,7 +117,7 @@ actor AlarmStore {
         sortAlarms()
         saveAlarms()
         await scheduleNextAlarm(force: true)
-        await updateLiveActivity()
+        await syncLiveActivity()
         AppLogger.alarmUpdated(updated.displayTitle)
     }
 
@@ -126,7 +126,7 @@ actor AlarmStore {
         saveAlarms()
         await cancelSchedule(for: alarm)
         await scheduleNextAlarm(force: true)
-        await updateLiveActivity()
+        await syncLiveActivity()
         AppLogger.alarmDeleted(alarm.displayTitle)
     }
 
@@ -150,7 +150,7 @@ actor AlarmStore {
             // 비활성화 후 반복 알림 대상이 바뀔 수 있으므로 재스케줄
             await scheduleNextAlarm(force: true)
         }
-        await updateLiveActivity()
+        await syncLiveActivity()
         AppLogger.alarmToggled(alarm.displayTitle, enabled: enabled)
     }
 
@@ -166,7 +166,7 @@ actor AlarmStore {
         sortAlarms()
         saveAlarms()
         await scheduleNextAlarm(force: true)
-        await updateLiveActivity()
+        await syncLiveActivity()
         AppLogger.info("Alarm skipped once: \(alarm.displayTitle)", category: .alarm)
     }
 
@@ -181,7 +181,7 @@ actor AlarmStore {
         sortAlarms()
         saveAlarms()
         await scheduleNextAlarm(force: true)
-        await updateLiveActivity()
+        await syncLiveActivity()
         AppLogger.info("Alarm skip cleared: \(alarm.displayTitle)", category: .alarm)
     }
 
@@ -230,6 +230,22 @@ actor AlarmStore {
         } catch {
             AppLogger.error("Failed to schedule snooze: \(error)", category: .alarm)
         }
+
+        // R8-3: 스누즈는 다음 가장 가까운 알람을 변경할 수 있으므로 Live Activity 동기화
+        await syncLiveActivity()
+    }
+
+    /// 스누즈를 취소한다 (snoozeDate를 nil로 초기화하고 알림을 정리한 뒤 재스케줄).
+    func cancelSnooze(_ alarm: Alarm) async {
+        guard let index = alarms.firstIndex(where: { $0.id == alarm.id }) else { return }
+        guard alarms[index].snoozeDate != nil else { return }
+
+        alarms[index].snoozeDate = nil
+        saveAlarms()
+        await localNotificationService.cancelAlarm(for: alarm)
+        await scheduleNextAlarm(force: true)
+        await syncLiveActivity()
+        AppLogger.info("Snooze cancelled: \(alarm.displayTitle)", category: .alarm)
     }
 
     // MARK: - Alarm Completion
@@ -254,7 +270,7 @@ actor AlarmStore {
             }
             await scheduleNextAlarm(force: true)
         }
-        await updateLiveActivity()
+        await syncLiveActivity()
         AppLogger.info("Alarm completed: \(alarm.displayTitle)", category: .alarm)
     }
 
@@ -293,8 +309,12 @@ actor AlarmStore {
 
     // MARK: - Live Activity Integration
 
-    /// 알람 상태 변경 후 Live Activity를 업데이트한다.
-    private func updateLiveActivity() async {
+    /// "현재 시점에서 가장 가까운 활성 알람"을 계산하여 Live Activity에 반영하는 단일 진입점.
+    ///
+    /// 이 메서드는 모든 mutation 경로(create/update/delete/toggle/skip/clearSkip/snooze/cancelSnooze/handleAlarmCompleted)
+    /// 끝과, App scenePhase가 .active로 복귀할 때, 그리고 알람 발화 직후 호출되어야 한다.
+    /// `nextAlarm`이 nil이면 LiveActivityManager가 내부에서 .end 처리하므로 orphan Activity가 남지 않는다.
+    func syncLiveActivity() async {
         if #available(iOS 17.0, *) {
             await liveActivityManager?.updateActivity(nextAlarm: nextAlarm)
         }
