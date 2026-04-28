@@ -234,7 +234,7 @@ struct LockScreenView: View {
 } contentStates: {
     AlarmActivityAttributes.ContentState(
         nextAlarmTime: "오전 7:30",
-        nextAlarmDate: "내일",
+        nextAlarmDate: "5월 1일",
         alarmTitle: "출근 알람",
         isSkipped: false,
         themeName: "winter"
@@ -246,7 +246,7 @@ struct LockScreenView: View {
 } contentStates: {
     AlarmActivityAttributes.ContentState(
         nextAlarmTime: "오전 7:30",
-        nextAlarmDate: "내일",
+        nextAlarmDate: "5월 1일",
         alarmTitle: "출근 알람",
         isSkipped: false,
         themeName: "summer"
@@ -258,7 +258,7 @@ struct LockScreenView: View {
 } contentStates: {
     AlarmActivityAttributes.ContentState(
         nextAlarmTime: "오전 8:00",
-        nextAlarmDate: "오늘",
+        nextAlarmDate: "4월 28일",
         alarmTitle: "아침 운동",
         isSkipped: false,
         themeName: "spring"

@@ -1610,40 +1610,6 @@
         }
       }
     },
-    "live_activity_relative_today" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Today"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "오늘"
-          }
-        }
-      }
-    },
-    "live_activity_relative_tomorrow" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tomorrow"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "내일"
-          }
-        }
-      }
-    },
     "next_alarm_format_date" : {
       "extractionState" : "manual",
       "localizations" : {

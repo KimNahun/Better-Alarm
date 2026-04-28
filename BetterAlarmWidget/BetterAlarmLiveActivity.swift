@@ -154,7 +154,7 @@ struct LockScreenAlarmView: View {
 } contentStates: {
     AlarmActivityAttributes.ContentState(
         nextAlarmTime: "오전 7:30",
-        nextAlarmDate: "내일",
+        nextAlarmDate: "5월 1일",
         alarmTitle: "기상 알람",
         isSkipped: false
     )

@@ -10,7 +10,7 @@ import ActivityKit
 struct AlarmActivityAttributes: ActivityAttributes {
     struct ContentState: Codable, Hashable, Sendable {
         var nextAlarmTime: String   // "오전 7:00"
-        var nextAlarmDate: String   // "오늘" | "내일" | "M월 d일"
+        var nextAlarmDate: String   // "M월 d일" 절대 형식 고정 (로케일 인지)
         var alarmTitle: String
         var isSkipped: Bool
         var isEmpty: Bool

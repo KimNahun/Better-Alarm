@@ -14,16 +14,14 @@ enum LocalizedDateFormatters {
         return date.formatted(date: .omitted, time: .shortened)
     }
 
-    /// 날짜를 "오늘" / "내일" / 로케일 인지형 날짜 문자열로 변환
+    /// 날짜를 항상 절대 형식("M월 d일" / "May 1")으로 변환.
+    /// "오늘" / "내일" 같은 상대 표현은 사용하지 않는다 — 위젯/Live Activity 사용자 피드백 반영.
+    /// `setLocalizedDateFormatFromTemplate("Md")`로 로케일별 자연스러운 표현(ko: "5월 1일", en: "May 1")을 얻는다.
     static func relativeDateString(for date: Date) -> String {
-        let calendar = Calendar.current
-        if calendar.isDateInToday(date) {
-            return String(localized: "live_activity_relative_today")
-        } else if calendar.isDateInTomorrow(date) {
-            return String(localized: "live_activity_relative_tomorrow")
-        } else {
-            return date.formatted(.dateTime.month().day().weekday(.abbreviated))
-        }
+        let formatter = DateFormatter()
+        formatter.locale = Locale.current
+        formatter.setLocalizedDateFormatFromTemplate("Md")
+        return formatter.string(from: date)
     }
 }
 
