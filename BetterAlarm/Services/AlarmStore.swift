@@ -280,7 +280,7 @@ actor AlarmStore {
         alarms
             .filter { $0.isEnabled && !$0.isSkippingNext }
             .compactMap { alarm -> (Alarm, Date)? in
-                guard let date = alarm.nextTriggerDate() else { return nil }
+                guard let date = alarm.effectiveNextTriggerDate() else { return nil }
                 return (alarm, date)
             }
             .min { $0.1 < $1.1 }?
@@ -288,7 +288,7 @@ actor AlarmStore {
     }
 
     var nextAlarmDisplayString: String? {
-        guard let alarm = nextAlarm, let date = alarm.nextTriggerDate() else { return nil }
+        guard let alarm = nextAlarm, let date = alarm.effectiveNextTriggerDate() else { return nil }
 
         let timeStr = date.formatted(date: .omitted, time: .shortened)
         let calendar = Calendar.current

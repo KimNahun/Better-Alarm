@@ -196,4 +196,14 @@ struct Alarm: Codable, Identifiable, Equatable, Sendable {
             return alarmDate > date ? alarmDate : nil
         }
     }
+
+    /// 사용자에게 보여줄 "다음 울림 시각" — 스누즈 중이면 snoozeDate가 정규 스케줄보다 빠를 때 우선한다.
+    /// nextTriggerDate()는 스케줄링 로직에서 사용되므로 snoozeDate를 무시하지만,
+    /// "다음 알람" 배너/Live Activity 표시는 실제 다음 울림 시각을 반영해야 한다.
+    func effectiveNextTriggerDate(from date: Date = Date()) -> Date? {
+        let scheduled = nextTriggerDate(from: date)
+        guard let snoozeDate, snoozeDate > date else { return scheduled }
+        guard let scheduled else { return snoozeDate }
+        return min(snoozeDate, scheduled)
+    }
 }
