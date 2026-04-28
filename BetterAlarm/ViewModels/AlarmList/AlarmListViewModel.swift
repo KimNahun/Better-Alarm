@@ -27,6 +27,26 @@ extension AlarmToggleHandling {
         }
     }
 
+    /// 토글의 "원하는 시각 상태"를 받아 적절한 액션으로 분기한다.
+    /// 시각 상태(isOn) = `alarm.isEnabled && !alarm.isSkippingNext`.
+    /// - desiredOn == true:
+    ///   - isSkippingNext가 켜져 있으면 → skip 해제 (알람은 이미 활성 상태 유지)
+    ///   - 그 외 → 알람 활성화 (기존 동작)
+    /// - desiredOn == false:
+    ///   - 알람 비활성화 (기존 동작; weekly면 액션시트)
+    func requestToggleVisualState(_ alarm: Alarm, desiredOn: Bool) {
+        if desiredOn {
+            if alarm.isSkippingNext {
+                AppLogger.info("Toggle ON while skipping — clearing skip: '\(alarm.displayTitle)'", category: .action)
+                Task { await clearSkip(alarm) }
+            } else {
+                requestToggle(alarm, enabled: true)
+            }
+        } else {
+            requestToggle(alarm, enabled: false)
+        }
+    }
+
     /// 알람 활성화/비활성화 토글
     func toggleAlarm(_ alarm: Alarm, enabled: Bool) async {
         togglingAlarmID = alarm.id

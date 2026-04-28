@@ -83,12 +83,14 @@ struct AlarmRowView: View {
                     }
 
                     // 활성화 토글
+                    // R8-1: "다음 1회만 끄기"가 활성화되어 있으면 시각적으로 OFF로 표시.
+                    // (alarm.isEnabled && !alarm.isSkippingNext) 가 토글의 시각 상태.
                     PToggle("", isOn: Binding(
-                        get: { alarm.isEnabled },
+                        get: { alarm.isEnabled && !alarm.isSkippingNext },
                         set: { onToggle($0) }
                     ))
                     .labelsHidden()
-                    .accessibilityLabel(Text("alarm_row_toggle_a11y_format \(alarm.displayTitle) \(alarm.isEnabled ? String(localized: "alarm_row_toggle_disable") : String(localized: "alarm_row_toggle_enable"))"))
+                    .accessibilityLabel(Text("alarm_row_toggle_a11y_format \(alarm.displayTitle) \((alarm.isEnabled && !alarm.isSkippingNext) ? String(localized: "alarm_row_toggle_disable") : String(localized: "alarm_row_toggle_enable"))"))
                     .frame(minWidth: 44, minHeight: 44)
                 }
                 .padding(.vertical, 12)
