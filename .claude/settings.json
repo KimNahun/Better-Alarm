@@ -1,12 +1,52 @@
 {
+  "env": {
+    "HARNESS_TARGET_DIR": "/Users/haesuyoun/Desktop/NahunPersonalFolder/Better-Alarm/BetterAlarm",
+    "HARNESS_PROJECT_ROOT": "/Users/haesuyoun/Desktop/NahunPersonalFolder/Better-Alarm",
+    "HARNESS_BUILD_COMMAND": "xcodebuild -project /Users/haesuyoun/Desktop/NahunPersonalFolder/Better-Alarm/BetterAlarm.xcodeproj -scheme BetterAlarm -destination 'id=1CE14D49-DEB7-4BED-AFEE-AF349E430DB3' build 2>&1 | grep -E 'error:|BUILD (SUCCEEDED|FAILED)'",
+    "HARNESS_SIMULATOR": "id=1CE14D49-DEB7-4BED-AFEE-AF349E430DB3"
+  },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/harness/scripts/hooks/block-direct-write.js\"",
+            "description": "프로젝트 폴더에 새 Swift 파일 직접 생성 차단 (/harness 사용 유도)"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/harness/scripts/hooks/secrets-check.js\"",
+            "description": "git commit/add 시 민감 파일(Secrets.xcconfig 등) 포함 여부 검사"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/harness/scripts/hooks/swift-syntax-check.js\"",
+            "description": "Swift 문법 검증 (swiftc -parse)"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "cd /Users/haesuyoun/Desktop/NahunPersonalFolder/Better-Alarm && git diff --quiet HEAD 2>/dev/null && exit 0; FILES=$(git diff --name-only HEAD 2>/dev/null | head -3 | xargs -I{} basename {} | tr '\\n' ' ' | sed 's/ $//'); git add -A && git commit -m \"fix: ${FILES:-변경사항 자동 커밋}\" 2>/dev/null || true",
-            "statusMessage": "변경사항 커밋 중..."
+            "command": "node \"$(git rev-parse --show-toplevel)/harness/scripts/hooks/pre-commit-build.js\"",
+            "statusMessage": "빌드 검증 + 커밋 중..."
           }
         ]
       }

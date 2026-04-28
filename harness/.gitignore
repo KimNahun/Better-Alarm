@@ -1,0 +1,33 @@
+# Xcode
+xcuserdata/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+timeline.xctimeline
+playground.xcworkspace
+.build/
+Carthage/Build/
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# macOS
+.DS_Store
+
+# Secrets (절대 커밋 금지)
+Secrets.xcconfig
+*.p12
+*.pem
+.env
+.env.*
+
+# Harness (자동 생성 파일)
+output/
+docs/
+SPEC.md
+QA_REPORT.md
+BUILD_RESULT.md
+FEEDBACK_LOG.md
+PROJECT_CONTEXT.md

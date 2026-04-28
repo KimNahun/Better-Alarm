@@ -1,113 +1,146 @@
-# 실행 방법
+# iOS Harness Engineering - 시작 가이드
 
-## 프로젝트 구조
+## 이것은 무엇인가?
+
+3-Agent 파이프라인(Planner -> Generator -> Evaluator)으로 **Swift 6 + SwiftUI + MVVM** 코드를 자동 생성하고 품질을 보장하는 하네스 엔지니어링 시스템입니다.
+
+**어떤 iOS 프로젝트에도 적용 가능**합니다.
+
+---
+
+## 디렉토리 구조
 
 ```
-harness-project/
-├── CLAUDE.md                      ← 오케스트레이터 (Claude Code가 자동으로 읽음)
-├── agents/
-│   ├── evaluation_criteria.md     ← Swift 품질 평가 기준
-│   ├── planner.md                 ← Planner 서브에이전트 지시서
-│   ├── generator.md               ← Generator 서브에이전트 지시서
-│   └── evaluator.md               ← Evaluator 서브에이전트 지시서
-├── docs/                          ← NotebookLM MCP에서 읽어온 API 레퍼런스 (자동 생성)
-│   ├── alarmkit_notes.md
-│   ├── appintent_notes.md
-│   └── widget_notes.md
-├── output/                        ← 생성된 Swift 파일들
-│   ├── [AppName]App.swift
-│   ├── Views/
-│   ├── ViewModels/
-│   ├── Models/
-│   ├── Services/
-│   ├── Intents/                   ← AppIntent 있을 경우
-│   └── Widgets/                   ← WidgetKit 있을 경우
-├── SPEC.md                        ← Planner가 생성 (실행 후 생김)
-├── SELF_CHECK.md                  ← Generator가 생성 (실행 후 생김)
-├── QA_REPORT.md                   ← Evaluator가 생성 (실행 후 생김)
-└── START.md                       ← 지금 이 파일
+harness/
+├── CLAUDE.md                           # 오케스트레이터 (Claude Code가 자동으로 읽음)
+├── PROJECT_CONTEXT.md                  # 프로젝트별 설정
+├── START.md                            # 이 파일
+│
+├── agents/                             # 서브에이전트 지시서
+│   ├── planner.md                      #   설계 전문 (opus)
+│   ├── generator.md                    #   구현 전문 (sonnet/opus)
+│   ├── evaluator.md                    #   QA 전문 (opus)
+│   ├── ios-reviewer.md                 #   피드백 수정 전문 (opus)
+│   └── evaluation_criteria.md          #   공통 평가 기준
+│
+├── skills/                             # 재사용 워크플로우
+│   ├── harness-pipeline/SKILL.md       #   전체 파이프라인 ��름
+│   ├── feedback-loop/SKILL.md          #   Phase 2 피드백 루프
+│   ├── ios-tdd/SKILL.md                #   TDD 워크플로우
+│   └── build-fix/SKILL.md              #   빌드 에러 수정
+│
+├── .claude/
+│   ├── settings.json                   # 훅 설정
+│   ├── rules/                          # 코딩 규칙 (항상 적용)
+│   │   ├── swift-style.md
+│   │   ├── swift-concurrency.md
+│   │   ├── ios-security.md
+│   │   ├── testing.md
+│   │   └── hig.md
+│   └── commands/                       # 슬래시 커맨드
+│       ├── harness.md                  #   /harness [프롬프트]
+│       ├── feedback.md                 #   /feedback [내용]
+│       ├── build-fix.md                #   /build-fix
+│       ├── evaluate.md                 #   /evaluate
+│       ���── tdd.md                      #   /tdd [대상]
+│
+├── scripts/hooks/                      # 훅 스크립트
+│   ├── block-direct-write.js
+│   ├── swift-syntax-check.js
+│   └── auto-commit.js
+│
+├── docs/                               # API 레퍼런스 (자동 생성)
+├── output/                             # 생성된 Swift 파일
+├── SPEC.md                             # Planner 출력 (자동 생성)
+├── QA_REPORT.md                        # Evaluator 출력 (자동 생성)
+├── BUILD_RESULT.md                     # 빌드/테스트 결과 (자동 생성)
+└── FEEDBACK_LOG.md                     # 피드백 기록 (자동 생성)
 ```
 
 ---
 
-## 실행 방법
+## 새 프로젝트에 적용하는 방법
 
-### 1단계: 이 폴더에서 Claude Code를 실행합니다
+### 1단계: PROJECT_CONTEXT.md 작성
+
+`PROJECT_CONTEXT.md`를 열고 프로젝트에 맞게 수정:
+- 앱 이름, 번들 ID, 타겟 OS
+- 프로젝트 경로 (`PROJECT_ROOT`, `TARGET_DIR`)
+- 빌드/테스트 명령어
+- 디자인 시스템 (있으면)
+- 추가 기능 요구사항
+
+### 2단계: Claude Code 실행
 
 ```bash
-cd harness-project
+cd harness
 claude
 ```
 
-Claude Code가 CLAUDE.md를 자동으로 읽고 오케스트레이터 역할을 합니다.
-
-### 2단계: 프롬프트 한 줄을 입력합니다
+### 3단계: 프롬프트 입력
 
 ```
-AlarmKit과 AppIntent를 활용한 스마트 알람 앱을 만들어줘
+/harness AlarmKit과 AppIntent를 활용한 스마트 알람 앱을 만들어줘
 ```
 
-이것만 치면 됩니다.
-CLAUDE.md의 지시에 따라 자동으로:
+자동으로:
+1. Planner가 SPEC.md 생성
+2. Generator가 output/ 에 Swift 파일 생성
+3. 빌드 게이트 통과 확인
+4. Evaluator가 QA_REPORT.md 생성
+5. 합격이면 프로젝트 폴더에 통합
 
-1. NotebookLM MCP에서 AlarmKit / AppIntent / WidgetKit 문서를 읽어옵니다
-2. Planner 서브에이전트가 SPEC.md (Swift 6 + MVVM 설계서)를 생성합니다
-3. Generator 서브에이전트가 output/ 폴더에 Swift 파일들을 생성합니다
-4. Evaluator 서브에이전트가 QA_REPORT.md를 생성합니다
-5. 불합격이면 Generator가 피드백을 반영하여 재작업합니다
-6. 합격이면 완료 보고가 나옵니다
+### 4단계: 피드백 루프 (Phase 2)
 
-### 3단계: 결과를 확인합니다
+앱을 실행해보고:
 
-```bash
-# output/ 폴더 파일을 Xcode에서 열기
-open output/
+```
+/feedback R1 시작
+/feedback [버그] 알람 생성 후 목록에 안 뜸
 ```
 
 ---
 
-## 예시 프롬프트
+## 슬래시 커맨드
 
-```
-AlarmKit으로 수면 추적 기능이 있는 알람 앱 만들어줘
-```
-
-```
-AppIntent와 WidgetKit을 활용한 할 일 관리 앱 만들어줘
-```
-
-```
-AlarmKit + AppIntent로 약 복용 알림 앱 만들어줘
-```
-
-```
-WidgetKit으로 홈 화면 위젯이 있는 타이머 앱 만들어줘
-```
+| 커맨드 | 용도 |
+|--------|------|
+| `/harness [설명]` | 전체 파이프라인 실행 |
+| `/feedback [내용]` | 피드백 처리 (Phase 2) |
+| `/build-fix` | 빌드 에러 수정 |
+| `/evaluate` | Evaluator만 단독 실행 |
+| `/tdd [대상]` | TDD 워크플로우 |
 
 ---
 
-## 평가 항목 (Swift 특화)
+## 환경변수 (훅 제어용)
+
+| 변수 | 용도 | 예시 |
+|------|------|------|
+| `HARNESS_TARGET_DIR` | Write 차단 대상 폴더 | `/path/to/YourApp` |
+| `HARNESS_PROJECT_ROOT` | 자동 커밋 대상 git 루트 | `/path/to/project` |
+
+---
+
+## 평가 항목
 
 | 항목 | 비중 | 핵심 기준 |
 |------|------|-----------|
 | Swift 6 동시성 | 30% | @MainActor, actor, Sendable |
-| MVVM 분리 | 25% | View↔VM↔Service 단방향 의존 |
+| MVVM 분리 | 25% | View - ViewModel - Service 단방향 의존 |
 | HIG 준수 | 20% | Dynamic Type, Semantic Color, 접근성 |
-| API 활용 | 15% | AlarmKit / AppIntent / WidgetKit |
+| API 활용 | 15% | Apple Framework 올바른 사용 |
 | 기능성/가독성 | 10% | 완성도, 접근 제어자, 에러 타입 |
 
 **합격 기준**: 가중 점수 7.0 이상 (동시성 또는 MVVM 4점 이하 시 무조건 불합격)
 
 ---
 
-## Solo 비교 실험
+## 예시 프롬프트
 
-```bash
-mkdir solo-test && cd solo-test
-claude
-
-# 같은 프롬프트 입력
-> AlarmKit과 AppIntent를 활용한 스마트 알람 앱을 만들어줘. Swift 6 + SwiftUI로.
 ```
-
-하네스 결과와 Solo 결과를 비교하면 아키텍처 품질 차이가 명확히 보입니다.
+/harness Core Data + CloudKit 동기화가 있는 할 일 관리 앱
+/harness HealthKit 데이터를 차트로 보여주는 건강 대시보드
+/harness MapKit + CoreLocation 기반 주변 맛집 추천 앱
+/harness StoreKit 2 결제가 있는 구독형 메모 앱
+```

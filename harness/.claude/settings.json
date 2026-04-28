@@ -1,0 +1,49 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/scripts/hooks/block-direct-write.js\"",
+            "description": "프로젝트 폴더에 새 Swift 파일 직접 생성 차단 (/harness 사용 유도)"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/scripts/hooks/secrets-check.js\"",
+            "description": "git commit/add 시 민감 파일(Secrets.xcconfig 등) 포함 여부 검사"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/scripts/hooks/swift-syntax-check.js\"",
+            "description": "Swift 문법 검증 (swiftc -parse)"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/scripts/hooks/pre-commit-build.js\"",
+            "statusMessage": "빌드 검증 + 커밋 중..."
+          }
+        ]
+      }
+    ]
+  }
+}
