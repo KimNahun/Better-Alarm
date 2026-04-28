@@ -158,7 +158,9 @@ struct BetterAlarmApp: App {
                         // AlarmKit Intent에서 저장한 스누즈 상태 동기화
                         await alarmStore.syncSnoozeFromIntent()
                         // 포그라운드 복귀 시 알람 재스케줄링 (local + alarmKit)
-                        await alarmStore.scheduleNextAlarm()
+                        // force: true — 60초 throttle을 우회해서, 권한이 뒤늦게 부여된 케이스나
+                        // 시스템에 의해 알림이 정리된 케이스에서도 항상 다시 등록되도록 한다.
+                        await alarmStore.scheduleNextAlarm(force: true)
                         // R8-3: 시간 경과로 가장 가까운 알람이 바뀌었을 수 있으므로 Live Activity 동기화
                         await alarmStore.syncLiveActivity()
                         // pending 알람 처리 (race condition 방지)
@@ -201,18 +203,21 @@ struct BetterAlarmApp: App {
                 // AppDelegate에 의존성 주입
                 appDelegate.configure(alarmStore: alarmStore, localNotificationService: localNotificationService, audioService: audioService)
 
+                // 알람 카테고리 등록 (정지/스누즈 액션) — 권한 요청 이전에 등록되어야 함
+                await localNotificationService.registerAlarmCategory()
+
+                // 알림 권한 요청 — scheduleNextAlarm 이전에 수행해야 한다.
+                // 권한 미부여 상태에서 scheduleAlarm이 호출되면 .notAuthorized로 throw되어
+                // 알람이 OS에 등록되지 않고, 이후 사용자가 권한을 허용해도 기존 알람들이
+                // 자동으로 재등록되지 않는다 (그래서 "폰 잠그면 알람 안 옴" 버그 발생).
+                _ = await localNotificationService.requestPermission()
+
                 // 알람 로드 + OS 알림 동기화 (local + alarmKit)
                 await alarmStore.loadAlarms()
-                await alarmStore.scheduleNextAlarm()
+                await alarmStore.scheduleNextAlarm(force: true)
 
                 // R8-3: Live Activity 초기화는 AlarmStore 단일 진입점을 통해 수행
                 await alarmStore.syncLiveActivity()
-
-                // 알림 카테고리 등록 (정지/스누즈 액션)
-                await localNotificationService.registerAlarmCategory()
-
-                // 알림 권한 요청
-                _ = await localNotificationService.requestPermission()
 
                 AppLogger.info("App launch tasks completed", category: .lifecycle)
             }
