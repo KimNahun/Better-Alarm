@@ -28,13 +28,16 @@ final class BackgroundTaskManager {
         isScheduled = false
     }
 
-    /// 모든 활성 local 알람을 재등록하고, 가장 임박한 알람에 대해 "알람이 설정되어 있습니다" 리마인더를 발송한다.
+    /// 모든 활성 local 알람을 재등록하고 사용자에게 안내 알림을 발송한다.
+    /// - Parameter isTerminating: true이면 swipe-up 종료 → "앱이 종료되면 알람이 울리지 않을 수 있습니다"
+    ///   경고를 발송한다 (활성 local 알람이 1개 이상일 때만). false면 정상 백그라운드 진입 안내 발송.
     /// - Note: `beginBackgroundTask`로 작업 시간을 확보 → 앱이 swipe-up kill 되거나 백그라운드에서 OS에 의해
     ///   종료되어도 등록된 UNNotification은 시스템이 그대로 발송한다.
     func scheduleExitAlarms(
         store: AlarmStore?,
         notificationService: LocalNotificationService?,
-        audioService: AudioService?
+        audioService: AudioService?,
+        isTerminating: Bool = false
     ) {
         if isScheduled { return }
         guard let store = store, let notificationService = notificationService else { return }
@@ -57,7 +60,7 @@ final class BackgroundTaskManager {
 
             let alarms = await store.alarms
             let localAlarms = alarms.filter { $0.isEnabled && $0.alarmMode == .local }
-            let nextAlarmID = localAlarms
+            let nextLocalAlarmID = localAlarms
                 .compactMap { alarm -> (Alarm, Date)? in
                     guard let d = alarm.nextTriggerDate() else { return nil }
                     return (alarm, d)
@@ -65,14 +68,33 @@ final class BackgroundTaskManager {
                 .min(by: { $0.1 < $1.1 })?
                 .0.id
 
-            AppLogger.info("BackgroundTaskManager re-registering \(localAlarms.count) local alarms", category: .lifecycle)
+            AppLogger.info("BackgroundTaskManager re-registering \(localAlarms.count) local alarms (terminating=\(isTerminating))", category: .lifecycle)
             for alarm in localAlarms {
-                try? await notificationService.scheduleAlarm(for: alarm, withRepeatingAlerts: alarm.id == nextAlarmID)
+                try? await notificationService.scheduleAlarm(for: alarm, withRepeatingAlerts: alarm.id == nextLocalAlarmID)
             }
 
-            // 가장 임박한 알람에 대해 "알람이 설정되어 있습니다 (날짜 시각)" 리마인더 발송
-            if let nextAlarmID, let nextAlarm = localAlarms.first(where: { $0.id == nextAlarmID }) {
-                await notificationService.scheduleBackgroundReminder(for: nextAlarm)
+            // 알림 발송 분기:
+            // - 종료 시(isTerminating=true) + 활성 local 알람 1개 이상 → 경고 메시지
+            //   AlarmKit은 OS 시스템 레벨에서 동작하므로 alarmKit 모드 알람만 있으면 경고 불필요.
+            // - 백그라운드 진입(isTerminating=false) → 정상 안내 메시지
+            if isTerminating {
+                if let nextLocalAlarmID,
+                   let nextAlarm = localAlarms.first(where: { $0.id == nextLocalAlarmID }) {
+                    await notificationService.scheduleTerminationWarning(for: nextAlarm)
+                }
+            } else {
+                // 백그라운드 진입 시엔 다음 알람이 local이든 alarmKit이든 안내한다 (사용자 확인용)
+                let allAlarms = alarms.filter { $0.isEnabled && !$0.isSkippingNext }
+                let nextOverall = allAlarms
+                    .compactMap { alarm -> (Alarm, Date)? in
+                        guard let d = alarm.effectiveNextTriggerDate() else { return nil }
+                        return (alarm, d)
+                    }
+                    .min(by: { $0.1 < $1.1 })?
+                    .0
+                if let nextAlarm = nextOverall {
+                    await notificationService.scheduleBackgroundReminder(for: nextAlarm)
+                }
             }
         }
     }
@@ -148,10 +170,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     func applicationWillTerminate(_ application: UIApplication) {
         AppLogger.info("App will terminate — re-registering alarms", category: .lifecycle)
         // PitcrewAssignment 패턴: BackgroundTaskManager가 UIBackgroundTask로 작업 시간을 확보.
+        // isTerminating=true → 활성 local 알람이 1개 이상이면 "앱 종료 시 알람 안 울릴 수 있음" 경고 발송.
         BackgroundTaskManager.shared.scheduleExitAlarms(
             store: alarmStore,
             notificationService: localNotificationService,
-            audioService: audioService
+            audioService: audioService,
+            isTerminating: true
         )
         // RunLoop을 2초 spin하여 위 Task가 UNNotification 등록을 마치도록 보장.
         // DispatchGroup.wait는 MainActor 컨텍스트에서 데드락 위험이 있어 RunLoop 패턴을 사용한다.

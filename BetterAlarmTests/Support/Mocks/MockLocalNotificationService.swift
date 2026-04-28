@@ -16,6 +16,7 @@ final class MockLocalNotificationService: LocalNotificationServiceProtocol, @unc
     private(set) var cancelAllCallCount = 0
     private(set) var scheduleSnoozeCalledWith: [(alarm: Alarm, minutes: Int)] = []
     private(set) var backgroundReminderScheduled = false
+    private(set) var terminationWarningScheduled = false
     private(set) var backgroundReminderCancelled = false
     private(set) var requestPermissionCallCount = 0
 
@@ -58,6 +59,10 @@ final class MockLocalNotificationService: LocalNotificationServiceProtocol, @unc
         backgroundReminderScheduled = true
     }
 
+    func scheduleTerminationWarning(for alarm: Alarm) async {
+        terminationWarningScheduled = true
+    }
+
     func cancelBackgroundReminder() async {
         backgroundReminderCancelled = true
     }
@@ -71,6 +76,7 @@ final class MockLocalNotificationService: LocalNotificationServiceProtocol, @unc
         cancelAllCallCount = 0
         scheduleSnoozeCalledWith = []
         backgroundReminderScheduled = false
+        terminationWarningScheduled = false
         backgroundReminderCancelled = false
         requestPermissionCallCount = 0
         shouldThrowOnSchedule = false

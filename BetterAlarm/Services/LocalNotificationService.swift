@@ -10,6 +10,7 @@ protocol LocalNotificationServiceProtocol: Sendable {
     func cancelAlarm(for alarm: Alarm) async
     func cancelAllAlarms() async
     func scheduleBackgroundReminder(for alarm: Alarm) async
+    func scheduleTerminationWarning(for alarm: Alarm) async
     func cancelBackgroundReminder() async
 }
 
@@ -254,6 +255,41 @@ actor LocalNotificationService: LocalNotificationServiceProtocol {
         // 즉시 발송 (1초 후)
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
 
+        let request = UNNotificationRequest(
+            identifier: backgroundReminderIdentifier,
+            content: content,
+            trigger: trigger
+        )
+
+        try? await notificationCenter.add(request)
+    }
+
+    /// 앱이 swipe-up 등으로 종료될 때 표시하는 경고성 알림.
+    /// "앱이 종료되면 알람이 울리지 않을 수 있습니다. 다음 알람: M월 d일 (요일) 오전 8:00".
+    /// AlarmKit 모드 알람만 있는 경우엔 OS 시스템 레벨에서 알람이 동작하므로 호출자가 분기하여
+    /// 이 메서드를 호출하지 않는다 (BackgroundTaskManager 참조).
+    func scheduleTerminationWarning(for alarm: Alarm) async {
+        let triggerDate = alarm.effectiveNextTriggerDate() ?? Date()
+        let timeStr = triggerDate.formatted(date: .omitted, time: .shortened)
+
+        let calendar = Calendar.current
+        let dateTimeStr: String
+        if calendar.isDateInToday(triggerDate) {
+            dateTimeStr = String(format: NSLocalizedString("next_alarm_format_today", comment: ""), timeStr)
+        } else if calendar.isDateInTomorrow(triggerDate) {
+            dateTimeStr = String(format: NSLocalizedString("next_alarm_format_tomorrow", comment: ""), timeStr)
+        } else {
+            let dateStr = triggerDate.formatted(.dateTime.month().day().weekday(.abbreviated))
+            dateTimeStr = String(format: NSLocalizedString("next_alarm_format_date", comment: ""), dateStr, timeStr)
+        }
+
+        AppLogger.info("Termination warning scheduled — next alarm: \(dateTimeStr)", category: .alarm)
+        let content = UNMutableNotificationContent()
+        content.title = NSLocalizedString("notif_termination_warning_title", comment: "")
+        content.body = String(format: NSLocalizedString("notif_termination_warning_format", comment: ""), dateTimeStr)
+        content.sound = .default
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         let request = UNNotificationRequest(
             identifier: backgroundReminderIdentifier,
             content: content,

@@ -1831,6 +1831,40 @@
         }
       }
     },
+    "notif_termination_warning_format" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alarms may not ring while the app is closed. Next alarm: %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "앱이 종료되면 알람이 울리지 않을 수 있습니다. 다시 열어 주세요. 다음 알람: %@"
+          }
+        }
+      }
+    },
+    "notif_termination_warning_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚠️ App is closed"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚠️ 앱이 종료됨"
+          }
+        }
+      }
+    },
     "NSAlarmKitUsageDescription" : {
       "extractionState" : "manual",
       "localizations" : {
