@@ -1,6 +1,7 @@
 import ActivityKit
 import WidgetKit
 import SwiftUI
+import PersonalColorDesignSystem
 
 // MARK: - Alarm Activity Attributes
 // This definition must exist in both main app and widget targets
@@ -37,8 +38,8 @@ struct AlarmActivityAttributes: ActivityAttributes {
 
 // MARK: - Theme Palette
 
-/// 위젯에서 사용하는 테마별 색상 팔레트.
-/// PersonalColorDesignSystem을 직접 import할 수 없으므로 앱 테마와 시각적으로 일치하는 값을 정의.
+/// 위젯에서 사용하는 테마 색상 팔레트.
+/// PersonalColorDesignSystem.PTheme.summer.colors 를 단일 출처로 직접 참조한다.
 struct WidgetTheme {
     let backgroundFrom: Color
     let backgroundTo: Color
@@ -49,13 +50,13 @@ struct WidgetTheme {
     /// 색상 선택 기능 제거 — 항상 Summer 팔레트를 반환한다.
     /// 매개변수는 호환을 위해 유지하지만 무시된다.
     static func palette(for themeName: String) -> WidgetTheme {
-        // Summer 고정 팔레트 (PTheme.summer.colors와 일치)
+        let c = PTheme.summer.colors
         return WidgetTheme(
-            backgroundFrom: Color(red: 0.08, green: 0.08, blue: 0.15),
-            backgroundTo:   Color(red: 0.10, green: 0.12, blue: 0.20),
-            accentFrom:     Color(red: 0.70, green: 0.50, blue: 1.00),
-            accentTo:       Color(red: 1.00, green: 0.60, blue: 0.70),
-            labelAccent:    Color(red: 0.70, green: 0.50, blue: 1.00)
+            backgroundFrom: c.backgroundTop,
+            backgroundTo:   c.backgroundBottom,
+            accentFrom:     c.accentPrimary,
+            accentTo:       c.accentSecondary,
+            labelAccent:    c.accentPrimary
         )
     }
 }

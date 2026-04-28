@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0B4BF7740FE8463DB82A6FD2 /* PersonalColorDesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = A5B4E7F3D7E54605BC3B968B /* PersonalColorDesignSystem */; };
+		0B4BF7750FE8463DB82A6FD3 /* PersonalColorDesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = A5B4E7F4D7E54605BC3B968C /* PersonalColorDesignSystem */; };
 		DE2A87E82F16075C005C1B49 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE2A87E72F16075C005C1B49 /* WidgetKit.framework */; };
 		DE2A87EA2F16075C005C1B49 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DE2A87E92F16075C005C1B49 /* SwiftUI.framework */; };
 		DE2A87F72F160762005C1B49 /* BetterAlarmWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DE2A87E52F16075C005C1B49 /* BetterAlarmWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -115,6 +116,7 @@
 			files = (
 				DE2A87EA2F16075C005C1B49 /* SwiftUI.framework in Frameworks */,
 				DE2A87E82F16075C005C1B49 /* WidgetKit.framework in Frameworks */,
+				0B4BF7750FE8463DB82A6FD3 /* PersonalColorDesignSystem in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -217,6 +219,7 @@
 			);
 			name = BetterAlarmWidgetExtension;
 			packageProductDependencies = (
+				A5B4E7F4D7E54605BC3B968C /* PersonalColorDesignSystem */,
 			);
 			productName = BetterAlarmWidgetExtension;
 			productReference = DE2A87E52F16075C005C1B49 /* BetterAlarmWidgetExtension.appex */;
@@ -675,6 +678,11 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		A5B4E7F3D7E54605BC3B968B /* PersonalColorDesignSystem */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7D1B8141F339402294B7798C /* XCRemoteSwiftPackageReference "PersonalColorDesignSystem" */;
+			productName = PersonalColorDesignSystem;
+		};
+		A5B4E7F4D7E54605BC3B968C /* PersonalColorDesignSystem */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 7D1B8141F339402294B7798C /* XCRemoteSwiftPackageReference "PersonalColorDesignSystem" */;
 			productName = PersonalColorDesignSystem;
