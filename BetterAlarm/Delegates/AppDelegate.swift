@@ -10,6 +10,74 @@ extension Notification.Name {
     static let alarmCompleted = Notification.Name("alarmCompleted")
 }
 
+// MARK: - BackgroundTaskManager
+
+/// 앱이 백그라운드로 전환되거나 종료될 때 모든 활성 알람을 OS에 재등록하는 싱글톤.
+/// PitcrewAssignment 프로젝트의 검증된 패턴을 이식 — UIBackgroundTask로 작업 시간을 확보하여
+/// iOS가 앱 프로세스를 종료하기 직전에 UNNotification 등록이 완료되도록 보장한다.
+@MainActor
+final class BackgroundTaskManager {
+    static let shared = BackgroundTaskManager()
+
+    /// 중복 예약 방지 플래그. 포그라운드 복귀 시 reset()으로 초기화.
+    private var isScheduled = false
+
+    private init() {}
+
+    func reset() {
+        isScheduled = false
+    }
+
+    /// 모든 활성 local 알람을 재등록하고, 가장 임박한 알람에 대해 "알람이 설정되어 있습니다" 리마인더를 발송한다.
+    /// - Note: `beginBackgroundTask`로 작업 시간을 확보 → 앱이 swipe-up kill 되거나 백그라운드에서 OS에 의해
+    ///   종료되어도 등록된 UNNotification은 시스템이 그대로 발송한다.
+    func scheduleExitAlarms(
+        store: AlarmStore?,
+        notificationService: LocalNotificationService?,
+        audioService: AudioService?
+    ) {
+        if isScheduled { return }
+        guard let store = store, let notificationService = notificationService else { return }
+
+        isScheduled = true
+
+        var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
+        backgroundTaskID = UIApplication.shared.beginBackgroundTask {
+            UIApplication.shared.endBackgroundTask(backgroundTaskID)
+            backgroundTaskID = .invalid
+        }
+
+        Task {
+            defer {
+                UIApplication.shared.endBackgroundTask(backgroundTaskID)
+                backgroundTaskID = .invalid
+            }
+
+            await audioService?.stopSilentLoop()
+
+            let alarms = await store.alarms
+            let localAlarms = alarms.filter { $0.isEnabled && $0.alarmMode == .local }
+            let nextAlarmID = localAlarms
+                .compactMap { alarm -> (Alarm, Date)? in
+                    guard let d = alarm.nextTriggerDate() else { return nil }
+                    return (alarm, d)
+                }
+                .min(by: { $0.1 < $1.1 })?
+                .0.id
+
+            AppLogger.info("BackgroundTaskManager re-registering \(localAlarms.count) local alarms", category: .lifecycle)
+            for alarm in localAlarms {
+                try? await notificationService.scheduleAlarm(for: alarm, withRepeatingAlerts: alarm.id == nextAlarmID)
+            }
+
+            // 가장 임박한 알람에 대해 "알람이 설정되어 있습니다 (날짜 시각)" 리마인더 발송
+            if let nextAlarmID, let nextAlarm = localAlarms.first(where: { $0.id == nextAlarmID }) {
+                await notificationService.scheduleBackgroundReminder(for: nextAlarm)
+            }
+        }
+    }
+}
+
 // MARK: - AppDelegate
 
 /// 앱 생명주기 이벤트를 처리하는 AppDelegate.
@@ -55,40 +123,20 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 
     func applicationDidEnterBackground(_ application: UIApplication) {
         AppLogger.info("App entered background", category: .lifecycle)
-        Task {
-            guard let store = alarmStore,
-                  let notificationService = localNotificationService else { return }
-
-            // local 모드 활성화 알람이 있으면 즉시 리마인더 등록
-            let hasLocal = await store.hasEnabledLocalAlarms
-            guard hasLocal else {
-                AppLogger.debug("No enabled local alarms — skipping background reminder", category: .lifecycle)
-                return
-            }
-
-            // 가장 임박한 local 알람 찾기
-            let alarms = await store.alarms
-            let nextLocal = alarms
-                .filter { $0.isEnabled && $0.alarmMode == .local }
-                .compactMap { alarm -> (Alarm, Date)? in
-                    guard let date = alarm.nextTriggerDate() else { return nil }
-                    return (alarm, date)
-                }
-                .min { $0.1 < $1.1 }?
-                .0
-
-            if let alarm = nextLocal {
-                AppLogger.info("Scheduling background reminder for: \(alarm.displayTitle)", category: .lifecycle)
-                await notificationService.scheduleBackgroundReminder(for: alarm)
-            }
-
-            // 무음 루프 시작 (백그라운드 유지)
-            await audioService?.startSilentLoop()
-        }
+        // 무음 루프 시작 (백그라운드 유지)
+        Task { await audioService?.startSilentLoop() }
+        // PitcrewAssignment 패턴: BackgroundTaskManager로 모든 알람 재등록 + 리마인더 발송
+        BackgroundTaskManager.shared.scheduleExitAlarms(
+            store: alarmStore,
+            notificationService: localNotificationService,
+            audioService: audioService
+        )
     }
 
     func applicationWillEnterForeground(_ application: UIApplication) {
         AppLogger.info("App entering foreground", category: .lifecycle)
+        // BackgroundTaskManager 중복 예약 플래그 초기화
+        BackgroundTaskManager.shared.reset()
         Task {
             // 백그라운드 리마인더 취소
             await localNotificationService?.cancelBackgroundReminder()
@@ -99,34 +147,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 
     func applicationWillTerminate(_ application: UIApplication) {
         AppLogger.info("App will terminate — re-registering alarms", category: .lifecycle)
-        // 앱 종료 시 활성화된 모든 local 알람의 UNCalendar 알림을 재등록하여
-        // 앱이 꺼진 상태에서도 iOS가 알림을 발송할 수 있도록 보장한다.
-        guard let store = alarmStore,
-              let notificationService = localNotificationService else { return }
-
-        let group = DispatchGroup()
-        group.enter()
-        Task {
-            defer { group.leave() }
-            // 무음 루프 정지
-            await audioService?.stopSilentLoop()
-            let alarms = await store.alarms
-            let localAlarms = alarms.filter { $0.isEnabled && $0.alarmMode == .local }
-            // 가장 임박한 알람 찾기 (반복 알림은 이 알람에만 등록)
-            let nextAlarmID = localAlarms
-                .compactMap { alarm -> (Alarm, Date)? in
-                    guard let d = alarm.nextTriggerDate() else { return nil }
-                    return (alarm, d)
-                }
-                .min(by: { $0.1 < $1.1 })?
-                .0.id
-            AppLogger.info("Re-registering \(localAlarms.count) local alarms on terminate", category: .lifecycle)
-            for alarm in localAlarms {
-                try? await notificationService.scheduleAlarm(for: alarm, withRepeatingAlerts: alarm.id == nextAlarmID)
-            }
-        }
-        // 최대 2초 대기 후 종료 허용
-        _ = group.wait(timeout: .now() + 2)
+        // PitcrewAssignment 패턴: BackgroundTaskManager가 UIBackgroundTask로 작업 시간을 확보.
+        BackgroundTaskManager.shared.scheduleExitAlarms(
+            store: alarmStore,
+            notificationService: localNotificationService,
+            audioService: audioService
+        )
+        // RunLoop을 2초 spin하여 위 Task가 UNNotification 등록을 마치도록 보장.
+        // DispatchGroup.wait는 MainActor 컨텍스트에서 데드락 위험이 있어 RunLoop 패턴을 사용한다.
+        RunLoop.current.run(until: Date().addingTimeInterval(2.0))
     }
 }
 

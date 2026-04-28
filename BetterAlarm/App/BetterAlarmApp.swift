@@ -133,18 +133,16 @@ struct BetterAlarmApp: App {
                         AppLogger.info("ScenePhase → background", category: .lifecycle)
                         // 백그라운드 무음 루프 시작 (앱 유지)
                         await audioService.startSilentLoop()
-                        // 가장 임박한 local 알람에 대해 백그라운드 리마인더 등록
-                        let alarms = await alarmStore.alarms
-                        let nextLocal = alarms
-                            .filter { $0.isEnabled && $0.alarmMode == .local }
-                            .compactMap { alarm -> (Alarm, Date)? in
-                                guard let date = alarm.nextTriggerDate() else { return nil }
-                                return (alarm, date)
-                            }
-                            .min { $0.1 < $1.1 }?
-                            .0
-                        if let alarm = nextLocal {
-                            await localNotificationService.scheduleBackgroundReminder(for: alarm)
+                        // BackgroundTaskManager (PitcrewAssignment 패턴) 단일 진입점으로 통합:
+                        // - UIBackgroundTask로 작업 시간 확보
+                        // - 모든 활성 local 알람을 재등록 (swipe-up kill 대비)
+                        // - 가장 임박한 알람에 대해 "알람이 설정되어 있습니다 (날짜 시각)" 리마인더 발송
+                        await MainActor.run {
+                            BackgroundTaskManager.shared.scheduleExitAlarms(
+                                store: alarmStore,
+                                notificationService: localNotificationService,
+                                audioService: audioService
+                            )
                         }
                     case .active:
                         AppLogger.info("ScenePhase → active", category: .lifecycle)
