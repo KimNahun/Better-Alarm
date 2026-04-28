@@ -201,6 +201,23 @@
         }
       }
     },
+    "alarm_detail_keyboard_done" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "완료"
+          }
+        }
+      }
+    },
     "alarm_detail_minute_unit_format" : {
       "extractionState" : "manual",
       "localizations" : {

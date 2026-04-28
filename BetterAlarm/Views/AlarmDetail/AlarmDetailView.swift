@@ -7,9 +7,17 @@ import PersonalColorDesignSystem
 /// - AlarmMode 토글: iOS 26 미만이면 PersonalColorDesignSystem 토스트 표시
 /// - alarmKit 모드일 때 조용한 알람 토글 disabled
 struct AlarmDetailView: View {
+    /// 키보드 포커스 대상 식별자.
+    /// 현재 폼 내부의 텍스트 입력 필드는 알람 제목 하나뿐이지만,
+    /// 향후 메모 등 추가 필드가 생길 가능성을 고려해 enum으로 분리.
+    private enum Field: Hashable {
+        case title
+    }
+
     @State private var viewModel: AlarmDetailViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.pThemeColors) private var theme
+    @FocusState private var focusedField: Field?
     private let onSaved: () -> Void
     private let onDeleted: (() -> Void)?
 
@@ -41,6 +49,9 @@ struct AlarmDetailView: View {
                         // 제목
                         TextField("alarm_detail_title_placeholder", text: $vm.title)
                             .foregroundStyle(Color.pTextPrimary)
+                            .focused($focusedField, equals: .title)
+                            .submitLabel(.done)
+                            .onSubmit { focusedField = nil }
 
                         // 반복 스케줄
                         scheduleSection
@@ -135,10 +146,30 @@ struct AlarmDetailView: View {
                 }
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
+                // 폼 스크롤 시 키보드 자연스럽게 내림 (드래그 추적)
+                .scrollDismissesKeyboard(.interactively)
             }
+            // 빈 영역 탭으로 키보드 닫기 — Form 행/컨트롤은 그대로 통과,
+            // ZStack 의 빈 배경(PGradientBackground 등)에 닿은 탭만 처리.
+            // simultaneousGesture 를 사용해 Picker/Toggle/NavigationLink 동작과 충돌하지 않게 함.
+            .simultaneousGesture(
+                TapGesture().onEnded {
+                    if focusedField != nil {
+                        focusedField = nil
+                    }
+                }
+            )
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
                 .toolbar {
+                    // 키보드 위에 "완료" 버튼 — 접근성/사용성 보강
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("alarm_detail_keyboard_done") {
+                            focusedField = nil
+                        }
+                        .foregroundStyle(theme.accentPrimary)
+                    }
                     ToolbarItem(placement: .principal) {
                         Text(viewModel.isEditing ? "alarm_detail_title_edit" : "alarm_detail_title_new")
                             .font(.headline.weight(.semibold))
