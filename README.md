@@ -40,7 +40,7 @@ Swift 6 + SwiftUI로 만든 iOS 알람 앱. 정확한 타이밍, 계절 테마, 
 | 언어 | Swift 6 (Strict Concurrency) |
 | UI | SwiftUI, Dark Mode 전용 |
 | 아키텍처 | MVVM (`@Observable` ViewModel + `actor` Service) |
-| 디자인 시스템 | [PersonalColorDesignSystem](https://github.com/KimNahun) (Glass Morphism + Haptic) |
+| 디자인 시스템 | [PersonalColorDesignSystem](https://github.com/KimNahun/PersonalColorDesignSystem) (Glass Morphism + Haptic) |
 | 알람 | AlarmKit (iOS 26+) / UserNotifications (iOS 17+) |
 | 오디오 | AVFoundation + MediaPlayer |
 | 위젯 | WidgetKit + ActivityKit (Live Activity) |
