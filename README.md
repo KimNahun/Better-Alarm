@@ -2,6 +2,32 @@
 
 Swift 6 + SwiftUI로 만든 iOS 알람 앱. 정확한 타이밍, 계절 테마, 잠금화면 위젯까지 지원합니다.
 
+## 미리보기
+
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <img src="docs/screenshots/01-lockscreen-liveactivity.png" alt="잠금화면 Live Activity" width="240"/>
+    </td>
+    <td align="center" width="33%">
+      <img src="docs/screenshots/02-alarm-list-dynamicisland.png" alt="알람 목록 & Dynamic Island" width="240"/>
+    </td>
+    <td align="center" width="33%">
+      <img src="docs/screenshots/03-alarm-ringing.png" alt="알람 울림 화면" width="240"/>
+    </td>
+  </tr>
+  <tr>
+    <td align="center"><b>잠금화면에서 다음 알람 확인</b></td>
+    <td align="center"><b>한눈에 보는 알람 목록</b></td>
+    <td align="center"><b>강력한 알람 화면</b></td>
+  </tr>
+  <tr>
+    <td align="center">화면을 켜지 않아도 잠금화면 Live Activity로<br/>다음 알람 시간이 표시돼요.<br/>중요한 일정을 놓치지 않습니다.</td>
+    <td align="center">예정된 알람을 한 화면에서 관리하세요.<br/>Dynamic Island에서 바로 스누즈하거나<br/>해제할 수 있어요.</td>
+    <td align="center">앱이 꺼져 있어도 알람이 울립니다.<br/>안심하세요.<br/>스누즈 또는 밀어서 중단으로 깔끔하게 해제.</td>
+  </tr>
+</table>
+
 ## 주요 기능
 
 ### 알람
