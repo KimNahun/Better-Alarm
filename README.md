@@ -7,24 +7,62 @@ Swift 6 + SwiftUI로 만든 iOS 알람 앱. 정확한 타이밍, 계절 테마, 
 <table>
   <tr>
     <td align="center" width="33%">
-      <img src="docs/screenshots/01-lockscreen-liveactivity.png" alt="잠금화면 Live Activity" width="240"/>
+      <img src="docs/screenshots/01-alarm-list.png" alt="알람 목록" width="240"/>
     </td>
     <td align="center" width="33%">
-      <img src="docs/screenshots/02-alarm-list-dynamicisland.png" alt="알람 목록 & Dynamic Island" width="240"/>
+      <img src="docs/screenshots/02-new-alarm.png" alt="새 알람 만들기" width="240"/>
     </td>
     <td align="center" width="33%">
-      <img src="docs/screenshots/03-alarm-ringing.png" alt="알람 울림 화면" width="240"/>
+      <img src="docs/screenshots/03-weekly.png" alt="주간 알람" width="240"/>
     </td>
   </tr>
   <tr>
-    <td align="center"><b>잠금화면에서 다음 알람 확인</b></td>
     <td align="center"><b>한눈에 보는 알람 목록</b></td>
-    <td align="center"><b>강력한 알람 화면</b></td>
+    <td align="center"><b>섬세한 알람 만들기</b></td>
+    <td align="center"><b>요일별로 정리된 주간 보기</b></td>
+  </tr>
+  <tr>
+    <td align="center">예정된 모든 알람을 한 화면에서.<br/>다음 알람이 언제 울리는지 상단에서<br/>바로 확인할 수 있어요.</td>
+    <td align="center">시간 선택부터 1회·주간 반복·특정 날짜까지.<br/>"앱이 꺼진 상태에서도 알람 받기" 옵션과<br/>"조용한 알람"(이어폰 전용)도 지원합니다.</td>
+    <td align="center">요일을 누르면 그 요일에 울릴 알람만<br/>깔끔하게 모아 보여줘요.<br/>일주일 일정을 한눈에 파악하세요.</td>
+  </tr>
+  <tr>
+    <td align="center" width="33%">
+      <img src="docs/screenshots/04-lockscreen-liveactivity.png" alt="잠금화면 Live Activity" width="240"/>
+    </td>
+    <td align="center" width="33%">
+      <img src="docs/screenshots/05-dynamic-island.png" alt="Dynamic Island" width="240"/>
+    </td>
+    <td align="center" width="33%">
+      <img src="docs/screenshots/06-ringing-foreground.png" alt="알람 울림 화면" width="240"/>
+    </td>
+  </tr>
+  <tr>
+    <td align="center"><b>잠금화면에서 바로 확인</b></td>
+    <td align="center"><b>Dynamic Island 컨트롤</b></td>
+    <td align="center"><b>심플한 알람 화면</b></td>
   </tr>
   <tr>
     <td align="center">화면을 켜지 않아도 잠금화면 Live Activity로<br/>다음 알람 시간이 표시돼요.<br/>중요한 일정을 놓치지 않습니다.</td>
-    <td align="center">예정된 알람을 한 화면에서 관리하세요.<br/>Dynamic Island에서 바로 스누즈하거나<br/>해제할 수 있어요.</td>
-    <td align="center">앱이 꺼져 있어도 알람이 울립니다.<br/>안심하세요.<br/>스누즈 또는 밀어서 중단으로 깔끔하게 해제.</td>
+    <td align="center">앱을 열지 않고도 Dynamic Island에서<br/>바로 스누즈하거나 알람을 종료할 수 있어요.<br/>흐름을 끊지 않는 가장 빠른 방법.</td>
+    <td align="center">알람이 울리면 큼지막한 정지 버튼과<br/>스누즈(5분)로 한 번에 처리.<br/>잠결에도 헷갈리지 않게 디자인했어요.</td>
+  </tr>
+  <tr>
+    <td align="center" width="33%">
+      <img src="docs/screenshots/07-ringing-alarmkit.png" alt="앱 종료 시에도 울리는 알람" width="240"/>
+    </td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td align="center"><b>앱이 꺼져도 알람이 울립니다</b></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td align="center">iOS 26 AlarmKit으로 앱을 완전히 종료해도<br/>시스템 레벨에서 알람이 울려요.<br/>안심하세요. 절대 늦지 않습니다.</td>
+    <td></td>
+    <td></td>
   </tr>
 </table>
 
