@@ -6,31 +6,40 @@ Swift 6 + SwiftUI로 만든 iOS 알람 앱. 정확한 타이밍, 계절 테마, 
 
 <table>
   <tr>
-    <td align="center"><img src="docs/screenshots/01-alarm-list.png" alt="알람 목록" width="130"/></td>
-    <td align="center"><img src="docs/screenshots/02-new-alarm.png" alt="새 알람 만들기" width="130"/></td>
-    <td align="center"><img src="docs/screenshots/03-weekly.png" alt="주간 알람" width="130"/></td>
-    <td align="center"><img src="docs/screenshots/04-lockscreen-liveactivity.png" alt="잠금화면 Live Activity" width="130"/></td>
-    <td align="center"><img src="docs/screenshots/05-dynamic-island.png" alt="Dynamic Island" width="130"/></td>
-    <td align="center"><img src="docs/screenshots/06-ringing-foreground.png" alt="알람 울림" width="130"/></td>
-    <td align="center"><img src="docs/screenshots/07-ringing-alarmkit.png" alt="AlarmKit 알람" width="130"/></td>
+    <td align="center" width="150"><b>알람 목록</b></td>
+    <td align="center" width="150"><b>새 알람 만들기</b></td>
+    <td align="center" width="150"><b>주간 보기</b></td>
+    <td align="center" width="150"><b>잠금화면 Live Activity</b></td>
   </tr>
   <tr>
-    <td align="center"><b>알람 목록</b></td>
-    <td align="center"><b>새 알람</b></td>
-    <td align="center"><b>주간 보기</b></td>
-    <td align="center"><b>잠금화면</b></td>
-    <td align="center"><b>Dynamic Island</b></td>
-    <td align="center"><b>알람 화면</b></td>
-    <td align="center"><b>앱 종료 시</b></td>
+    <td align="center"><img src="docs/screenshots/01-alarm-list.png" alt="알람 목록" width="140"/></td>
+    <td align="center"><img src="docs/screenshots/02-new-alarm.png" alt="새 알람 만들기" width="140"/></td>
+    <td align="center"><img src="docs/screenshots/03-weekly.png" alt="주간 알람" width="140"/></td>
+    <td align="center"><img src="docs/screenshots/04-lockscreen-liveactivity.png" alt="잠금화면 Live Activity" width="140"/></td>
   </tr>
   <tr>
-    <td align="center"><sub>예정된 알람을<br/>한 화면에서</sub></td>
-    <td align="center"><sub>1회·주간 반복·<br/>특정 날짜</sub></td>
-    <td align="center"><sub>요일별로<br/>모아 보기</sub></td>
-    <td align="center"><sub>다음 알람을<br/>잠금화면에</sub></td>
-    <td align="center"><sub>탭 한 번으로<br/>스누즈·종료</sub></td>
-    <td align="center"><sub>큰 정지 버튼·<br/>스누즈 5분</sub></td>
-    <td align="center"><sub>앱이 꺼져도<br/>안심하세요</sub></td>
+    <td align="center">예정된 알람을 한 화면에서 관리하고, 다음 알람 시간을 상단에서 바로 확인하세요.</td>
+    <td align="center">시간, 반복(1회·주간·특정 날짜), 사운드, 조용한 알람까지 한 번에 설정할 수 있어요.</td>
+    <td align="center">요일을 누르면 그 요일에 울릴 알람만 모아 보여줘서, 일주일 일정을 한눈에 파악할 수 있어요.</td>
+    <td align="center">화면을 켜지 않아도 잠금화면에 다음 알람이 표시돼서 중요한 일정을 놓치지 않아요.</td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td align="center" width="200"><b>Dynamic Island</b></td>
+    <td align="center" width="200"><b>알람 울림 화면</b></td>
+    <td align="center" width="200"><b>앱이 꺼져도 울리는 알람</b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/05-dynamic-island.png" alt="Dynamic Island" width="180"/></td>
+    <td align="center"><img src="docs/screenshots/06-ringing-foreground.png" alt="알람 울림" width="180"/></td>
+    <td align="center"><img src="docs/screenshots/07-ringing-alarmkit.png" alt="AlarmKit 알람" width="180"/></td>
+  </tr>
+  <tr>
+    <td align="center">앱을 열지 않고도 Dynamic Island에서 바로 스누즈하거나 알람을 종료할 수 있어요.</td>
+    <td align="center">큼지막한 정지 버튼과 5분 스누즈로 한 번에 처리. 잠결에도 헷갈리지 않게 디자인했어요.</td>
+    <td align="center">iOS 26 AlarmKit으로 앱을 완전히 종료해도 시스템 레벨에서 알람이 울려요. 안심하세요.</td>
   </tr>
 </table>
 
