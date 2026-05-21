@@ -2,6 +2,10 @@
 
 Swift 6 + SwiftUI로 만든 iOS 알람 앱. 정확한 타이밍, 계절 테마, 잠금화면 위젯까지 지원합니다.
 
+<a href="https://apps.apple.com/kr/app/betteralarm/id6757860634">
+  <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/ko-kr?size=250x83" alt="Download on the App Store" height="50"/>
+</a>
+
 ## 미리보기
 
 <table width="100%">
